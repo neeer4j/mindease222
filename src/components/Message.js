@@ -1,11 +1,12 @@
 // src/components/Message.jsx
 
-import React, { useMemo } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { Box, Typography, Avatar, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
+import { AuthContext } from '../contexts/AuthContext'; // Adjust the path as needed
 dayjs.extend(localizedFormat);
 
 /**
@@ -29,7 +30,7 @@ dayjs.extend(localizedFormat);
  *   - {string} mood - User's mood, applicable if the message type is 'mood'.
  */
 
-// Base options for all avatars, can be extended for bot and user specific settings
+ // Base options for all avatars, can be extended for bot and user specific settings
 const avatarBaseOptions = {
   seed: 'mindEase-default-seed', // Fallback seed for avatar generation
 };
@@ -48,26 +49,29 @@ const userAvatarOptions = {
 
 const Message = ({ msg }) => {
   const theme = useTheme();
+  const { user } = useContext(AuthContext); // Get the authenticated user from context
   const isBot = msg.isBot;
   const isEmergency = msg.isEmergency;
 
-  // Memoize avatar URL generation for performance.
-  // Re-calculates only when isBot or msg.userId changes.
-  const avatarUrl = useMemo(() => {
+  // Memoize DiceBear avatar URL generation for bot avatars ONLY
+  const botAvatarDiceBearUrl = useMemo(() => {
+    if (!isBot) return null; // Only generate for bot messages
     const baseUrl = 'https://api.dicebear.com/6.x';
-    const style = isBot ? 'bottts' : 'micah'; // Different avatar styles for bot and user
-    const options = isBot
-      ? { ...botAvatarOptions, seed: `mindEase-bot-${msg.userId || avatarBaseOptions.seed}` } // Bot seed
-      : { ...userAvatarOptions, seed: `user-${msg.userId || Math.random().toString(36).substr(2, 5)}` }; // User seed
-
+    const style = 'bottts';
+    const options = { ...botAvatarOptions, seed: `mindEase-bot-${msg.userId || avatarBaseOptions.seed}` };
     const params = new URLSearchParams();
-    params.append('seed', options.seed); // Seed is always appended
+    params.append('seed', options.seed);
+    return `${baseUrl}/${style}/svg?${params.toString()}`;
+  }, [isBot, msg.userId]);
 
-    // Example for future customization: appending array parameters for user avatars if needed
-    // if (!isBot && userAvatarOptions.accessories) {
-    //   userAvatarOptions.accessories.forEach(accessory => params.append('accessories[]', accessory));
-    // }
-
+  // Memoize DiceBear avatar URL generation for user fallback avatars
+  const userAvatarDiceBearFallbackUrl = useMemo(() => {
+    if (isBot) return null; // Only generate for user messages (fallback)
+    const baseUrl = 'https://api.dicebear.com/6.x';
+    const style = 'micah';
+    const options = { ...userAvatarOptions, seed: `user-${msg.userId || Math.random().toString(36).substr(2, 5)}` };
+    const params = new URLSearchParams();
+    params.append('seed', options.seed);
     return `${baseUrl}/${style}/svg?${params.toString()}`;
   }, [isBot, msg.userId]);
 
@@ -119,7 +123,7 @@ const Message = ({ msg }) => {
           transition={{ duration: 0.2 }}
         >
           <Avatar
-            src={avatarUrl}
+            src={botAvatarDiceBearUrl} // Use botAvatarDiceBearUrl for bot avatars
             alt="Bot Avatar"
             sx={{
               width: 45,
@@ -230,7 +234,9 @@ const Message = ({ msg }) => {
           transition={{ duration: 0.2 }}
         >
           <Avatar
-            src={avatarUrl}
+            // Use the authenticated user's avatar from AuthContext.
+            // Falls back to a generated DiceBear avatar if not available.
+            src={(user && user.avatar) || userAvatarDiceBearFallbackUrl}
             alt="User Avatar"
             sx={{
               width: 45,

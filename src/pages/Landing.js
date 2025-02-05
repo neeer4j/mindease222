@@ -550,7 +550,7 @@ const Landing = () => {
                             height: '100%',
                             objectFit: 'cover',
                             // Brighter in dark mode, dimmer in light
-                            filter: isDarkMode ? 'none' : 'brightness(100%)',
+                            filter: isDarkMode ? 'none' : 'brightness(110%)',
                             transition: 'filter 0.3s ease',
                           }}
                           loading="lazy"
