@@ -1,0 +1,36 @@
+{
+    "logs": [
+        {
+            "outputFile": "app.web.mindease_dbed7.twa.app-mergeReleaseResources-5:/values-km/values-km.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\NAYIF\\.gradle\\caches\\8.8\\transforms\\b511174c15fdde7dea3e957094b4390b\\transformed\\browser-1.4.0\\res\\values-km\\values-km.xml",
+                    "from": {
+                        "startLines": "2,3,4,5",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "55,152,249,382",
+                        "endColumns": "96,96,132,99",
+                        "endOffsets": "147,244,377,477"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\NAYIF\\.gradle\\caches\\8.8\\transforms\\2144911bb09dce3a07f407e3b390637e\\transformed\\core-1.1.0\\res\\values-km\\values-km.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "100",
+                        "endOffsets": "151"
+                    },
+                    "to": {
+                        "startLines": "6",
+                        "startColumns": "4",
+                        "startOffsets": "482",
+                        "endColumns": "100",
+                        "endOffsets": "578"
+                    }
+                }
+            ]
+        }
+    ]
+}

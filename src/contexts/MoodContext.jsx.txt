@@ -1,0 +1,48 @@
+// src/contexts/MoodContext.jsx
+
+import React, { createContext, useState, useEffect } from 'react';
+
+// Create the MoodContext
+export const MoodContext = createContext();
+
+// Create the MoodProvider component
+export const MoodProvider = ({ children }) => {
+  const [moodEntries, setMoodEntries] = useState([]);
+
+  // Load mood entries from localStorage on mount
+  useEffect(() => {
+    const savedMoods = localStorage.getItem('moodEntries');
+    if (savedMoods) {
+      setMoodEntries(JSON.parse(savedMoods));
+    }
+  }, []);
+
+  // Save mood entries to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('moodEntries', JSON.stringify(moodEntries));
+  }, [moodEntries]);
+
+  // Function to add a new mood entry
+  const addMood = (mood) => {
+    const newMood = { id: Date.now(), mood, timestamp: new Date().toISOString() };
+    setMoodEntries([...moodEntries, newMood]);
+  };
+
+  // Function to edit an existing mood entry
+  const editMood = (id, updatedMood) => {
+    setMoodEntries(
+      moodEntries.map((entry) => (entry.id === id ? { ...entry, mood: updatedMood } : entry))
+    );
+  };
+
+  // Function to delete a mood entry
+  const deleteMood = (id) => {
+    setMoodEntries(moodEntries.filter((entry) => entry.id !== id));
+  };
+
+  return (
+    <MoodContext.Provider value={{ moodEntries, addMood, editMood, deleteMood }}>
+      {children}
+    </MoodContext.Provider>
+  );
+};

@@ -1,0 +1,48 @@
+// src/contexts/ActivityContext.jsx
+
+import React, { createContext, useState, useEffect } from 'react';
+
+// Create the ActivityContext
+export const ActivityContext = createContext();
+
+// Create the ActivityProvider component
+export const ActivityProvider = ({ children }) => {
+  const [activities, setActivities] = useState([]);
+
+  // Load activities from localStorage on mount
+  useEffect(() => {
+    const savedActivities = localStorage.getItem('activities');
+    if (savedActivities) {
+      setActivities(JSON.parse(savedActivities));
+    }
+  }, []);
+
+  // Save activities to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('activities', JSON.stringify(activities));
+  }, [activities]);
+
+  // Function to add a new activity
+  const addActivity = (activity) => {
+    const newActivity = { id: Date.now(), ...activity };
+    setActivities([...activities, newActivity]);
+  };
+
+  // Function to edit an existing activity
+  const editActivity = (id, updatedActivity) => {
+    setActivities(
+      activities.map((act) => (act.id === id ? { ...act, ...updatedActivity } : act))
+    );
+  };
+
+  // Function to delete an activity
+  const deleteActivity = (id) => {
+    setActivities(activities.filter((act) => act.id !== id));
+  };
+
+  return (
+    <ActivityContext.Provider value={{ activities, addActivity, editActivity, deleteActivity }}>
+      {children}
+    </ActivityContext.Provider>
+  );
+};

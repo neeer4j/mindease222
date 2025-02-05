@@ -1,0 +1,36 @@
+{
+    "logs": [
+        {
+            "outputFile": "app.web.mindease_dbed7.twa.app-mergeReleaseResources-5:/values-zu/values-zu.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\NAYIF\\.gradle\\caches\\8.8\\transforms\\2144911bb09dce3a07f407e3b390637e\\transformed\\core-1.1.0\\res\\values-zu\\values-zu.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "100",
+                        "endOffsets": "151"
+                    },
+                    "to": {
+                        "startLines": "6",
+                        "startColumns": "4",
+                        "startOffsets": "499",
+                        "endColumns": "100",
+                        "endOffsets": "595"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\NAYIF\\.gradle\\caches\\8.8\\transforms\\b511174c15fdde7dea3e957094b4390b\\transformed\\browser-1.4.0\\res\\values-zu\\values-zu.xml",
+                    "from": {
+                        "startLines": "2,3,4,5",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "55,167,275,387",
+                        "endColumns": "111,107,111,111",
+                        "endOffsets": "162,270,382,494"
+                    }
+                }
+            ]
+        }
+    ]
+}

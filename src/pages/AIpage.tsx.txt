@@ -1,0 +1,385 @@
+// ./app/page.tsx
+
+"use client";
+
+import React, { useState, useEffect, useRef, useMemo, useCallback, useContext } from 'react';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import MoodTracker from './components/MoodTracker';
+import ErrorBoundary from './components/ErrorBoundary';
+import Modal from './components/Modal'; // Import the Modal component
+import Message from './components/Message'; // Import the updated Message component
+import {
+  Container,
+  Typography,
+  Button,
+  Grid,
+  Box,
+  useTheme,
+  useMediaQuery,
+  Card,
+  CardContent,
+  CardActions,
+  Avatar,
+  Tooltip,
+  TextField,
+} from '@mui/material';
+import { motion } from 'framer-motion';
+import { styled } from '@mui/system';
+import { AuthContext } from '../contexts/AuthContext'; // Assuming you have an AuthContext
+
+// Styled Gradient Button using MUI's styled API
+const GradientButton = styled(Button)(({ theme }) => ({
+  background: `linear-gradient(45deg, ${theme.palette.primary.light} 30%, ${theme.palette.primary.main} 90%)`,
+  color: theme.palette.primary.contrastText,
+  borderRadius: '8px',
+  padding: '8px 16px',
+  boxShadow: theme.shadows[4],
+  transition: 'background 0.5s, box-shadow 0.3s',
+  '&:hover': {
+    background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
+    boxShadow: theme.shadows[6],
+  },
+}));
+
+// Styled Send Button
+const SendButton = styled(Button)(({ theme }) => ({
+  background: `linear-gradient(45deg, ${theme.palette.secondary.light} 30%, ${theme.palette.secondary.main} 90%)`,
+  color: theme.palette.secondary.contrastText,
+  borderRadius: '50%',
+  padding: '12px',
+  boxShadow: theme.shadows[4],
+  transition: 'background 0.5s, box-shadow 0.3s',
+  '&:hover': {
+    background: `linear-gradient(45deg, ${theme.palette.secondary.main} 30%, ${theme.palette.secondary.dark} 90%)`,
+    boxShadow: theme.shadows[6],
+  },
+}));
+
+interface MessageType {
+  text: string;
+  isBot: boolean;
+  timestamp: string; // Stored as ISO string
+  isEmergency: boolean;
+}
+
+const Page = () => {
+  const [messages, setMessages] = useState<MessageType[]>([]);
+  const [userInput, setUserInput] = useState<string>('');
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false); // State for any additional modals
+  const [modalContent, setModalContent] = useState<React.ReactNode | null>(null); // Content for the modal
+  const chatContainerRef = useRef<HTMLDivElement>(null); // Ref for the chat container
+  const inputRef = useRef<HTMLTextAreaElement>(null); // Ref for the input field
+  const { isAuthenticated } = useContext(AuthContext); // Using AuthContext
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Constants for crisis detection
+  const CRISIS_KEYWORDS = ['suicide', 'self-harm', 'kill myself'];
+  const EMERGENCY_RESOURCES = [
+    "National Suicide Prevention Lifeline (US): 1-800-273-TALK (8255)",
+    "Crisis Text Line: Text HOME to 741741",
+    "Find local helplines: https://findahelpline.com"
+  ];
+
+  // Initialize Gemini outside the component to prevent re-initialization
+  const genAI = useMemo(() => new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY), []);
+  const model = useMemo(() => genAI.getGenerativeModel({
+    model: "gemini-1.5-flash",
+    systemInstruction: {
+      role: "system",
+      parts: [{
+        text: "You are MindEase, a compassionate AI therapist. Provide empathetic and supportive responses, offer general advice and coping strategies when appropriate, and ask open-ended questions to understand the user's feelings. Avoid giving professional medical or legal advice. Keep responses conversational and under 3 sentences."
+      }]
+    }
+  }), [genAI]);
+
+  // Memoize the chat history to prevent unnecessary computations
+  const chatHistory = useMemo(() => {
+    return messages.map(msg => ({
+      role: msg.isBot ? 'model' : 'user',
+      parts: [{ text: msg.text }]
+    }));
+  }, [messages]);
+
+  // Auto-scroll to bottom when messages or isTyping changes
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages, isTyping]);
+
+  // Load chat history from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('mindEaseChat');
+    if (saved) {
+      // Parse the saved messages and ensure timestamp is a string
+      setMessages(JSON.parse(saved));
+    }
+    inputRef.current?.focus();
+  }, []);
+
+  // Save chat history to localStorage whenever messages change
+  useEffect(() => {
+    try {
+      localStorage.setItem('mindEaseChat', JSON.stringify(messages));
+    } catch (error) {
+      console.error("Failed to save chat history:", error);
+    }
+  }, [messages]);
+
+  // Handler to send messages
+  const handleSend = useCallback(async () => {
+    const trimmedInput = userInput.trim();
+    if (!trimmedInput || isTyping) return;
+
+    // Crisis detection
+    const containsCrisis = CRISIS_KEYWORDS.some(kw => trimmedInput.toLowerCase().includes(kw));
+
+    if (containsCrisis) {
+      const emergencyMessage: MessageType = {
+        text: `Your safety matters. Please contact:\n${EMERGENCY_RESOURCES.join('\n')}`,
+        isBot: true,
+        timestamp: new Date().toISOString(),
+        isEmergency: true
+      };
+      setMessages(prev => [...prev, emergencyMessage]);
+      setUserInput('');
+      // Refocus the input after handling crisis message
+      inputRef.current?.focus();
+      return;
+    }
+
+    // Add user message
+    const newMessage: MessageType = { 
+      text: trimmedInput, 
+      isBot: false, 
+      timestamp: new Date().toISOString(),
+      isEmergency: false
+    };
+    setMessages(prev => [...prev, newMessage]);
+    setUserInput('');
+    setIsTyping(true);
+
+    try {
+      const chat = model.startChat({
+        history: chatHistory
+      });
+
+      const result = await chat.sendMessage(trimmedInput);
+      const response = await result.response;
+      const text = response.text();
+
+      const botMessage: MessageType = { 
+        text: text, 
+        isBot: true, 
+        timestamp: new Date().toISOString(),
+        isEmergency: false
+      };
+      setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error("Error fetching AI response:", error);
+      const errorMessage: MessageType = { 
+        text: "Sorry, I'm having trouble connecting. Please try again.", 
+        isBot: true, 
+        timestamp: new Date().toISOString(),
+        isEmergency: false
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+      // Refocus the input after message sending is complete
+      inputRef.current?.focus();
+    }
+  }, [userInput, isTyping, chatHistory, model]);
+
+  // Handle Enter key press for sending messages
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Function to handle opening modals with dynamic content
+  const openModal = (content: React.ReactNode) => {
+    setModalContent(content);
+    setIsModalOpen(true);
+  };
+
+  // Function to handle closing modals
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalContent(null);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.8 }}
+      style={{
+        minHeight: '100vh',
+        background: theme.palette.background.default, // Use the theme's background
+        paddingTop: theme.spacing(8),
+        paddingBottom: theme.spacing(10),
+      }}
+    >
+      <Container maxWidth="md">
+        {/* Header */}
+        <Grid container spacing={2} alignItems="center" justifyContent="center" mb={6}>
+          <Grid item>
+            <Avatar
+              sx={{
+                bgcolor: theme.palette.primary.main,
+                width: 56,
+                height: 56,
+              }}
+            >
+              <Typography variant="h5" color="white">
+                ME
+              </Typography>
+            </Avatar>
+          </Grid>
+          <Grid item>
+            <Typography variant="h4" component="h1" color="textPrimary">
+              MindEase
+            </Typography>
+            <Typography variant="subtitle1" color="textSecondary">
+              Your AI Therapist
+            </Typography>
+          </Grid>
+        </Grid>
+
+        {/* Chat Window */}
+        <ErrorBoundary>
+          <Box
+            ref={chatContainerRef}
+            component={motion.div}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            sx={{
+              height: { xs: '300px', md: '500px' },
+              overflowY: 'auto',
+              mb: 4,
+              border: '1px solid',
+              borderColor: 'grey.300',
+              borderRadius: '16px',
+              p: 2,
+              backgroundColor: 'background.paper',
+              boxShadow: 3,
+            }}
+            role="log"
+            aria-live="polite"
+          >
+            {messages.map((msg, index) => (
+              <Message key={index} msg={msg} />
+            ))}
+            {isTyping && (
+              <Box display="flex" alignItems="center" mb={2}>
+                <Box
+                  component={motion.div}
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    bgcolor: 'primary.main',
+                    borderRadius: '50%',
+                    mr: 1,
+                  }}
+                />
+                <Typography variant="body2" color="textSecondary">
+                  MindEase is typing...
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </ErrorBoundary>
+
+        {/* Input Area */}
+        <Box
+          component={motion.div}
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          display="flex"
+          gap={2}
+        >
+          <TextField
+            inputRef={inputRef}
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            placeholder="Share your thoughts..."
+            variant="outlined"
+            multiline
+            minRows={1}
+            maxRows={4}
+            fullWidth
+            onKeyDown={handleKeyDown}
+            aria-label="User input"
+            sx={{
+              flex: 1,
+              borderRadius: '12px',
+              backgroundColor: 'background.paper',
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'grey.300',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'primary.main',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: 'primary.main',
+                  boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.2)',
+                },
+              },
+            }}
+          />
+          <Tooltip title="Send Message">
+            <SendButton
+              variant="contained"
+              onClick={handleSend}
+              disabled={isTyping || !userInput.trim()}
+              aria-label="Send message"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-6 w-6" 
+                viewBox="0 0 20 20" 
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
+              </svg>
+            </SendButton>
+          </Tooltip>
+        </Box>
+
+        {/* Disclaimer */}
+        <Box mt={4}>
+          <Typography variant="body2" color="textSecondary" align="center" fontStyle="italic">
+            MindEase provides supportive listening, not professional therapy.
+          </Typography>
+        </Box>
+
+        {/* Mood Tracker */}
+        <Box mt={6}>
+          <MoodTracker />
+        </Box>
+      </Container>
+
+      {/* Generic Modal */}
+      {isModalOpen && modalContent && (
+        <Modal onClose={closeModal}>
+          {modalContent}
+        </Modal>
+      )}
+    </motion.div>
+  );
+};
+
+export default AIPage;

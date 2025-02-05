@@ -1,0 +1,86 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@fontsource/merriweather": "^5.1.0",
+    "@fontsource/raleway": "^5.1.0",
+    "@fortawesome/fontawesome-free": "^6.6.0",
+    "@google/generative-ai": "^0.21.0",
+    "@heroui/react": "^2.6.14",
+    "@mui/icons-material": "^6.4.1",
+    "@mui/material": "^6.4.1",
+    "@mui/styles": "^6.1.4",
+    "@mui/x-data-grid": "^7.21.0",
+    "@mui/x-date-pickers": "^7.24.1",
+    "@react-spring/web": "^9.7.5",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "apexcharts": "^4.4.0",
+    "axios": "^1.7.7",
+    "chart.js": "^4.4.7",
+    "chartjs-adapter-date-fns": "^3.0.0",
+    "chartjs-plugin-zoom": "^2.2.0",
+    "date-fns": "^4.1.0",
+    "dayjs": "^1.11.13",
+    "file-saver": "^2.0.5",
+    "firebase": "^11.2.0",
+    "framer-motion": "^11.18.2",
+    "gsap": "^3.12.7",
+    "install": "^0.13.0",
+    "mdb-react-ui-kit": "^9.0.0",
+    "npm": "^10.9.0",
+    "react": "^18.3.1",
+    "react-apexcharts": "^1.7.0",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "^18.3.1",
+    "react-grid-layout": "^1.5.0",
+    "react-helmet": "^6.1.0",
+    "react-icons": "^5.4.0",
+    "react-intersection-observer": "^9.13.1",
+    "react-lottie": "^1.2.4",
+    "react-parallax": "^3.5.1",
+    "react-resizable": "^3.0.5",
+    "react-router-dom": "^6.27.0",
+    "react-scripts": "5.0.1",
+    "react-use": "^17.6.0",
+    "react-window": "^1.8.11",
+    "react-window-infinite-loader": "^1.0.10",
+    "react-youtube": "^10.1.0",
+    "recharts": "^2.15.1",
+    "scrollreveal": "^4.0.9",
+    "styled-components": "^6.1.14",
+    "swiper": "^11.1.14",
+    "web-vitals": "^2.1.4"
+    },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "workbox-cli": "^7.3.0"
+  }
+}
