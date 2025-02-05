@@ -49,6 +49,7 @@ const GradientButton = styled(Button)(({ theme }) => ({
 const Landing = () => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark'; // <-- Handy shortcut
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { isAuthenticated } = useContext(AuthContext);
 
@@ -59,8 +60,7 @@ const Landing = () => {
       description:
         'Monitor and log your daily moods to gain insights into your emotional patterns. Understand triggers and trends in your emotional well-being over time.',
       action: () => navigate('/mood-tracker'),
-      imageUrl:
-        'images/bc.jpg'
+      imageUrl: 'images/bc.jpg',
     },
     {
       icon: <ChatIcon fontSize="large" color="inherit" />,
@@ -68,8 +68,7 @@ const Landing = () => {
       description:
         'Engage with our AI therapist for supportive conversations and guidance. Get personalized advice and support anytime you need it.',
       action: () => navigate('/chat'),
-      imageUrl:
-        'images/cd.jpg',
+      imageUrl: 'images/cd.jpg',
       alt: 'Person chatting with AI on laptop',
     },
     {
@@ -78,8 +77,7 @@ const Landing = () => {
       description:
         'Keep track of your activities and reflect on your personal growth. Discover how your daily routines impact your mood and overall wellness.',
       action: () => navigate('/activity-logging'),
-      imageUrl:
-        'images/ActivityLog.png',
+      imageUrl: 'images/ActivityLog.png',
       alt: 'Person logging activities on tablet',
     },
     {
@@ -88,8 +86,7 @@ const Landing = () => {
       description:
         'Access a library of guided meditations to help reduce stress and improve focus. Perfect for beginners and experienced meditators alike.',
       action: () => navigate('/meditations'),
-      imageUrl:
-      'images/df.jpg',
+      imageUrl: 'images/df.jpg',
       alt: 'Person meditating in serene environment',
     },
     {
@@ -98,8 +95,7 @@ const Landing = () => {
       description:
         'Track your sleep patterns and understand factors affecting your sleep quality. Improve your rest and wake up feeling refreshed.',
       action: () => navigate('/sleep-tracker'),
-      imageUrl:
-      'images/hi.jpg',
+      imageUrl: 'images/hi.jpg',
       alt: 'Person sleeping peacefully',
     },
     {
@@ -108,8 +104,7 @@ const Landing = () => {
       description:
         'Visualize your emotional journey with detailed progress reports and charts. See your improvements and stay motivated on your wellness path.',
       action: () => navigate('/progress-reports'),
-      imageUrl:
-      'images/rt.jpg',
+      imageUrl: 'images/rt.jpg',
       alt: 'Graph showing progress over time',
     },
   ];
@@ -120,8 +115,7 @@ const Landing = () => {
       title: 'Personalized Experience',
       description:
         'Tailored tools and insights to meet your unique mental wellness needs.',
-      imageUrl:
-        'images/fe.jpg',
+      imageUrl: 'images/fe.jpg',
       alt: 'Personalized experience illustration',
     },
     {
@@ -129,8 +123,7 @@ const Landing = () => {
       title: 'Privacy and Security',
       description:
         'Your data is encrypted and kept confidential, ensuring your peace of mind.',
-      imageUrl:
-        'images/tt.jpg',
+      imageUrl: 'images/tt.jpg',
       alt: 'Secure data encryption illustration',
     },
     {
@@ -138,8 +131,7 @@ const Landing = () => {
       title: '24/7 Support',
       description:
         'Access our resources and AI support anytime, anywhere you need assistance.',
-      imageUrl:
-        'images/tf.jpg',
+      imageUrl: 'images/tf.jpg',
       alt: 'Support agent providing assistance',
     },
   ];
@@ -147,11 +139,10 @@ const Landing = () => {
   const testimonials = [
     {
       quote:
-        "MindEase has been a game changer for me. Tracking my mood has helped me identify patterns I never noticed before.",
+        'MindEase has been a game changer for me. Tracking my mood has helped me identify patterns I never noticed before.',
       author: 'Jennifer C Fernandez',
       avatarUrl: 'images/pp.jpg',
-      imageUrl:
-        'images/pp.jpg',
+      imageUrl: 'images/pp.jpg',
       alt: 'Happy person smiling',
     },
     {
@@ -159,17 +150,15 @@ const Landing = () => {
         "The AI chat feature is like having a supportive friend available 24/7. It's incredibly helpful in managing daily stress.",
       author: 'Vivek Vinod',
       avatarUrl: 'images/p2.jpg',
-      imageUrl:
-        'images/p2.jpg',
+      imageUrl: 'images/p2.jpg',
       alt: 'Person using laptop in calm environment',
     },
     {
       quote:
-        "I love how easy it is to log my activities and see how they impact my mood. It's really helped me prioritize self-care.",
+        'I love how easy it is to log my activities and see how they impact my mood. It’s really helped me prioritize self-care.',
       author: 'Nandana N Kumar',
       avatarUrl: 'images/p3.jpg',
-      imageUrl:
-        'images/p3.jpg',
+      imageUrl: 'images/p3.jpg',
       alt: 'Person journaling in a serene setting',
     },
   ];
@@ -193,8 +182,7 @@ const Landing = () => {
     },
   ];
 
-  const heroImageUrl =
-  'images/ab.jpg';
+  const heroImageUrl = 'images/ab.jpg';
 
   return (
     <PageLayout>
@@ -255,9 +243,9 @@ const Landing = () => {
                     fontWeight: 400,
                   }}
                 >
-                  Your personalized mental wellness companion. Track your mood, chat with
-                  AI, and discover tools to cultivate a balanced and joyful life. Start
-                  your journey to inner peace today.
+                  Your personalized mental wellness companion. Track your mood,
+                  chat with AI, and discover tools to cultivate a balanced and
+                  joyful life. Start your journey to inner peace today.
                 </Typography>
 
                 <Box
@@ -268,7 +256,10 @@ const Landing = () => {
                   justifyContent={isMobile ? 'center' : 'flex-start'}
                 >
                   {isAuthenticated ? (
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
                       <GradientButton
                         variant="contained"
                         size="large"
@@ -287,7 +278,10 @@ const Landing = () => {
                     </motion.div>
                   ) : (
                     <>
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         <GradientButton
                           variant="contained"
                           size="large"
@@ -304,7 +298,10 @@ const Landing = () => {
                           Get Started
                         </GradientButton>
                       </motion.div>
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
                         <Button
                           variant="outlined"
                           color="primary"
@@ -366,7 +363,8 @@ const Landing = () => {
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
-                      filter: 'brightness(70%)',
+                      // Make hero image brighter in dark mode
+                      filter: isDarkMode ? 'none' : 'brightness(100%)',
                       transition: 'filter 0.3s ease',
                     }}
                     loading="lazy"
@@ -423,15 +421,10 @@ const Landing = () => {
                 fontWeight: 400,
               }}
             >
-              Empowering tools designed to support your mental well-being and personal
-              growth, seamlessly integrated for your daily life.
+              Empowering tools designed to support your mental well-being and
+              personal growth, seamlessly integrated for your daily life.
             </Typography>
-            <Grid
-              container
-              spacing={isMobile ? 4 : 5}
-              mt={5}
-              justifyContent="center"
-            >
+            <Grid container spacing={isMobile ? 4 : 5} mt={5} justifyContent="center">
               {features.map((feature, index) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
                   <motion.div
@@ -465,7 +458,9 @@ const Landing = () => {
                         minHeight: 450,
                       }}
                     >
-                      <Box sx={{ textAlign: 'center', paddingTop: theme.spacing(3) }}>
+                      <Box
+                        sx={{ textAlign: 'center', paddingTop: theme.spacing(3) }}
+                      >
                         <Avatar
                           sx={{
                             bgcolor: theme.palette.primary.light,
@@ -550,7 +545,8 @@ const Landing = () => {
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
-                            filter: 'brightness(60%)',
+                            // Brighter in dark mode, dimmer in light
+                            filter: isDarkMode ? 'none' : 'brightness(100%)',
                             transition: 'filter 0.3s ease',
                           }}
                           loading="lazy"
@@ -609,16 +605,11 @@ const Landing = () => {
                 fontWeight: 400,
               }}
             >
-              We are committed to providing a secure, personalized, and supportive
-              environment for your mental wellness journey. Discover the MindEase
-              difference.
+              We are committed to providing a secure, personalized, and
+              supportive environment for your mental wellness journey. Discover
+              the MindEase difference.
             </Typography>
-            <Grid
-              container
-              spacing={isMobile ? 4 : 6}
-              mt={5}
-              justifyContent="center"
-            >
+            <Grid container spacing={isMobile ? 4 : 6} mt={5} justifyContent="center">
               {whyChooseUsPoints.map((point, index) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
                   <motion.div
@@ -698,7 +689,8 @@ const Landing = () => {
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
-                            filter: 'brightness(50%)',
+                            // Make it brighter in dark mode
+                            filter: isDarkMode ? 'none' : 'brightness(100%)',
                             transition: 'filter 0.3s ease',
                           }}
                           loading="lazy"
@@ -753,7 +745,7 @@ const Landing = () => {
                   'url(https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                opacity: 0.1,
+                opacity: isDarkMode ? 0.15 : 0.1, // slightly higher in dark mode
                 filter: 'blur(8px)',
                 zIndex: 1,
               }}
@@ -789,14 +781,10 @@ const Landing = () => {
                 zIndex: 2,
               }}
             >
-              Real stories from real users who have found peace and growth with MindEase.
+              Real stories from real users who have found peace and growth with
+              MindEase.
             </Typography>
-            <Grid
-              container
-              spacing={isMobile ? 4 : 6}
-              mt={6}
-              justifyContent="center"
-            >
+            <Grid container spacing={isMobile ? 4 : 6} mt={6} justifyContent="center">
               {testimonials.map((testimonial, index) => (
                 <Grid item xs={12} md={4} lg={3} key={index}>
                   <motion.div
@@ -840,7 +828,7 @@ const Landing = () => {
                           backgroundImage: `url(${testimonial.imageUrl})`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
-                          opacity: 0.05,
+                          opacity: isDarkMode ? 0.1 : 0.05,
                           filter: 'blur(4px)',
                           borderRadius: '28px',
                           zIndex: -1,
@@ -857,7 +845,7 @@ const Landing = () => {
                             lineHeight: 1.7,
                           }}
                         >
-                          " {testimonial.quote} "
+                          &quot; {testimonial.quote} &quot;
                         </Typography>
                       </CardContent>
                       <Box
@@ -933,12 +921,7 @@ const Landing = () => {
               THE TEAM BEHIND MINDEASE, PASSIONATE ABOUT MENTAL WELLNESS AND
               TECHNOLOGY.
             </Typography>
-            <Grid
-              container
-              spacing={isMobile ? 4 : 6}
-              mt={6}
-              justifyContent="center"
-            >
+            <Grid container spacing={isMobile ? 4 : 6} mt={6} justifyContent="center">
               {developers.map((developer, index) => (
                 <Grid item xs={12} sm={6} md={3} key={index}>
                   <motion.div
@@ -1051,7 +1034,7 @@ const Landing = () => {
                   'url(https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                opacity: 0.05,
+                opacity: isDarkMode ? 0.1 : 0.05,
                 filter: 'blur(8px)',
                 zIndex: 1,
               }}
@@ -1081,9 +1064,9 @@ const Landing = () => {
                 zIndex: 2,
               }}
             >
-              Unlock the power of MindEase and transform your mental well-being today.
-              Sign up for free and explore our comprehensive suite of features designed
-              to guide you towards a happier, healthier you.
+              Unlock the power of MindEase and transform your mental well-being
+              today. Sign up for free and explore our comprehensive suite of
+              features designed to guide you towards a happier, healthier you.
             </Typography>
             <motion.div
               whileHover={{ scale: 1.06 }}
@@ -1102,7 +1085,7 @@ const Landing = () => {
                   boxShadow: theme.shadows[6],
                 }}
               >
-                Start for Free - It's Quick & Easy!
+                Start for Free - It&apos;s Quick &amp; Easy!
               </GradientButton>
             </motion.div>
           </Box>
