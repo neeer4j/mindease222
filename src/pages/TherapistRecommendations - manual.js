@@ -167,6 +167,8 @@ const widgetItemVariants = {
 // TherapistWidget Component
 // -----------------------
 
+// Inside TherapistWidget component in src/pages/TherapistRecommendations.js
+
 const TherapistWidget = ({ therapist, handleDetailsClick }) => {
   const contentRef = useRef(null);
 
@@ -252,6 +254,7 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
     </motion.div>
   );
 };
+
 
 // -----------------------
 // TherapistDetailsContent Component
@@ -341,7 +344,9 @@ const TherapistRecommendations = () => {
   useEffect(() => {
     const googleApiKey = process.env.REACT_APP_GOOGLE_API_KEY;
     if (!googleApiKey) {
-      // Removed the API not loaded message
+      console.error(
+        'Google API key is missing. Please set REACT_APP_GOOGLE_API_KEY in your .env file!'
+      );
       return;
     }
 
@@ -352,11 +357,13 @@ const TherapistRecommendations = () => {
 
     // Listen for the load event so we know the API is ready.
     script.addEventListener('load', () => {
+      console.log('Google Maps API loaded successfully.');
       setGoogleApiLoaded(true);
     });
 
-    // Removed error message from the API load event
     script.addEventListener('error', () => {
+      console.error('Failed to load Google Maps API.');
+      // Optionally, you might want to update state to reflect this error.
       setGoogleApiLoaded(false);
     });
 
@@ -380,10 +387,13 @@ const TherapistRecommendations = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
+          console.log(`User location: ${latitude}, ${longitude}`);
+          // Pass force=true to always fetch fresh data.
           fetchTherapists(latitude, longitude, force);
           setIsRefreshing(false);
         },
         (err) => {
+          console.error('Error obtaining location:', err);
           setLocationError(
             'Unable to access your location. Please ensure location services are enabled for your browser and this site.'
           );
@@ -407,7 +417,8 @@ const TherapistRecommendations = () => {
     if (googleApiLoaded && therapists.length === 0) {
       fetchData();
     }
-  }, [googleApiLoaded, therapists.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googleApiLoaded]);
 
   // Also, if there's an error in fetching therapists, show it in the Snackbar.
   useEffect(() => {

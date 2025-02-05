@@ -615,7 +615,7 @@ Quick Replies:
               <ChatIcon sx={{ color: 'white', fontSize: 24 }} />
             </Avatar>
             <Box>
-              <Typography variant="h6" color="textPrimary" sx={{ fontWeight: 800 }}>
+              <Typography variant="h6" color="textPrimary" sax={{ fontWeight: 800 }}>
                 MindEase
               </Typography>
               <Typography variant="caption" color="textSecondary">
