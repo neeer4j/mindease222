@@ -167,6 +167,8 @@ const widgetItemVariants = {
 // TherapistWidget Component
 // -----------------------
 
+// Inside TherapistWidget component in src/pages/TherapistRecommendations.js
+
 const TherapistWidget = ({ therapist, handleDetailsClick }) => {
   const contentRef = useRef(null);
 
@@ -202,6 +204,13 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
               {therapist.address}
             </Typography>
           </Box>
+          {therapist.distance != null && (
+            <Box mb={1} display="flex" alignItems="center">
+              <Typography variant="caption" color="textSecondary">
+                {therapist.distance.toFixed(1)} km away
+              </Typography>
+            </Box>
+          )}
           <Box display="flex" alignItems="center">
             <StarIcon fontSize="medium" color="warning" sx={{ mr: 0.5 }} />
             <Typography variant="body2" color="textSecondary">
@@ -245,6 +254,7 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
     </motion.div>
   );
 };
+
 
 // -----------------------
 // TherapistDetailsContent Component
@@ -325,13 +335,18 @@ const TherapistRecommendations = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // New state to track when Google Maps API is loaded
+  const [googleApiLoaded, setGoogleApiLoaded] = useState(false);
+
   // -----------------------
   // 1) Dynamically Load Google Maps JS API
   // -----------------------
   useEffect(() => {
     const googleApiKey = process.env.REACT_APP_GOOGLE_API_KEY;
     if (!googleApiKey) {
-      console.error('Google API key is missing. Please set REACT_APP_GOOGLE_API_KEY in your .env file!');
+      console.error(
+        'Google API key is missing. Please set REACT_APP_GOOGLE_API_KEY in your .env file!'
+      );
       return;
     }
 
@@ -340,16 +355,28 @@ const TherapistRecommendations = () => {
     script.async = true;
     script.defer = true;
 
+    // Listen for the load event so we know the API is ready.
+    script.addEventListener('load', () => {
+      console.log('Google Maps API loaded successfully.');
+      setGoogleApiLoaded(true);
+    });
+
+    script.addEventListener('error', () => {
+      console.error('Failed to load Google Maps API.');
+      // Optionally, you might want to update state to reflect this error.
+      setGoogleApiLoaded(false);
+    });
+
     document.head.appendChild(script);
 
-    // Optional cleanup: remove script on component unmount
+    // Cleanup on unmount.
     return () => {
       document.head.removeChild(script);
     };
   }, []);
 
   // -----------------------
-  // 2) Get User's Location and Fetch Therapists
+  // 2) Get User's Location and Fetch Therapists (only after API is loaded)
   // -----------------------
   const fetchData = (force = false) => {
     if (!force && therapists.length > 0) return;
@@ -361,7 +388,7 @@ const TherapistRecommendations = () => {
         (position) => {
           const { latitude, longitude } = position.coords;
           console.log(`User location: ${latitude}, ${longitude}`);
-          // Pass force=true to always fetch fresh data
+          // Pass force=true to always fetch fresh data.
           fetchTherapists(latitude, longitude, force);
           setIsRefreshing(false);
         },
@@ -385,15 +412,15 @@ const TherapistRecommendations = () => {
     }
   };
 
-  // On mount, if no cached data exists, fetch data.
+  // Trigger fetchData only after the Google API is loaded.
   useEffect(() => {
-    if (therapists.length === 0) {
+    if (googleApiLoaded && therapists.length === 0) {
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [googleApiLoaded]);
 
-  // If there's an error fetching therapists, show in Snackbar
+  // Also, if there's an error in fetching therapists, show it in the Snackbar.
   useEffect(() => {
     if (error) {
       setSnackbarMessage(error);
@@ -402,32 +429,32 @@ const TherapistRecommendations = () => {
     }
   }, [error]);
 
-  // Manual refresh: clear data & force a new fetch
+  // Manual refresh: clear data and force a new fetch.
   const handleRefresh = () => {
-    clearTherapists(); // Clear cached data
-    fetchData(true); // Force new API call
+    clearTherapists(); // Clear cached data.
+    fetchData(true); // Force a new API call.
     setSnackbarMessage('Therapist recommendations refreshed.');
     setSnackbarSeverity('info');
     setSnackbarOpen(true);
     setIsRefreshing(true);
 
-    // Add slight delay for "spinning" icon
+    // Add a slight delay for the "spinning" icon.
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  // Close the Snackbar
+  // Close the Snackbar.
   const handleSnackbarClose = (event, reason) => {
     if (reason === 'clickaway') return;
     setSnackbarOpen(false);
   };
 
-  // Show details for selected therapist
+  // Show details for the selected therapist.
   const handleDetailsClick = (therapist) => {
     setSelectedTherapist(therapist);
     setDialogOpen(true);
   };
 
-  // Close the details dialog
+  // Close the details dialog.
   const handleDialogClose = () => {
     setDialogOpen(false);
     setSelectedTherapist(null);
@@ -482,7 +509,7 @@ const TherapistRecommendations = () => {
                 </Box>
               </HeroSection>
 
-              {/* Therapist Widgets or Loading Skeletal */}
+              {/* Therapist Widgets or Loading Skeleton */}
               <motion.div
                 variants={widgetVariants}
                 initial="hidden"
@@ -490,7 +517,7 @@ const TherapistRecommendations = () => {
               >
                 <Grid container spacing={3}>
                   {loading ? (
-                    // Show skeleton placeholders while loading
+                    // Show skeleton placeholders while loading.
                     Array.from({ length: 3 }).map((_, index) => (
                       <Grid item xs={12} md={4} key={index}>
                         <WidgetCard>
@@ -511,7 +538,7 @@ const TherapistRecommendations = () => {
                       </Grid>
                     ))
                   ) : therapists.length > 0 ? (
-                    // Show therapist widgets
+                    // Show therapist widgets.
                     therapists.map((therapist) => (
                       <Grid item xs={12} md={4} key={therapist.id}>
                         <TherapistWidget
@@ -521,15 +548,15 @@ const TherapistRecommendations = () => {
                       </Grid>
                     ))
                   ) : !loading && !locationError ? (
-                    // No therapists found
+                    // No therapists found.
                     <Grid item xs={12}>
                       <Typography
                         variant="subtitle1"
                         color="textSecondary"
                         align="center"
                       >
-                        No therapists found in your area. Please try again
-                        later or refresh.
+                        No therapists found in your area. Please try again later or
+                        refresh.
                       </Typography>
                     </Grid>
                   ) : null}

@@ -23,6 +23,28 @@ export const TherapistFindProvider = ({ children }) => {
   };
 
   /**
+   * Compute the distance between two points (in km) using the Haversine formula.
+   *
+   * @param {number} lat1 - Latitude of the first point.
+   * @param {number} lon1 - Longitude of the first point.
+   * @param {number} lat2 - Latitude of the second point.
+   * @param {number} lon2 - Longitude of the second point.
+   * @returns {number} - The distance in kilometers.
+   */
+  const computeDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  /**
    * Helper function to fetch place details using the Place Details API.
    *
    * @param {string} placeId - The place ID of the location.
@@ -80,7 +102,7 @@ export const TherapistFindProvider = ({ children }) => {
       // Build the request object.
       const request = {
         location,
-        radius: 8000, // 5 km radius
+        radius: 20000, // Extended radius: 20,000 meters (20 km)
         type: "doctor", // Using a string instead of an array.
         keyword: "therapist", // Helps narrow results.
       };
@@ -128,6 +150,15 @@ export const TherapistFindProvider = ({ children }) => {
               detailsError
             );
           }
+
+          // Calculate distance using the helper (in kilometers)
+          let distance = null;
+          if (result.geometry && result.geometry.location) {
+            const placeLat = result.geometry.location.lat();
+            const placeLng = result.geometry.location.lng();
+            distance = computeDistance(latitude, longitude, placeLat, placeLng);
+          }
+
           return {
             id: result.place_id,
             name: result.name,
@@ -135,6 +166,7 @@ export const TherapistFindProvider = ({ children }) => {
             address: result.vicinity || "Unknown address",
             rating: result.rating || "N/A",
             phone, // Retrieved from Place Details API.
+            distance, // Distance in km (as a number)
             avatarUrl: result.photos
               ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${result.photos[0].photo_reference}&key=${hardcodedApiKey}`
               : result.icon, // Use default icon if no photo available.
