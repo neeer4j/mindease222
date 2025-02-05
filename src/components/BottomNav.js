@@ -40,19 +40,22 @@ const BottomNav = () => {
   const currentMode = globalTheme.palette.mode; // 'dark' or 'light'
 
   // Create a dedicated theme for the BottomNav.
-  // In light mode, force unselected icons and text to black.
+  // In light mode, we choose colours that enhance readability and contrast.
   const bottomNavTheme = createTheme({
     palette: {
       mode: currentMode,
       primary: {
-        main: '#007BFF', // Blue for active items.
+        // Use a deep blue in light mode and your preferred blue in dark mode.
+        main: currentMode === 'light' ? '#1976d2' : '#007BFF',
       },
       background: {
-        paper: 'transparent',
+        // Use a solid white background for light mode.
+        paper: currentMode === 'light' ? '#fff' : globalTheme.palette.background.paper,
       },
       text: {
-        primary: currentMode === 'light' ? '#000' : '#fff',
-        secondary: currentMode === 'light' ? '#444' : '#b3b3b3',
+        // Darker text in light mode for better contrast.
+        primary: currentMode === 'light' ? '#333' : '#fff',
+        secondary: currentMode === 'light' ? '#666' : '#b3b3b3',
       },
     },
     typography: {
@@ -60,12 +63,17 @@ const BottomNav = () => {
     },
   });
 
-  // Use a dark transparent background gradient for the bottom nav.
+  // For light mode, use a subtle white gradient; for dark mode, keep the darker gradient.
   const navBgGradient =
-    'linear-gradient(to top, rgba(0, 0, 0, 0.9) 40%, transparent 90%)';
+    currentMode === 'light'
+      ? 'linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 50%, transparent 100%)'
+      : 'linear-gradient(to top, rgba(0, 0, 0, 0.9) 40%, transparent 90%)';
 
-  // Change the menu background to a strong dark transparent look.
-  const menuBg = 'rgba(0, 0, 0, 0.85)';
+  // Update the drop-up menu background based on the current mode.
+  const menuBg =
+    currentMode === 'light'
+      ? 'rgba(255, 255, 255, 0.95)' // Light background for light mode.
+      : 'rgba(0, 0, 0, 0.85)'; // Dark background for dark mode.
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -73,6 +81,8 @@ const BottomNav = () => {
 
   // Check for mobile screens.
   const isMobile = useMediaQuery(globalTheme.breakpoints.down('sm'));
+  // Determine if we are on the Chat page on mobile.
+  const isChatPage = isMobile && location.pathname === '/chat';
 
   // State for navigation selection.
   const [value, setValue] = useState(() => {
@@ -127,11 +137,14 @@ const BottomNav = () => {
   };
 
   // Styling for the modern drop-up (features) menu.
+  // Here we also update the text colour for light mode.
   const menuSx = {
     '& .MuiMenuItem-root': {
       fontSize: { xs: '0.75rem', sm: '0.875rem' },
       paddingY: 1,
       paddingX: 2,
+      // Set the text colour based on the mode.
+      color: currentMode === 'light' ? bottomNavTheme.palette.text.primary : '#fff',
     },
   };
 
@@ -141,7 +154,9 @@ const BottomNav = () => {
       borderRadius: '12px',
       boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.15)',
       backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
+      border: currentMode === 'light'
+        ? '1px solid rgba(0, 0, 0, 0.1)'
+        : '1px solid rgba(255, 255, 255, 0.1)',
       overflow: 'visible',
       mt: 1,
     },
@@ -157,9 +172,11 @@ const BottomNav = () => {
             bottom: 0,
             left: 0,
             right: 0,
-            background: navBgGradient,
+            // For unauthenticated users on mobile (and also on chat, if needed),
+            // use a solid background without gradient fade.
+            background: isChatPage ? bottomNavTheme.palette.background.paper : navBgGradient,
             boxShadow: 'none',
-            border: 'none',
+            border: isChatPage ? 'none' : undefined,
           }}
           elevation={0}
         >
@@ -171,7 +188,9 @@ const BottomNav = () => {
               border: 'none',
               '& .MuiBottomNavigationAction-root': {
                 minWidth: '50px',
-                color: currentMode === 'light' ? '#000' : 'inherit',
+                color: currentMode === 'light'
+                  ? bottomNavTheme.palette.text.primary
+                  : 'inherit',
               },
               '& .MuiBottomNavigationAction-root.Mui-selected': {
                 color: bottomNavTheme.palette.primary.main,
@@ -206,9 +225,10 @@ const BottomNav = () => {
           bottom: 0,
           left: 0,
           right: 0,
-          background: navBgGradient,
+          // When on the chat page on mobile, remove the fade and use a solid background with minimal borders.
+          background: isChatPage ? bottomNavTheme.palette.background.paper : navBgGradient,
           boxShadow: 'none',
-          border: 'none',
+          border: isChatPage ? 'none' : undefined,
         }}
         elevation={0}
       >
@@ -221,7 +241,10 @@ const BottomNav = () => {
             border: 'none',
             p: { xs: 0.5, sm: 1 },
             '& .MuiBottomNavigationAction-root': {
-              color: currentMode === 'light' ? '#000' : 'text.secondary',
+              // Use the updated text colour for unselected items in light mode.
+              color: currentMode === 'light'
+                ? bottomNavTheme.palette.text.primary
+                : 'text.secondary',
               minWidth: '50px',
             },
             '& .Mui-selected': {

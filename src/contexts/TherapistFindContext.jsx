@@ -97,11 +97,11 @@ export const TherapistFindProvider = ({ children }) => {
       const map = new window.google.maps.Map(mapContainer);
 
       // Create a LatLng object for the given coordinates.
-      const location = new window.google.maps.LatLng(latitude, longitude);
+      const locationObj = new window.google.maps.LatLng(latitude, longitude);
 
       // Build the request object.
       const request = {
-        location,
+        location: locationObj,
         radius: 20000, // Extended radius: 20,000 meters (20 km)
         type: "doctor", // Using a string instead of an array.
         keyword: "therapist", // Helps narrow results.
@@ -134,8 +134,8 @@ export const TherapistFindProvider = ({ children }) => {
         return;
       }
 
-      // Hardcoded API key for fetching photos.
-      const hardcodedApiKey = "AIzaSyCfuO1hkovL3lZyON0FN2jDygTAyFqDGHQ";
+      // Retrieve the API key from environment variables.
+      const googleApiKey = process.env.REACT_APP_GOOGLE_API_KEY;
 
       // For each result, fetch detailed information and map the data.
       const mappedData = await Promise.all(
@@ -168,7 +168,7 @@ export const TherapistFindProvider = ({ children }) => {
             phone, // Retrieved from Place Details API.
             distance, // Distance in km (as a number)
             avatarUrl: result.photos
-              ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${result.photos[0].photo_reference}&key=${hardcodedApiKey}`
+              ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${result.photos[0].photo_reference}&key=${googleApiKey}`
               : result.icon, // Use default icon if no photo available.
           };
         })

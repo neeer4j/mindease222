@@ -202,13 +202,6 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
               {therapist.address}
             </Typography>
           </Box>
-          {therapist.distance != null && (
-            <Box mb={1} display="flex" alignItems="center">
-              <Typography variant="caption" color="textSecondary">
-                {therapist.distance.toFixed(1)} km away
-              </Typography>
-            </Box>
-          )}
           <Box display="flex" alignItems="center">
             <StarIcon fontSize="medium" color="warning" sx={{ mr: 0.5 }} />
             <Typography variant="body2" color="textSecondary">
@@ -332,46 +325,11 @@ const TherapistRecommendations = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // New state to track when Google Maps API is loaded
-  const [googleApiLoaded, setGoogleApiLoaded] = useState(false);
-
   // -----------------------
-  // 1) Dynamically Load Google Maps JS API
-  // -----------------------
-  useEffect(() => {
-    const googleApiKey = process.env.REACT_APP_GOOGLE_API_KEY;
-    if (!googleApiKey) {
-      // Removed the API not loaded message
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-
-    // Listen for the load event so we know the API is ready.
-    script.addEventListener('load', () => {
-      setGoogleApiLoaded(true);
-    });
-
-    // Removed error message from the API load event
-    script.addEventListener('error', () => {
-      setGoogleApiLoaded(false);
-    });
-
-    document.head.appendChild(script);
-
-    // Cleanup on unmount.
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
-
-  // -----------------------
-  // 2) Get User's Location and Fetch Therapists (only after API is loaded)
+  // Get User's Location and Fetch Therapists
   // -----------------------
   const fetchData = (force = false) => {
+    // If not forcing and we already have therapists, do nothing.
     if (!force && therapists.length > 0) return;
     setLocationError(null);
     setIsRefreshing(true);
@@ -380,10 +338,13 @@ const TherapistRecommendations = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
+          console.log(`User location: ${latitude}, ${longitude}`);
+          // Always pass force=true if you want a fresh API call.
           fetchTherapists(latitude, longitude, force);
           setIsRefreshing(false);
         },
         (err) => {
+          console.error('Error obtaining location:', err);
           setLocationError(
             'Unable to access your location. Please ensure location services are enabled for your browser and this site.'
           );
@@ -402,14 +363,13 @@ const TherapistRecommendations = () => {
     }
   };
 
-  // Trigger fetchData only after the Google API is loaded.
+  // Fetch therapist data on mount
   useEffect(() => {
-    if (googleApiLoaded && therapists.length === 0) {
-      fetchData();
-    }
-  }, [googleApiLoaded, therapists.length]);
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Also, if there's an error in fetching therapists, show it in the Snackbar.
+  // Show any error from the context via Snackbar.
   useEffect(() => {
     if (error) {
       setSnackbarMessage(error);

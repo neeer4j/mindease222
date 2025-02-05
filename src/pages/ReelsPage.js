@@ -34,6 +34,7 @@ import { getStorage, ref as storageRef, list, getDownloadURL } from 'firebase/st
 // ------------------------------------------------------------------
 // Styled Components & Scroll Snap Setup
 // ------------------------------------------------------------------
+
 const ReelsContainer = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'isMobile' && prop !== 'bottomNavHeight',
 })(({ theme, isMobile, bottomNavHeight }) => ({
@@ -110,6 +111,7 @@ const BigHeartOverlay = styled(motion.div)(({ theme }) => ({
   zIndex: 11,
 }));
 
+// Increase z-index so that the volume button is not overlapped by text.
 const RightSideControls = styled(Box)(() => ({
   position: 'absolute',
   right: 16,
@@ -117,7 +119,7 @@ const RightSideControls = styled(Box)(() => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  zIndex: 3,
+  zIndex: 6,
 }));
 
 const IconButtonWrapper = styled(motion.div)(({ theme }) => ({
@@ -163,23 +165,16 @@ const ProgressBar = styled(Box)(({ progress }) => ({
   width: `${progress}%`,
   height: '100%',
   backgroundColor: '#fff',
-  transition: 'width 0.1s linear', // Use linear timing for a continuous feel
+  transition: 'width 0.1s linear', // Using linear transition for a continuous feel
 }));
 
 // ------------------------------------------------------------------
 // VideoReelItem Component
 // ------------------------------------------------------------------
+
 const VideoReelItem = forwardRef(
   (
-    {
-      video,
-      isMobile,
-      bottomNavHeight,
-      index,
-      onVisible,
-      globalMuted,
-      setGlobalMuted,
-    },
+    { video, isMobile, bottomNavHeight, index, onVisible, globalMuted, setGlobalMuted },
     ref
   ) => {
     const videoRef = useRef(null);
@@ -211,19 +206,20 @@ const VideoReelItem = forwardRef(
       []
     );
 
-    // Instead of local muted state, we use the global state.
+    // Set muted state from global value.
     useEffect(() => {
       if (videoRef.current) {
         videoRef.current.muted = globalMuted;
       }
     }, [globalMuted]);
 
-    // Intersection Observer: autoplay when fully visible and pause otherwise.
+    // Intersection Observer: autoplay when sufficiently visible and pause otherwise.
     useEffect(() => {
       const handleIntersection = (entries) => {
         entries.forEach((entry) => {
           if (!videoRef.current) return;
-          if (!manuallyPaused && entry.intersectionRatio === 1) {
+          // On mobile, use a threshold of 0.5 to trigger autoplay when at least 50% is visible.
+          if (!manuallyPaused && entry.intersectionRatio >= (isMobile ? 0.5 : 1)) {
             videoRef.current
               .play()
               .catch((error) => console.error('Error playing video:', error));
@@ -235,7 +231,7 @@ const VideoReelItem = forwardRef(
       };
 
       const observer = new IntersectionObserver(handleIntersection, {
-        threshold: 1,
+        threshold: isMobile ? 0.5 : 1,
       });
 
       if (videoRef.current) {
@@ -245,7 +241,7 @@ const VideoReelItem = forwardRef(
       return () => {
         observer.disconnect();
       };
-    }, [manuallyPaused, onVisible, index]);
+    }, [manuallyPaused, onVisible, index, isMobile]);
 
     const handleVideoLoadedData = useCallback(() => {
       setIsVideoLoading(false);
@@ -256,13 +252,12 @@ const VideoReelItem = forwardRef(
       console.error('Error loading video:', video.videoUrl);
     }, [video.videoUrl]);
 
-    // NEW: Continuously update progress using requestAnimationFrame
+    // Continuously update progress using requestAnimationFrame.
     useEffect(() => {
       let animationFrameId;
       const updateProgress = () => {
         if (videoRef.current && videoRef.current.duration) {
-          const progress =
-            (videoRef.current.currentTime / videoRef.current.duration) * 100;
+          const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
           setVideoProgress(progress);
         }
         animationFrameId = requestAnimationFrame(updateProgress);
@@ -271,10 +266,10 @@ const VideoReelItem = forwardRef(
       return () => cancelAnimationFrame(animationFrameId);
     }, []);
 
-    // NEW: Allow seeking by clicking or touching on the progress bar
+    // Allow seeking by clicking or touching on the progress bar.
     const handleSeek = useCallback((e) => {
       if (!videoRef.current || !videoRef.current.duration) return;
-      // Support both mouse and touch events
+      // Support both mouse and touch events.
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const rect = e.currentTarget.getBoundingClientRect();
       const clickX = clientX - rect.left;
@@ -372,7 +367,7 @@ const VideoReelItem = forwardRef(
 
           <BottomGradientOverlay />
 
-          {/* NEW: Play/Pause icon animation overlay */}
+          {/* Play/Pause icon animation overlay */}
           <AnimatePresence>
             {showPlayPauseIcon && (
               <motion.div
@@ -397,7 +392,7 @@ const VideoReelItem = forwardRef(
             )}
           </AnimatePresence>
 
-          {/* NEW: Progress Bar (seek) */}
+          {/* Progress Bar (seek) */}
           <ProgressBarContainer
             onClick={handleSeek}
             onTouchStart={handleSeek}

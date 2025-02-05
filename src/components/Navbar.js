@@ -36,7 +36,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import HotelIcon from '@mui/icons-material/Hotel';
 import MeditationIcon from '@mui/icons-material/SelfImprovement';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-// NEW: Therapist icon (you can choose another icon if you prefer)
+// NEW: Therapist icon
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 // NEW: Reels icon
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
@@ -98,10 +98,24 @@ const Navbar = ({ toggleTheme }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  // Check if the current mobile route is the reels page.
+  const isReelsPageOnMobile = isMobile && location.pathname === '/reels';
+
+  // Define a mobile-specific background gradient.
+  // For light mode, we use a subtle white gradient; for dark mode, the original dark gradient.
+  const mobileNavbarBg =
+    theme.palette.mode === 'light'
+      ? 'linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 40%, transparent 90%)'
+      : 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.7) 40%, transparent 90%)';
+
+  // For light mode, adjust text colour accordingly.
+  const mobileTextColor = theme.palette.mode === 'light' ? theme.palette.text.primary : '#fff';
+  const mobileTextShadow = theme.palette.mode === 'light' ? 'none' : '1px 1px 2px rgba(0,0,0,0.3)';
+
   const [submenuOpen, setSubmenuOpen] = useState(null);
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [activePhoto, setActivePhoto] = useState(
-    navLinks.find((link) => link.title === 'Features').children[0].photoUrl
+    navLinks.find((link) => link.title === 'Features')?.children[0]?.photoUrl || ''
   );
 
   useEffect(() => {
@@ -113,6 +127,11 @@ const Navbar = ({ toggleTheme }) => {
       });
     }
   }, []);
+
+  // Hide the Navbar on mobile when on the '/chat' route.
+  if (isMobile && location.pathname === '/chat') {
+    return null;
+  }
 
   const isActiveLink = (link) => {
     if (link.path && location.pathname === link.path) return true;
@@ -273,7 +292,7 @@ const Navbar = ({ toggleTheme }) => {
 
   return (
     <>
-      {/* Mobile Navbar Container with Gradient Background */}
+      {/* Mobile Navbar Container with Themed Gradient Background */}
       {isMobile && (
         <Box
           sx={{
@@ -282,7 +301,7 @@ const Navbar = ({ toggleTheme }) => {
             left: 0,
             right: 0,
             zIndex: theme.zIndex.drawer + 3,
-            background: 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.7) 40%, transparent 90%)',
+            background: mobileNavbarBg,
             borderBottomLeftRadius: '24px',
             borderBottomRightRadius: '24px',
             overflow: 'hidden',
@@ -291,7 +310,6 @@ const Navbar = ({ toggleTheme }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            position: 'fixed',
           }}
         >
           <Button component={Link} to="/" sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}>
@@ -300,26 +318,35 @@ const Navbar = ({ toggleTheme }) => {
               sx={{
                 fontFamily: '"Roboto", sans-serif',
                 fontWeight: 700,
-                color: '#fff',
-                textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
+                color: mobileTextColor,
+                textShadow: mobileTextShadow,
               }}
             >
               MindEase AI
             </Typography>
           </Button>
-          <IconButton
-            onClick={toggleTheme}
-            color="inherit"
-            aria-label="Toggle light and dark mode"
-            disableRipple
-            disableFocusRipple
-            sx={{
-              '&:hover': { backgroundColor: 'transparent' },
-              transition: 'color 0s ease-in-out',
-            }}
-          >
-            {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
+          {/* Only render the theme toggle button if not on the reels page (mobile) */}
+          {!isReelsPageOnMobile && (
+            <motion.div
+              whileTap={{ scale: 0.9 }}
+              animate={{ rotate: theme.palette.mode === 'dark' ? 180 : 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <IconButton
+                onClick={toggleTheme}
+                color="inherit"
+                aria-label="Toggle light and dark mode"
+                disableRipple
+                disableFocusRipple
+                sx={{
+                  '&:hover': { backgroundColor: 'transparent' },
+                  transition: 'color 0s ease-in-out',
+                }}
+              >
+                {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+            </motion.div>
+          )}
         </Box>
       )}
 
