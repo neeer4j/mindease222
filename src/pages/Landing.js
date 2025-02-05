@@ -167,18 +167,22 @@ const Landing = () => {
     {
       name: 'Alan Dibu',
       role: 'Lead Developer & Data Scientist',
+      avatarSrc: '/images/developers/alan.jpg', // Path to Alan's avatar in public/images/developers
     },
     {
       name: 'Neeraj',
       role: 'Backend Architect & UI/UX Expert',
+      avatarSrc: '/images/developers/neeraj.jpg', // Path to Neeraj's avatar
     },
     {
       name: 'Gautham',
       role: 'Frontend Developer & Accessibility Specialist',
+      avatarSrc: '/images/developers/gautham.jpg', // Path to Gautham's avatar
     },
     {
       name: 'Muhammed Nayif',
       role: 'Mobile App Developer & QA Engineer',
+      avatarSrc: '/images/developers/nayif.jpg', // Path to Nayif's avatar
     },
   ];
 
@@ -845,7 +849,7 @@ const Landing = () => {
                             lineHeight: 1.7,
                           }}
                         >
-                          &quot; {testimonial.quote} &quot;
+                          " {testimonial.quote} "
                         </Typography>
                       </CardContent>
                       <Box
@@ -955,25 +959,18 @@ const Landing = () => {
                         zIndex: 2,
                       }}
                     >
-                      {/* Developer Avatar Placeholder */}
+                      {/* Developer Avatar  */}
                       <Avatar
                         alt={developer.name}
+                        src={developer.avatarSrc} // Use src prop and avatarSrc from developer object
                         sx={{
                           width: 100,
                           height: 100,
                           mb: 2,
                           boxShadow: theme.shadows[2],
-                          backgroundColor: theme.palette.grey[200],
-                          fontSize: '2rem',
                         }}
-                      >
-                        {/* Initials as placeholder */}
-                        {developer.name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')
-                          .toUpperCase()}
-                      </Avatar>
+                        loading="lazy"
+                      />
                       <CardContent sx={{ textAlign: 'center' }}>
                         <Typography
                           variant="h6"
@@ -1085,7 +1082,7 @@ const Landing = () => {
                   boxShadow: theme.shadows[6],
                 }}
               >
-                Start for Free - It&apos;s Quick &amp; Easy!
+                Start for Free - It's Quick & Easy!
               </GradientButton>
             </motion.div>
           </Box>
