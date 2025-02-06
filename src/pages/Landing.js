@@ -1,6 +1,6 @@
 // src/pages/Landing.jsx
 
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   Typography,
   Button,
@@ -14,7 +14,7 @@ import {
   Avatar,
   Tooltip,
 } from '@mui/material';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   EmojiEmotions as EmojiEmotionsIcon,
@@ -26,6 +26,8 @@ import {
   VerifiedUser as VerifiedUserIcon,
   Security as SecurityIcon,
   SupportAgent as SupportAgentIcon,
+  ArrowBackIos,
+  ArrowForwardIos,
 } from '@mui/icons-material';
 import { styled } from '@mui/system';
 import { AuthContext } from '../contexts/AuthContext';
@@ -49,7 +51,7 @@ const GradientButton = styled(Button)(({ theme }) => ({
 const Landing = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark'; // <-- Handy shortcut
+  const isDarkMode = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { isAuthenticated } = useContext(AuthContext);
 
@@ -136,6 +138,7 @@ const Landing = () => {
     },
   ];
 
+  // --- Updated Testimonials Array (6 objects) ---
   const testimonials = [
     {
       quote:
@@ -161,6 +164,30 @@ const Landing = () => {
       imageUrl: 'images/p3.jpg',
       alt: 'Person journaling in a serene setting',
     },
+    {
+      quote:
+        'Since I started using MindEase, I feel more in control of my emotions. The insights are eye-opening.',
+      author: 'Carlos M Reyes',
+      avatarUrl: 'images/p4.jpg',
+      imageUrl: 'images/p4.jpg',
+      alt: 'Smiling person looking inspired',
+    },
+    {
+      quote:
+        'The guided meditations have truly transformed my approach to stress. I feel more relaxed every day.',
+      author: 'Sophia L Martinez',
+      avatarUrl: 'images/p5.jpg',
+      imageUrl: 'images/p5.jpg',
+      alt: 'Person meditating peacefully',
+    },
+    {
+      quote:
+        'MindEase not only helps me track my mood but also gives actionable insights. Highly recommended!',
+      author: 'Daniel K Lee',
+      avatarUrl: 'images/p6.jpg',
+      imageUrl: 'images/p6.jpg',
+      alt: 'Person with thoughtful expression',
+    },
   ];
 
   const developers = [
@@ -172,22 +199,55 @@ const Landing = () => {
     {
       name: 'Neeraj Venu',
       role: ' UI/UX Expert',
-      avatarSrc:'images/developers/neeraj.jpg', // Path to Neeraj's avatar
+      avatarSrc: 'images/developers/neeraj.jpg', // Path to Neeraj's avatar
     },
     {
       name: 'Alan Dibu',
       role: 'Backend Architect & Data Scientist',
-      avatarSrc:'images/developers/alan.jpg', // Path to Alan's avatar in public/images/developers
+      avatarSrc: 'images/developers/alan.jpg', // Path to Alan's avatar in public/images/developers
     },
     {
       name: 'Gautham Suresh',
       role: 'Frontend Developer & Accessibility Specialist',
       avatarSrc: '/images/developers/gautham.jpg', // Path to Gautham's avatar
     },
-    
   ];
 
   const heroImageUrl = 'images/ab.jpg';
+
+  // --- Testimonial Slider Logic ---
+
+  // Calculate number of slides (3 testimonials per slide)
+  const slideCount = Math.ceil(testimonials.length / 3);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Auto-advance slide every 10 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slideCount);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [slideCount]);
+
+  // Manual control handlers
+  const handleNext = () => {
+    setCurrentSlide((prev) => (prev + 1) % slideCount);
+  };
+
+  const handlePrev = () => {
+    setCurrentSlide((prev) => (prev - 1 + slideCount) % slideCount);
+  };
+
+  // Determine which testimonials to show on the current slide
+  const startIndex = currentSlide * 3;
+  const currentTestimonials = testimonials.slice(startIndex, startIndex + 3);
+
+  // Slide animation variants (adjust as desired)
+  const slideVariants = {
+    initial: { x: 300, opacity: 0 },
+    animate: { x: 0, opacity: 1 },
+    exit: { x: -300, opacity: 0 },
+  };
 
   return (
     <PageLayout>
@@ -197,7 +257,6 @@ const Landing = () => {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.8 }}
         style={{
-          // Removed paddingTop and paddingBottom as PageLayout handles it
           background: theme.palette.background.gradient,
         }}
       >
@@ -261,10 +320,7 @@ const Landing = () => {
                   justifyContent={isMobile ? 'center' : 'flex-start'}
                 >
                   {isAuthenticated ? (
-                    <motion.div
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <GradientButton
                         variant="contained"
                         size="large"
@@ -283,10 +339,7 @@ const Landing = () => {
                     </motion.div>
                   ) : (
                     <>
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <GradientButton
                           variant="contained"
                           size="large"
@@ -303,10 +356,7 @@ const Landing = () => {
                           Get Started
                         </GradientButton>
                       </motion.div>
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                         <Button
                           variant="outlined"
                           color="primary"
@@ -338,7 +388,6 @@ const Landing = () => {
               </motion.div>
             </Grid>
             <Grid item xs={12} md={6}>
-              {/* Decorative Image with Faded Style */}
               <motion.div
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -360,7 +409,6 @@ const Landing = () => {
                     margin: '0 auto',
                   }}
                 >
-                  {/* Background Image with Faded Overlay */}
                   <img
                     src={heroImageUrl}
                     alt="Mental Wellness Illustration"
@@ -368,13 +416,11 @@ const Landing = () => {
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
-                      // Make hero image brighter in dark mode
                       filter: isDarkMode ? 'none' : 'brightness(100%)',
                       transition: 'filter 0.3s ease',
                     }}
                     loading="lazy"
                   />
-                  {/* Optional Overlay for Additional Faded Effect */}
                   <Box
                     sx={{
                       position: 'absolute',
@@ -463,9 +509,7 @@ const Landing = () => {
                         minHeight: 450,
                       }}
                     >
-                      <Box
-                        sx={{ textAlign: 'center', paddingTop: theme.spacing(3) }}
-                      >
+                      <Box sx={{ textAlign: 'center', paddingTop: theme.spacing(3) }}>
                         <Avatar
                           sx={{
                             bgcolor: theme.palette.primary.light,
@@ -505,12 +549,7 @@ const Landing = () => {
                           {feature.description}
                         </Typography>
                       </CardContent>
-                      <CardActions
-                        sx={{
-                          justifyContent: 'center',
-                          padding: theme.spacing(3),
-                        }}
-                      >
+                      <CardActions sx={{ justifyContent: 'center', padding: theme.spacing(3) }}>
                         <Tooltip title={`Learn more about ${feature.title}`}>
                           <motion.div
                             whileHover={{ scale: 1.05 }}
@@ -532,7 +571,6 @@ const Landing = () => {
                           </motion.div>
                         </Tooltip>
                       </CardActions>
-                      {/* Feature Image with Faded Style */}
                       <Box
                         sx={{
                           position: 'relative',
@@ -550,7 +588,6 @@ const Landing = () => {
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
-                            // Brighter in dark mode, dimmer in light
                             filter: isDarkMode ? 'none' : 'brightness(110%)',
                             transition: 'filter 0.3s ease',
                           }}
@@ -575,151 +612,7 @@ const Landing = () => {
           </Box>
         </motion.section>
 
-        {/* Why Choose Us Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 0.8, delay: 0.1, staggerChildren: 0.2 }}
-        >
-          <Box mt={14} mb={isMobile ? 8 : 10}>
-            <Typography
-              variant={isMobile ? 'h4' : 'h3'}
-              align="center"
-              gutterBottom
-              sx={{
-                fontWeight: 800,
-                color: theme.palette.text.primary,
-                paddingX: isMobile ? theme.spacing(2) : 0,
-                textShadow: `1px 1px 1px ${theme.palette.grey[300]}`,
-                lineHeight: 1.3,
-              }}
-            >
-              Why Choose MindEase?
-            </Typography>
-            <Typography
-              variant="h6"
-              align="center"
-              color="textSecondary"
-              gutterBottom
-              sx={{
-                paddingX: isMobile ? theme.spacing(3) : 0,
-                maxWidth: 750,
-                margin: '0 auto',
-                fontSize: '1.05rem',
-                fontWeight: 400,
-              }}
-            >
-              We are committed to providing a secure, personalized, and
-              supportive environment for your mental wellness journey. Discover
-              the MindEase difference.
-            </Typography>
-            <Grid container spacing={isMobile ? 4 : 6} mt={5} justifyContent="center">
-              {whyChooseUsPoints.map((point, index) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                    viewport={{ once: true, amount: 0.6 }}
-                    transition={{ duration: 0.5, delay: 0.3 + index * 0.2 }}
-                    whileHover={{ scale: 1.03 }}
-                  >
-                    <Card
-                      sx={{
-                        background: theme.palette.background.paper,
-                        borderRadius: '24px',
-                        boxShadow: theme.shadows[2],
-                        padding: theme.spacing(4),
-                        textAlign: 'center',
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        border: `1px solid transparent`,
-                        transition:
-                          'box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease',
-                        '&:hover': {
-                          boxShadow: theme.shadows[5],
-                          border: `1px solid ${theme.palette.primary.main}`,
-                          transform: 'translateY(-5px)',
-                        },
-                      }}
-                    >
-                      <Avatar
-                        sx={{
-                          m: 2,
-                          bgcolor: theme.palette.secondary.main,
-                          width: 60,
-                          height: 60,
-                        }}
-                      >
-                        {point.icon}
-                      </Avatar>
-                      <CardContent sx={{ padding: 0 }}>
-                        <Typography
-                          variant="h6"
-                          component="div"
-                          sx={{
-                            fontWeight: 700,
-                            color: theme.palette.text.primary,
-                            mb: 2,
-                          }}
-                        >
-                          {point.title}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="textSecondary"
-                          sx={{ fontSize: '1rem', lineHeight: 1.6 }}
-                        >
-                          {point.description}
-                        </Typography>
-                      </CardContent>
-                      {/* Why Choose Us Image with Faded Style */}
-                      <Box
-                        sx={{
-                          position: 'relative',
-                          width: '100%',
-                          height: '100px',
-                          mt: 3,
-                          borderRadius: '20px',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <img
-                          src={point.imageUrl}
-                          alt={point.alt}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            // Make it brighter in dark mode
-                            filter: isDarkMode ? 'none' : 'brightness(100%)',
-                            transition: 'filter 0.3s ease',
-                          }}
-                          loading="lazy"
-                        />
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            background: 'rgba(0, 0, 0, 0.2)',
-                          }}
-                        ></Box>
-                      </Box>
-                    </Card>
-                  </motion.div>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        </motion.section>
-
-        {/* Testimonials Section */}
+        {/* --- Updated "Hear From Our Community" Section with Slider --- */}
         <motion.section
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -750,7 +643,7 @@ const Landing = () => {
                   'url(https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80)',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                opacity: isDarkMode ? 0.15 : 0.1, // slightly higher in dark mode
+                opacity: isDarkMode ? 0.15 : 0.1,
                 filter: 'blur(8px)',
                 zIndex: 1,
               }}
@@ -786,105 +679,150 @@ const Landing = () => {
                 zIndex: 2,
               }}
             >
-              Real stories from real users who have found peace and growth with
-              MindEase.
+              Real stories from real users who have found peace and growth with MindEase.
             </Typography>
-            <Grid container spacing={isMobile ? 4 : 6} mt={6} justifyContent="center">
-              {testimonials.map((testimonial, index) => (
-                <Grid item xs={12} md={4} lg={3} key={index}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 60 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.7 }}
-                    transition={{
-                      duration: 0.6,
-                      delay: 0.4 + index * 0.25,
-                    }}
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <Card
-                      sx={{
-                        background: theme.palette.background.paper,
-                        borderRadius: '28px',
-                        boxShadow: theme.shadows[3],
-                        padding: theme.spacing(4),
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        transition:
-                          'box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease',
-                        '&:hover': {
-                          boxShadow: theme.shadows[5],
-                          transform: 'scale(1.03)',
-                        },
-                        position: 'relative',
-                        zIndex: 2,
-                      }}
-                    >
-                      {/* Testimonial Background Image with Faded Style */}
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          backgroundImage: `url(${testimonial.imageUrl})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          opacity: isDarkMode ? 0.1 : 0.05,
-                          filter: 'blur(4px)',
-                          borderRadius: '28px',
-                          zIndex: -1,
-                        }}
-                      ></Box>
-                      <CardContent>
-                        <Typography
-                          variant="body1"
-                          fontStyle="italic"
-                          align="center"
-                          gutterBottom
+
+            {/* Slider Container */}
+            <Box
+              sx={{
+                position: 'relative',
+                height: isMobile ? 350 : 400,
+                mt: 6,
+                overflow: 'hidden',
+              }}
+            >
+              <AnimatePresence exitBeforeEnter>
+                <motion.div
+                  key={currentSlide}
+                  variants={slideVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{ duration: 0.8 }}
+                  style={{ position: 'absolute', width: '100%' }}
+                >
+                  <Grid container spacing={isMobile ? 4 : 6} justifyContent="center">
+                    {currentTestimonials.map((testimonial, index) => (
+                      <Grid item xs={12} md={4} key={index}>
+                        <Card
                           sx={{
-                            fontSize: '1.1rem',
-                            lineHeight: 1.7,
+                            background: theme.palette.background.paper,
+                            borderRadius: '28px',
+                            boxShadow: theme.shadows[3],
+                            padding: theme.spacing(4),
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            transition:
+                              'box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease',
+                            '&:hover': {
+                              boxShadow: theme.shadows[5],
+                              transform: 'scale(1.03)',
+                            },
+                            position: 'relative',
+                            zIndex: 2,
                           }}
                         >
-                          " {testimonial.quote} "
-                        </Typography>
-                      </CardContent>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          flexDirection: 'column',
-                          mb: 3,
-                        }}
-                      >
-                        <Avatar
-                          alt={testimonial.author}
-                          src={testimonial.avatarUrl}
-                          sx={{
-                            width: 64,
-                            height: 64,
-                            mb: 2,
-                            boxShadow: theme.shadows[2],
-                          }}
-                          loading="lazy"
-                        />
-                        <Typography
-                          variant="subtitle1"
-                          color="textPrimary"
-                          sx={{ fontWeight: 600 }}
-                        >
-                          {testimonial.author}
-                        </Typography>
-                      </Box>
-                    </Card>
-                  </motion.div>
-                </Grid>
-              ))}
-            </Grid>
+                          {/* Testimonial Background Image with Faded Style */}
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              backgroundImage: `url(${testimonial.imageUrl})`,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                              opacity: isDarkMode ? 0.1 : 0.05,
+                              filter: 'blur(4px)',
+                              borderRadius: '28px',
+                              zIndex: -1,
+                            }}
+                          ></Box>
+                          <CardContent>
+                            <Typography
+                              variant="body1"
+                              fontStyle="italic"
+                              align="center"
+                              gutterBottom
+                              sx={{
+                                fontSize: '1.1rem',
+                                lineHeight: 1.7,
+                              }}
+                            >
+                              " {testimonial.quote} "
+                            </Typography>
+                          </CardContent>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              flexDirection: 'column',
+                              mb: 3,
+                            }}
+                          >
+                            <Avatar
+                              alt={testimonial.author}
+                              src={testimonial.avatarUrl}
+                              sx={{
+                                width: 64,
+                                height: 64,
+                                mb: 2,
+                                boxShadow: theme.shadows[2],
+                              }}
+                              loading="lazy"
+                            />
+                            <Typography
+                              variant="subtitle1"
+                              color="textPrimary"
+                              sx={{ fontWeight: 600 }}
+                            >
+                              {testimonial.author}
+                            </Typography>
+                          </Box>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Manual Navigation Controls */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: 10,
+                  transform: 'translateY(-50%)',
+                  zIndex: 3,
+                  cursor: 'pointer',
+                  backgroundColor: theme.palette.background.paper,
+                  borderRadius: '50%',
+                  p: 0.5,
+                }}
+                onClick={handlePrev}
+              >
+                <ArrowBackIos fontSize="small" />
+              </Box>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  right: 10,
+                  transform: 'translateY(-50%)',
+                  zIndex: 3,
+                  cursor: 'pointer',
+                  backgroundColor: theme.palette.background.paper,
+                  borderRadius: '50%',
+                  p: 0.5,
+                }}
+                onClick={handleNext}
+              >
+                <ArrowForwardIos fontSize="small" />
+              </Box>
+            </Box>
           </Box>
         </motion.section>
 
@@ -960,10 +898,9 @@ const Landing = () => {
                         zIndex: 2,
                       }}
                     >
-                      {/* Developer Avatar  */}
                       <Avatar
                         alt={developer.name}
-                        src={developer.avatarSrc} // Use src prop and avatarSrc from developer object
+                        src={developer.avatarSrc}
                         sx={{
                           width: 100,
                           height: 100,
@@ -1020,7 +957,6 @@ const Landing = () => {
               overflow: 'hidden',
             }}
           >
-            {/* Background Image with Faded Style */}
             <Box
               sx={{
                 position: 'absolute',
