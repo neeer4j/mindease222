@@ -34,10 +34,10 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import HotelIcon from '@mui/icons-material/Hotel';
 import MeditationIcon from '@mui/icons-material/SelfImprovement';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-// NEW: Therapist icon
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-// NEW: Reels icon
-import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital'; // NEW: Therapist icon
+import OndemandVideoIcon from '@mui/icons-material/OndemandVideo'; // NEW: Reels icon
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
 
 const navLinks = [
   { title: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
@@ -84,27 +84,29 @@ const navLinks = [
     ],
   },
   { title: 'Insights', path: '/insights', icon: <InsightsIcon /> },
-  // NEW: Therapist Recommendations link
   { title: 'Therapists', path: '/therapist-recommendations', icon: <LocalHospitalIcon /> },
   { title: 'Profile', path: '/profile', icon: <ProfileIcon /> },
 ];
 
-const Navbar = () => {
+const Navbar = ({ toggleTheme }) => {
   const { isAuthenticated, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  // Determine if we should hide the theme toggle (on login/signup pages)
+  const hideToggle = location.pathname === '/login' || location.pathname === '/signup';
+
   // State for tracking scroll direction for the desktop title
   const [showTitle, setShowTitle] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Set up scroll listener to hide/show title
+  // Set up scroll listener to hide/show the desktop title
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      // If scrolling down and past a threshold (e.g., 50px), hide title
+      // Hide title when scrolling down past 50px; show when scrolling up.
       if (currentScrollY > lastScrollY && currentScrollY > 50) {
         setShowTitle(false);
       } else {
@@ -126,7 +128,6 @@ const Navbar = () => {
       ? 'linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 40%, transparent 90%)'
       : 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.7) 40%, transparent 90%)';
 
-  // Updated mobile text shadow for better contrast.
   const mobileTextColor = theme.palette.mode === 'light' ? theme.palette.text.primary : '#fff';
   const mobileTextShadow =
     theme.palette.mode === 'light'
@@ -346,8 +347,28 @@ const Navbar = () => {
               MindEase AI
             </Typography>
           </Button>
-          {/* Dark mode toggle removed */}
-          {/* Optionally, other mobile-only elements can be added here */}
+          {/* Show theme toggle on mobile if not on login/signup */}
+          {!hideToggle && (
+            <motion.div
+              whileTap={{ scale: 0.9 }}
+              animate={{ rotate: theme.palette.mode === 'dark' ? 180 : 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <IconButton
+                onClick={toggleTheme}
+                color="inherit"
+                aria-label="Toggle light and dark mode"
+                disableRipple
+                disableFocusRipple
+                sx={{
+                  '&:hover': { backgroundColor: 'transparent' },
+                  transition: 'color 0s ease-in-out',
+                }}
+              >
+                {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
+            </motion.div>
+          )}
         </Box>
       )}
 
@@ -370,8 +391,8 @@ const Navbar = () => {
                 fontFamily: '"Roboto", sans-serif',
                 fontWeight: 700,
                 color: theme.palette.text.primary,
-                // Increased text shadow for better contrast
-                textShadow: '3px 3px 6px rgba(0,0,0,0.6)',
+                // Increased text shadow for better contrast on desktop
+                textShadow: '4px 4px 8px rgba(0,0,0,0.8)',
                 transition: 'color 0s ease-in-out',
               }}
             >
@@ -523,6 +544,29 @@ const Navbar = () => {
                           </Button>
                         </motion.div>
                       </>
+                    )}
+                    
+                    {/* Show theme toggle button if not on login/signup */}
+                    {!hideToggle && (
+                      <motion.div
+                        whileTap={{ scale: 0.9 }}
+                        animate={{ rotate: theme.palette.mode === 'dark' ? 180 : 0 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <IconButton
+                          onClick={toggleTheme}
+                          color="inherit"
+                          aria-label="Toggle light and dark mode"
+                          disableRipple
+                          disableFocusRipple
+                          sx={{
+                            '&:hover': { backgroundColor: 'transparent' },
+                            transition: 'color 0s ease-in-out',
+                          }}
+                        >
+                          {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                        </IconButton>
+                      </motion.div>
                     )}
                   </Box>
                 </Toolbar>
