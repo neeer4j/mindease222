@@ -165,25 +165,26 @@ const Landing = () => {
 
   const developers = [
     {
+      name: 'Muhammed Nayif',
+      role: 'Lead Developer & Project Head',
+      avatarSrc: '/images/developers/nayif.jpeg', // Path to Nayif's avatar
+    },
+    {
+      name: 'Neeraj Venu',
+      role: ' UI/UX Expert',
+      avatarSrc:'images/developers/neeraj.jpg', // Path to Neeraj's avatar
+    },
+    {
       name: 'Alan Dibu',
-      role: 'Lead Developer & Data Scientist',
-      avatarSrc: '/images/developers/alan.jpg', // Path to Alan's avatar in public/images/developers
+      role: 'Backend Architect & Data Scientist',
+      avatarSrc:'images/developers/alan.jpg', // Path to Alan's avatar in public/images/developers
     },
     {
-      name: 'Neeraj',
-      role: 'Backend Architect & UI/UX Expert',
-      avatarSrc: '/images/developers/neeraj.jpg', // Path to Neeraj's avatar
-    },
-    {
-      name: 'Gautham',
+      name: 'Gautham Suresh',
       role: 'Frontend Developer & Accessibility Specialist',
       avatarSrc: '/images/developers/gautham.jpg', // Path to Gautham's avatar
     },
-    {
-      name: 'Muhammed Nayif',
-      role: 'Mobile App Developer & QA Engineer',
-      avatarSrc: '/images/developers/nayif.jpg', // Path to Nayif's avatar
-    },
+    
   ];
 
   const heroImageUrl = 'images/ab.jpg';
