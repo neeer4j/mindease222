@@ -20,7 +20,7 @@ import { MoodProvider } from "./contexts/MoodContext";
 import { ActivityProvider } from "./contexts/ActivityContext";
 import { SleepProvider } from "./contexts/SleepContext";
 import { ChatProvider } from "./contexts/ChatContext";
-import { TherapistFindProvider } from "./contexts/TherapistFindContext"; // <-- Import the provider
+import { TherapistFindProvider } from "./contexts/TherapistFindContext";
 import { auth, getRedirectResult } from "./firebase";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -41,13 +41,12 @@ import ActivityLogging from "./pages/ActivityLogging";
 import Insights from "./pages/Insights";
 import Meditations from "./pages/Meditations";
 import SleepQualityMonitor from "./pages/SleepQualityMonitor";
-// Import the new Therapist Recommendations page
 import TherapistRecommendations from "./pages/TherapistRecommendations";
-// NEW: Import the Reels page
 import ReelsPage from "./pages/ReelsPage";
 import getTheme from "./theme";
 import { AnimatePresence } from "framer-motion";
 import BottomNav from "./components/BottomNav";
+import ScrollToTop from "./components/ScrollToTop"; // NEW: Import ScrollToTop
 
 // Debugging log
 console.log("Rendering App...");
@@ -199,7 +198,6 @@ function RedirectHandler() {
 const MainContent = ({ toggleTheme, mode }) => {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
-  const location = useLocation();
 
   return (
     <Box
@@ -215,6 +213,8 @@ const MainContent = ({ toggleTheme, mode }) => {
       <Navbar toggleTheme={toggleTheme} mode={mode} />
       <Box component="main" sx={{ flexGrow: 1 }}>
         <RedirectHandler />
+        {/* ScrollToTop ensures new pages start at the top */}
+        <ScrollToTop />
         <AppRoutes toggleTheme={toggleTheme} />
       </Box>
       {!isMobile && <Footer />} {/* Footer only for non-mobile */}

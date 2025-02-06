@@ -24,8 +24,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Import required icons
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ChatIcon from '@mui/icons-material/Chat';
 import MoodIcon from '@mui/icons-material/Mood';
@@ -91,26 +89,49 @@ const navLinks = [
   { title: 'Profile', path: '/profile', icon: <ProfileIcon /> },
 ];
 
-const Navbar = ({ toggleTheme }) => {
+const Navbar = () => {
   const { isAuthenticated, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  // State for tracking scroll direction for the desktop title
+  const [showTitle, setShowTitle] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Set up scroll listener to hide/show title
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      // If scrolling down and past a threshold (e.g., 50px), hide title
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setShowTitle(false);
+      } else {
+        setShowTitle(true);
+      }
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   // Check if the current mobile route is the reels page.
   const isReelsPageOnMobile = isMobile && location.pathname === '/reels';
 
   // Define a mobile-specific background gradient.
-  // For light mode, we use a subtle white gradient; for dark mode, the original dark gradient.
   const mobileNavbarBg =
     theme.palette.mode === 'light'
       ? 'linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 40%, transparent 90%)'
       : 'linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.7) 40%, transparent 90%)';
 
-  // For light mode, adjust text colour accordingly.
+  // Updated mobile text shadow for better contrast.
   const mobileTextColor = theme.palette.mode === 'light' ? theme.palette.text.primary : '#fff';
-  const mobileTextShadow = theme.palette.mode === 'light' ? 'none' : '1px 1px 2px rgba(0,0,0,0.3)';
+  const mobileTextShadow =
+    theme.palette.mode === 'light'
+      ? '2px 2px 4px rgba(0,0,0,0.3)'
+      : '2px 2px 4px rgba(0,0,0,0.7)';
 
   const [submenuOpen, setSubmenuOpen] = useState(null);
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
@@ -325,28 +346,8 @@ const Navbar = ({ toggleTheme }) => {
               MindEase AI
             </Typography>
           </Button>
-          {/* Only render the theme toggle button if not on the reels page (mobile) */}
-          {!isReelsPageOnMobile && (
-            <motion.div
-              whileTap={{ scale: 0.9 }}
-              animate={{ rotate: theme.palette.mode === 'dark' ? 180 : 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <IconButton
-                onClick={toggleTheme}
-                color="inherit"
-                aria-label="Toggle light and dark mode"
-                disableRipple
-                disableFocusRipple
-                sx={{
-                  '&:hover': { backgroundColor: 'transparent' },
-                  transition: 'color 0s ease-in-out',
-                }}
-              >
-                {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-              </IconButton>
-            </motion.div>
-          )}
+          {/* Dark mode toggle removed */}
+          {/* Optionally, other mobile-only elements can be added here */}
         </Box>
       )}
 
@@ -358,6 +359,8 @@ const Navbar = ({ toggleTheme }) => {
             top: theme.spacing(2),
             left: theme.spacing(3),
             zIndex: theme.zIndex.drawer + 2,
+            opacity: showTitle ? 1 : 0,
+            transition: 'opacity 0.3s ease-in-out',
           }}
         >
           <Button component={Link} to="/" sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}>
@@ -367,7 +370,8 @@ const Navbar = ({ toggleTheme }) => {
                 fontFamily: '"Roboto", sans-serif',
                 fontWeight: 700,
                 color: theme.palette.text.primary,
-                textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
+                // Increased text shadow for better contrast
+                textShadow: '3px 3px 6px rgba(0,0,0,0.6)',
                 transition: 'color 0s ease-in-out',
               }}
             >
@@ -494,49 +498,11 @@ const Navbar = ({ toggleTheme }) => {
                             Login
                           </Button>
                         </motion.div>
-                        <motion.div
-                          whileTap={{ scale: 0.9 }}
-                          animate={{ rotate: theme.palette.mode === 'dark' ? 180 : 0 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <IconButton
-                            onClick={toggleTheme}
-                            color="inherit"
-                            aria-label="Toggle light and dark mode"
-                            disableRipple
-                            disableFocusRipple
-                            sx={{
-                              '&:hover': { backgroundColor: 'transparent' },
-                              transition: 'color 0s ease-in-out',
-                            }}
-                          >
-                            {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-                          </IconButton>
-                        </motion.div>
                       </>
                     )}
 
                     {isAuthenticated && (
                       <>
-                        <motion.div
-                          whileTap={{ scale: 0.9 }}
-                          animate={{ rotate: theme.palette.mode === 'dark' ? 180 : 0 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <IconButton
-                            onClick={toggleTheme}
-                            color="inherit"
-                            aria-label="Toggle light and dark mode"
-                            disableRipple
-                            disableFocusRipple
-                            sx={{
-                              '&:hover': { backgroundColor: 'transparent' },
-                              transition: 'color 0s ease-in-out',
-                            }}
-                          >
-                            {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-                          </IconButton>
-                        </motion.div>
                         <motion.div whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}>
                           <IconButton onClick={toggleNavbarVisibility} color="inherit" aria-label="Toggle navbar" sx={{ ...commonButtonSx }}>
                             <CloseIcon />

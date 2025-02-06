@@ -339,7 +339,7 @@ const widgetItemVariants = {
 // Main Component: DashboardPage
 // =======================
 const DashboardPage = () => {
-  const navigate = useNavigate(); // Called only once here.
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -645,7 +645,7 @@ const DashboardPage = () => {
    * The force parameter bypasses caching.
    */
   const fetchData = (force = false) => {
-    if (!force && therapistData.length > 0) return;
+    // Removed automatic fetch on mount to avoid prompting for location.
     setLocationErrorState(null);
     setIsRefreshing(true);
     if (navigator.geolocation) {
@@ -672,13 +672,8 @@ const DashboardPage = () => {
     }
   };
 
-  // On mount, if no cached therapist data exists, fetch data.
-  useEffect(() => {
-    if (therapistData.length === 0) {
-      fetchData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Removed the useEffect that automatically calls fetchData on mount.
+  // Therapist recommendations will now only be fetched manually via the refresh button.
 
   useEffect(() => {
     if (therapistError) {
@@ -708,6 +703,11 @@ const DashboardPage = () => {
     setDialogOpen(false);
     setSelectedTherapist(null);
   };
+
+  // AI Generated Insights for Dashboard could be managed elsewhere.
+  // (This dashboard code does not include AI insights logic as in the Insights page.)
+  // If you need to include AI insights in the dashboard, you can integrate similar caching
+  // and fetching logic as in your Insights page.
 
   return (
     <DashboardContainer>

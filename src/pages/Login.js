@@ -20,13 +20,12 @@ import {
   Card as MuiCard,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Visibility, VisibilityOff, Brightness4, Brightness7 } from '@mui/icons-material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { FcGoogle } from 'react-icons/fc'; // Import Google Icon
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import ForgotPassword from './ForgotPassword';
-import { SitemarkIcon } from './CustomIcons'; // Ensure this component exists
 import AppTheme from '../shared-theme/AppTheme';
 import { useTheme } from '@mui/material/styles';
 
@@ -74,17 +73,6 @@ const SignInContainer = styled(motion(Stack))(({ theme }) => ({
       backgroundImage:
         'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))',
     }),
-  },
-}));
-
-const DarkModeToggleButton = styled(IconButton)(({ theme }) => ({
-  position: 'absolute',
-  top: theme.spacing(2),
-  right: theme.spacing(2),
-  color: theme.palette.mode === 'dark' ? '#FFD700' : '#0A192F',
-  [theme.breakpoints.down('xs')]: {
-    top: theme.spacing(1),
-    right: theme.spacing(1),
   },
 }));
 
@@ -156,13 +144,10 @@ export default function EnhancedLogin(props) {
   const navigate = useNavigate();
   const theme = useTheme();
   const { isAuthenticated, login, signInWithGoogle, loading: authLoading, error: authError } = useContext(AuthContext);
-  const [darkMode, setDarkMode] = useState(theme.palette.mode === 'dark');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
   const [showPassword, setShowPassword] = useState(false);
-
   const [open, setOpen] = useState(false); // For ForgotPassword modal
 
   // State for internal validation errors and success messages
@@ -181,12 +166,6 @@ export default function EnhancedLogin(props) {
 
   const handleClose = () => {
     setOpen(false);
-  };
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    // Implement theme toggle logic here if using a theme provider
-    // For example, you can use a context or a state management library to handle theme switching
   };
 
   // Handle login submission
@@ -256,16 +235,9 @@ export default function EnhancedLogin(props) {
           animate="visible"
           exit="exit"
         >
-          {/* Dark Mode Toggle */}
-          <DarkModeToggleButton onClick={toggleDarkMode} aria-label="Toggle dark mode">
-            {darkMode ? <Brightness7 /> : <Brightness4 />}
-          </DarkModeToggleButton>
-
           <motion.div variants={cardVariants}>
             <Card variant="outlined">
-              <Box sx={{ textAlign: 'center', mb: 3 }}>
-                <SitemarkIcon sx={{ width: { xs: 50, sm: 60 }, height: 'auto' }} />
-              </Box>
+              {/* Sitemark logo removed */}
               <Typography
                 component="h1"
                 variant="h5"
@@ -273,7 +245,7 @@ export default function EnhancedLogin(props) {
                   width: '100%',
                   fontSize: { xs: '1.5rem', sm: '1.75rem' },
                   textAlign: 'center',
-                  color: darkMode ? '#FFFFFF' : '#0A192F',
+                  color: theme.palette.text.primary,
                   fontFamily: 'Roboto, sans-serif',
                   fontWeight: 700,
                   mb: 2,
@@ -521,11 +493,11 @@ export default function EnhancedLogin(props) {
                 {/* Sign In with Google Button */}
                 <motion.div variants={fieldVariants}>
                   <GoogleButton
-                    variant="contained" // Use 'contained' to apply background color
+                    variant="contained"
                     startIcon={<FcGoogle size={20} />}
                     onClick={handleGoogleSignIn}
                     disabled={authLoading}
-                    fullWidth // Make the button span the full width
+                    fullWidth
                     aria-label="Sign in with Google"
                   >
                     {authLoading ? <CircularProgress size={20} color="inherit" /> : 'Sign In with Google'}

@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardActions,
-  Avatar,
   IconButton,
   Button,
   Snackbar,
@@ -102,17 +101,7 @@ const HeroSection = styled(Box)(({ theme }) => ({
   },
 }));
 
-const HeroAvatar = styled(Avatar)(({ theme }) => ({
-  width: theme.spacing(10),
-  height: theme.spacing(10),
-  marginRight: theme.spacing(3),
-  backgroundColor: theme.palette.background.paper,
-  border: `2px solid ${theme.palette.common.white}`,
-  [theme.breakpoints.down('sm')]: {
-    marginBottom: theme.spacing(2),
-    marginRight: 0,
-  },
-}));
+// (Removed HeroAvatar as it was used for the header image)
 
 const HeroTextContainer = styled(Box)(({ theme }) => ({
   flexGrow: 1,
@@ -164,7 +153,7 @@ const widgetItemVariants = {
 };
 
 // -----------------------
-// TherapistWidget Component
+// TherapistWidget Component (Modified)
 // -----------------------
 
 const TherapistWidget = ({ therapist, handleDetailsClick }) => {
@@ -176,7 +165,7 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
     }
   }, []);
 
-  // Construct direct Google Maps URL using place_id
+  // Direct Google Maps URL (unchanged)
   const googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${therapist.id}`;
 
   return (
@@ -184,11 +173,8 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
       <WidgetCard>
         <WidgetHeader>
           <Typography variant="subtitle2">{therapist.name}</Typography>
-          <Avatar
-            src={therapist.avatarUrl}
-            alt={therapist.name}
-            sx={{ width: 32, height: 32 }}
-          />
+          {/* Instead of loading an image, show a default PersonIcon */}
+          <PersonIcon fontSize="small" />
         </WidgetHeader>
         <WidgetContent ref={contentRef}>
           <Box mb={1}>
@@ -247,12 +233,11 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
 };
 
 // -----------------------
-// TherapistDetailsContent Component
+// TherapistDetailsContent Component (Modified)
 // -----------------------
 
 const TherapistDetailsContent = ({ therapist, onClose }) => {
   const googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${therapist.id}`;
-
   return (
     <>
       <DialogTitle>{therapist.name}</DialogTitle>
@@ -276,15 +261,7 @@ const TherapistDetailsContent = ({ therapist, onClose }) => {
             </Typography>
           </Box>
         </Box>
-        {therapist.avatarUrl && (
-          <Box mt={3} display="flex" justifyContent="center">
-            <Avatar
-              src={therapist.avatarUrl}
-              alt={therapist.name}
-              sx={{ width: 120, height: 120 }}
-            />
-          </Box>
-        )}
+        {/* Removed image display; if desired, a default icon can be shown here as well */}
       </DialogContent>
       <DialogActions>
         <Button
@@ -316,7 +293,6 @@ const TherapistRecommendations = () => {
     fetchTherapists,
     clearTherapists,
   } = useContext(TherapistFindContext);
-
   const [locationError, setLocationError] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -325,79 +301,77 @@ const TherapistRecommendations = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // -----------------------
-  // Get User's Location and Fetch Therapists
-  // -----------------------
+  /**
+   * fetchData: Gets user's current location and uses the context's fetchTherapists
+   * method to fetch therapist recommendations.
+   * The force parameter bypasses caching.
+   */
   const fetchData = (force = false) => {
-    // If not forcing and we already have therapists, do nothing.
     if (!force && therapists.length > 0) return;
     setLocationError(null);
     setIsRefreshing(true);
-
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           console.log(`User location: ${latitude}, ${longitude}`);
-          // Always pass force=true if you want a fresh API call.
+          // Pass force=true to always fetch fresh data.
           fetchTherapists(latitude, longitude, force);
           setIsRefreshing(false);
         },
         (err) => {
-          console.error('Error obtaining location:', err);
+          console.error("Error obtaining location:", err);
           setLocationError(
-            'Unable to access your location. Please ensure location services are enabled for your browser and this site.'
+            "Unable to access your location. Please ensure location services are enabled for your browser and this site."
           );
-          setSnackbarMessage('Location access denied.');
-          setSnackbarSeverity('warning');
+          setSnackbarMessage("Location access denied.");
+          setSnackbarSeverity("warning");
           setSnackbarOpen(true);
           setIsRefreshing(false);
         }
       );
     } else {
-      setLocationError('Geolocation is not supported by this browser.');
-      setSnackbarMessage('Geolocation not supported.');
-      setSnackbarSeverity('error');
+      setLocationError("Geolocation is not supported by this browser.");
+      setSnackbarMessage("Geolocation not supported.");
+      setSnackbarSeverity("error");
       setSnackbarOpen(true);
       setIsRefreshing(false);
     }
   };
 
-  // Fetch therapist data on mount
+  // On mount, if no cached data exists, fetch data.
   useEffect(() => {
-    fetchData();
+    if (therapists.length === 0) {
+      fetchData();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Show any error from the context via Snackbar.
   useEffect(() => {
     if (error) {
       setSnackbarMessage(error);
-      setSnackbarSeverity('error');
+      setSnackbarSeverity("error");
       setSnackbarOpen(true);
     }
   }, [error]);
 
-  // Manual refresh: clear data and force a new fetch.
+  // Handle manual refresh: clear cached data and force a new fetch.
   const handleRefresh = () => {
     clearTherapists(); // Clear cached data.
     fetchData(true); // Force a new API call.
-    setSnackbarMessage('Therapist recommendations refreshed.');
-    setSnackbarSeverity('info');
+    setSnackbarMessage("Therapist recommendations refreshed.");
+    setSnackbarSeverity("info");
     setSnackbarOpen(true);
     setIsRefreshing(true);
-
-    // Add a slight delay for the "spinning" icon.
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
-  // Close the Snackbar.
   const handleSnackbarClose = (event, reason) => {
     if (reason === 'clickaway') return;
     setSnackbarOpen(false);
   };
 
-  // Show details for the selected therapist.
+  // Open details dialog for the selected therapist.
   const handleDetailsClick = (therapist) => {
     setSelectedTherapist(therapist);
     setDialogOpen(true);
@@ -420,11 +394,7 @@ const TherapistRecommendations = () => {
           >
             <Container maxWidth="lg" sx={{ pt: 4, pb: 4 }}>
               <HeroSection>
-                <HeroAvatar
-                  src="https://therapybrands.com/wp-content/uploads/2023/04/Blog-Header-Images-6.jpg"
-                  alt="Hero Avatar"
-                  imgProps={{ referrerPolicy: 'no-referrer' }}
-                />
+                {/* Hero header image removed to focus on therapist widgets */}
                 <HeroTextContainer>
                   <HeroTextH4 variant="h4">
                     Your Path to Well-being Starts Here
@@ -432,18 +402,11 @@ const TherapistRecommendations = () => {
                   <Typography variant="subtitle1" color="inherit">
                     {locationError
                       ? locationError
-                      : 'Discover compassionate therapists ready to support you.'}
+                      : "Discover compassionate therapists ready to support you."}
                   </Typography>
                 </HeroTextContainer>
                 {/* Refresh button in the top-right corner */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    zIndex: 10,
-                  }}
-                >
+                <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
                   <IconButton
                     onClick={handleRefresh}
                     color="primary"
@@ -458,15 +421,9 @@ const TherapistRecommendations = () => {
                 </Box>
               </HeroSection>
 
-              {/* Therapist Widgets or Loading Skeleton */}
-              <motion.div
-                variants={widgetVariants}
-                initial="hidden"
-                animate="visible"
-              >
+              <motion.div variants={widgetVariants} initial="hidden" animate="visible">
                 <Grid container spacing={3}>
                   {loading ? (
-                    // Show skeleton placeholders while loading.
                     Array.from({ length: 3 }).map((_, index) => (
                       <Grid item xs={12} md={4} key={index}>
                         <WidgetCard>
@@ -474,11 +431,7 @@ const TherapistRecommendations = () => {
                             <Skeleton variant="text" width="60%" />
                           </WidgetHeader>
                           <WidgetContent>
-                            <Skeleton
-                              variant="rectangular"
-                              height={100}
-                              sx={{ borderRadius: '8px' }}
-                            />
+                            <Skeleton variant="rectangular" height={100} sx={{ borderRadius: '8px' }} />
                           </WidgetContent>
                           <CardActions>
                             <Skeleton variant="text" width="40%" />
@@ -487,25 +440,15 @@ const TherapistRecommendations = () => {
                       </Grid>
                     ))
                   ) : therapists.length > 0 ? (
-                    // Show therapist widgets.
                     therapists.map((therapist) => (
                       <Grid item xs={12} md={4} key={therapist.id}>
-                        <TherapistWidget
-                          therapist={therapist}
-                          handleDetailsClick={handleDetailsClick}
-                        />
+                        <TherapistWidget therapist={therapist} handleDetailsClick={handleDetailsClick} />
                       </Grid>
                     ))
                   ) : !loading && !locationError ? (
-                    // No therapists found.
                     <Grid item xs={12}>
-                      <Typography
-                        variant="subtitle1"
-                        color="textSecondary"
-                        align="center"
-                      >
-                        No therapists found in your area. Please try again later or
-                        refresh.
+                      <Typography variant="subtitle1" color="textSecondary" align="center">
+                        No therapists found in your area. Please try again later or refresh.
                       </Typography>
                     </Grid>
                   ) : null}
@@ -514,34 +457,20 @@ const TherapistRecommendations = () => {
             </Container>
           </motion.main>
 
-          {/* Snackbar for alerts */}
           <Snackbar
             open={snackbarOpen}
             autoHideDuration={6000}
             onClose={handleSnackbarClose}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           >
-            <Alert
-              onClose={handleSnackbarClose}
-              severity={snackbarSeverity}
-              sx={{ width: '100%' }}
-            >
+            <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
               {snackbarMessage}
             </Alert>
           </Snackbar>
 
-          {/* Dialog for therapist details */}
-          <Dialog
-            open={dialogOpen}
-            onClose={handleDialogClose}
-            fullWidth
-            maxWidth="sm"
-          >
+          <Dialog open={dialogOpen} onClose={handleDialogClose} fullWidth maxWidth="sm">
             {selectedTherapist && (
-              <TherapistDetailsContent
-                therapist={selectedTherapist}
-                onClose={handleDialogClose}
-              />
+              <TherapistDetailsContent therapist={selectedTherapist} onClose={handleDialogClose} />
             )}
           </Dialog>
         </PageLayout>

@@ -15,33 +15,46 @@ export const TherapistFindProvider = ({ children }) => {
   const [lastFetched, setLastFetched] = useState(0);
   const { user } = useContext(AuthContext);
 
+  // Retrieve API key from environment variables
+  const googleApiKey = process.env.REACT_APP_GOOGLE_API_KEY;
+  if (!googleApiKey) {
+    console.error("Google API key is not defined.");
+  }
+
   /**
-   * Ensure Google Maps API is loaded before calling Places API.
+   * Lazy load the Google Maps JavaScript API.
+   * Returns a Promise that resolves when the API is loaded.
    */
-  const isGoogleMapsLoaded = () => {
-    return typeof window !== "undefined" && window.google && window.google.maps;
+  const loadGoogleMapsScript = () => {
+    return new Promise((resolve, reject) => {
+      // If already loaded, resolve immediately.
+      if (window.google && window.google.maps) {
+        resolve(window.google);
+        return;
+      }
+      // Create the script element.
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        if (window.google && window.google.maps) {
+          resolve(window.google);
+        } else {
+          reject(new Error("Google Maps API loaded but not available."));
+        }
+      };
+      script.onerror = () =>
+        reject(new Error("Google Maps API failed to load."));
+      document.head.appendChild(script);
+    });
   };
 
   /**
-   * Compute the distance between two points (in km) using the Haversine formula.
-   *
-   * @param {number} lat1 - Latitude of the first point.
-   * @param {number} lon1 - Longitude of the first point.
-   * @param {number} lat2 - Latitude of the second point.
-   * @param {number} lon2 - Longitude of the second point.
-   * @returns {number} - The distance in kilometers.
+   * Helper function to check if Google Maps API is loaded.
    */
-  const computeDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Earth's radius in kilometers
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+  const isGoogleMapsLoaded = () => {
+    return typeof window !== "undefined" && window.google && window.google.maps;
   };
 
   /**
@@ -52,7 +65,6 @@ export const TherapistFindProvider = ({ children }) => {
    */
   const fetchPlaceDetails = (placeId) => {
     return new Promise((resolve, reject) => {
-      // Create a dummy div for the PlacesService (not added to the DOM)
       const service = new window.google.maps.places.PlacesService(
         document.createElement("div")
       );
@@ -75,7 +87,7 @@ export const TherapistFindProvider = ({ children }) => {
    * @param {boolean} forceRefresh - If true, bypass cache and fetch fresh data.
    */
   const fetchTherapists = async (latitude, longitude, forceRefresh = false) => {
-    // If not forcing refresh and data is already cached within 5 minutes, skip refetching.
+    // If not forcing refresh and data is already cached within 10 minutes, skip refetching.
     if (
       !forceRefresh &&
       therapists.length > 0 &&
@@ -88,8 +100,9 @@ export const TherapistFindProvider = ({ children }) => {
     setError(null);
 
     try {
+      // Lazy load Google Maps API if it's not already available.
       if (!isGoogleMapsLoaded()) {
-        throw new Error("Google Maps JavaScript API is not loaded.");
+        await loadGoogleMapsScript();
       }
 
       // Create an invisible map container (not added to the DOM)
@@ -97,12 +110,12 @@ export const TherapistFindProvider = ({ children }) => {
       const map = new window.google.maps.Map(mapContainer);
 
       // Create a LatLng object for the given coordinates.
-      const locationObj = new window.google.maps.LatLng(latitude, longitude);
+      const location = new window.google.maps.LatLng(latitude, longitude);
 
       // Build the request object.
       const request = {
-        location: locationObj,
-        radius: 20000, // Extended radius: 20,000 meters (20 km)
+        location,
+        radius: 8000, // 8 km radius (adjust as needed)
         type: "doctor", // Using a string instead of an array.
         keyword: "therapist", // Helps narrow results.
       };
@@ -134,9 +147,6 @@ export const TherapistFindProvider = ({ children }) => {
         return;
       }
 
-      // Retrieve the API key from environment variables.
-      const googleApiKey = process.env.REACT_APP_GOOGLE_API_KEY;
-
       // For each result, fetch detailed information and map the data.
       const mappedData = await Promise.all(
         results.map(async (result) => {
@@ -150,15 +160,6 @@ export const TherapistFindProvider = ({ children }) => {
               detailsError
             );
           }
-
-          // Calculate distance using the helper (in kilometers)
-          let distance = null;
-          if (result.geometry && result.geometry.location) {
-            const placeLat = result.geometry.location.lat();
-            const placeLng = result.geometry.location.lng();
-            distance = computeDistance(latitude, longitude, placeLat, placeLng);
-          }
-
           return {
             id: result.place_id,
             name: result.name,
@@ -166,7 +167,6 @@ export const TherapistFindProvider = ({ children }) => {
             address: result.vicinity || "Unknown address",
             rating: result.rating || "N/A",
             phone, // Retrieved from Place Details API.
-            distance, // Distance in km (as a number)
             avatarUrl: result.photos
               ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${result.photos[0].photo_reference}&key=${googleApiKey}`
               : result.icon, // Use default icon if no photo available.
