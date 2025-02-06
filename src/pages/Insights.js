@@ -106,7 +106,7 @@ const Insights = () => {
   const sleepDurationOverTimeRef = useRef(null);
 
   // Initialize the Gemini AI model using the API key
-  const genAI = useMemo(() => new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY), []);
+  const genAI = useMemo(() => new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY2), []);
   const aiModel = useMemo(() => genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }), [genAI]);
 
   // Handle Activity Selection using Chips
@@ -417,16 +417,24 @@ Please provide insights that help the user understand their overall mental well-
     // Wait until all context data has finished loading.
     if (moodLoading || activityLoading || sleepLoading) return;
 
+    const currentCounts = {
+      mood: moodEntries.length,
+      activity: activities.length,
+      sleep: sleepLogs.length,
+    };
+
     const cached = localStorage.getItem('aiInsightsCache');
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
         if (
-          parsed.moodCount === moodEntries.length &&
-          parsed.activityCount === activities.length &&
-          parsed.sleepCount === sleepLogs.length
+          parsed.moodCount === currentCounts.mood &&
+          parsed.activityCount === currentCounts.activity &&
+          parsed.sleepCount === currentCounts.sleep
         ) {
           setAiInsights(parsed.aiInsights);
+          // Update our previous counts to avoid triggering the debounced update.
+          prevCountsRef.current = currentCounts;
           return; // Use cached insights and do not fetch again.
         }
       } catch (e) {
@@ -434,7 +442,8 @@ Please provide insights that help the user understand their overall mental well-
       }
     }
     // If no valid cache exists, fetch insights.
-    if (moodEntries.length > 0 || activities.length > 0 || sleepLogs.length > 0) {
+    if (currentCounts.mood > 0 || currentCounts.activity > 0 || currentCounts.sleep > 0) {
+      prevCountsRef.current = currentCounts;
       fetchAiInsights();
     }
   }, [
