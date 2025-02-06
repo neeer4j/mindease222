@@ -115,7 +115,7 @@ export const TherapistFindProvider = ({ children }) => {
       // Build the request object.
       const request = {
         location,
-        radius: 8000, // 8 km radius (adjust as needed)
+        radius: 15000, // 15 km radius (adjust as needed)
         type: "doctor", // Using a string instead of an array.
         keyword: "therapist", // Helps narrow results.
       };
