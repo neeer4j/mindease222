@@ -51,35 +51,35 @@ const navLinks = [
         path: '/mood-tracker',
         icon: <MoodIcon />,
         photoUrl:
-          'https://images.unsplash.com/photo-1543164904-8ff92670a192?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3',
+          'images/navbar/aa.jpg',
       },
       {
         title: 'Activity Logging',
         path: '/activity-logging',
         icon: <ActivityIcon />,
         photoUrl:
-          'https://images.unsplash.com/photo-1596066190600-3af9aadaaea1?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3',
+          'images/navbar/ac.jpg',
       },
       {
         title: 'Sleep Tracker',
         path: '/sleep-tracker',
         icon: <HotelIcon />,
         photoUrl:
-          'https://images.unsplash.com/photo-1487300001871-12053913095d?w=500&auto=format&fit=crop&q=60',
+          'images/navbar/sleep.jpg',
       },
       {
         title: 'Reels',
         path: '/reels',
         icon: <OndemandVideoIcon />,
         photoUrl:
-          'https://images.unsplash.com/photo-1565870100382-f0a510db3cd1?q=80&w=1931&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+          'images/navbar/reel.jpg',
       },
       {
         title: 'Meditation',
         path: '/meditations',
         icon: <MeditationIcon />,
         photoUrl:
-          'https://plus.unsplash.com/premium_photo-1682096492098-8745454126cf?q=80&w=2070&auto=format&fit=crop',
+          'images/navbar/images.jpg',
       },
     ],
   },
@@ -358,7 +358,7 @@ const Navbar = ({ toggleTheme }) => {
                 textShadow: mobileTextShadow,
               }}
             >
-              MindEase AI
+              MindEase AI™
             </Typography>
           </Button>
           {/* Show theme toggle on mobile if not on login/signup */}
@@ -410,7 +410,7 @@ const Navbar = ({ toggleTheme }) => {
                 transition: 'color 0s ease-in-out',
               }}
             >
-              MindEase AI
+              MindEase AI™
             </Typography>
           </Button>
         </Box>

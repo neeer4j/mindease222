@@ -198,13 +198,13 @@ const Landing = () => {
     },
     {
       name: 'Neeraj Venu',
-      role: ' UI/UX Expert',
+      role: ' UI/UX Designer',
       avatarSrc: 'images/developers/neeraj.jpg',
     },
     {
       name: 'Alan Dibu',
       role: 'Backend Architect & Data Scientist',
-      avatarSrc: 'images/developers/alan.jpg',
+      avatarSrc: 'images/developers/alan.jpeg',
     },
     {
       name: 'Gautham Suresh',
