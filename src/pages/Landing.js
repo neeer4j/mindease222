@@ -31,7 +31,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/system';
 import { AuthContext } from '../contexts/AuthContext';
-import PageLayout from '../components/PageLayout'; // Import PageLayout
+import PageLayout from '../components/PageLayout';
 
 // Styled Gradient Button using MUI's styled API
 const GradientButton = styled(Button)(({ theme }) => ({
@@ -138,7 +138,7 @@ const Landing = () => {
     },
   ];
 
-  // --- Updated Testimonials Array (6 objects) ---
+  // --- Testimonials Array with 6 Objects ---
   const testimonials = [
     {
       quote:
@@ -194,31 +194,31 @@ const Landing = () => {
     {
       name: 'Muhammed Nayif',
       role: 'Lead Developer & Project Head',
-      avatarSrc: '/images/developers/nayif.jpeg', // Path to Nayif's avatar
+      avatarSrc: '/images/developers/nayif.jpeg',
     },
     {
       name: 'Neeraj Venu',
       role: ' UI/UX Expert',
-      avatarSrc: 'images/developers/neeraj.jpg', // Path to Neeraj's avatar
+      avatarSrc: 'images/developers/neeraj.jpg',
     },
     {
       name: 'Alan Dibu',
       role: 'Backend Architect & Data Scientist',
-      avatarSrc: 'images/developers/alan.jpg', // Path to Alan's avatar in public/images/developers
+      avatarSrc: 'images/developers/alan.jpg',
     },
     {
       name: 'Gautham Suresh',
       role: 'Frontend Developer & Accessibility Specialist',
-      avatarSrc: '/images/developers/gautham.jpg', // Path to Gautham's avatar
+      avatarSrc: '/images/developers/gautham.jpg',
     },
   ];
 
   const heroImageUrl = 'images/ab.jpg';
 
   // --- Testimonial Slider Logic ---
-
-  // Calculate number of slides (3 testimonials per slide)
-  const slideCount = Math.ceil(testimonials.length / 3);
+  // Determine the number of testimonials per slide:
+  const testimonialsPerSlide = isMobile ? 1 : 3;
+  const slideCount = Math.ceil(testimonials.length / testimonialsPerSlide);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Auto-advance slide every 10 seconds
@@ -239,8 +239,8 @@ const Landing = () => {
   };
 
   // Determine which testimonials to show on the current slide
-  const startIndex = currentSlide * 3;
-  const currentTestimonials = testimonials.slice(startIndex, startIndex + 3);
+  const startIndex = currentSlide * testimonialsPerSlide;
+  const currentTestimonials = testimonials.slice(startIndex, startIndex + testimonialsPerSlide);
 
   // Slide animation variants (adjust as desired)
   const slideVariants = {
@@ -612,7 +612,7 @@ const Landing = () => {
           </Box>
         </motion.section>
 
-        {/* --- Updated "Hear From Our Community" Section with Slider --- */}
+        {/* --- Updated "Hear From Our Community" Section with Responsive Slider --- */}
         <motion.section
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -703,7 +703,7 @@ const Landing = () => {
                 >
                   <Grid container spacing={isMobile ? 4 : 6} justifyContent="center">
                     {currentTestimonials.map((testimonial, index) => (
-                      <Grid item xs={12} md={4} key={index}>
+                      <Grid item xs={12} md={isMobile ? 12 : 4} key={index}>
                         <Card
                           sx={{
                             background: theme.palette.background.paper,
