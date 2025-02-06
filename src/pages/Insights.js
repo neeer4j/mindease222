@@ -1,6 +1,6 @@
 // src/pages/Insights.jsx
 
-import React, { useState, useMemo, useContext, useRef } from 'react';
+import React, { useState, useMemo, useContext, useRef, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -13,20 +13,12 @@ import {
   CircularProgress,
   TextField,
   Button,
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
-  Collapse, // Import Collapse for smoother animation
-  IconButton, // Import IconButton for icon button
-  Tooltip, // Import Tooltip for better UX
-  Chip, // Import Chip for activity selection
+  Collapse,
+  Tooltip,
+  Chip,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Line,
-  Bar,
-  Scatter,
-} from 'react-chartjs-2';
+import { Line, Bar, Scatter } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -35,20 +27,23 @@ import {
   LineElement,
   BarElement,
   ArcElement,
-  Tooltip as ChartTooltip, // Rename Tooltip import from chart.js
+  Tooltip as ChartTooltip,
   Legend,
   Title,
   Filler,
 } from 'chart.js';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
-import 'chartjs-adapter-date-fns'; // For time-based charts
+import 'chartjs-adapter-date-fns';
 import { MoodContext } from '../contexts/MoodContext';
 import { ActivityContext } from '../contexts/ActivityContext';
-import { SleepContext } from '../contexts/SleepContext'; // Import Sleep Context
+import { SleepContext } from '../contexts/SleepContext';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'; // Import ExpandMoreIcon
-import FilterListIcon from '@mui/icons-material/FilterList'; // Import FilterListIcon
+import FilterListIcon from '@mui/icons-material/FilterList';
 import PageLayout from '../components/PageLayout';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 // Register Chart.js components and plugins
 ChartJS.register(
   CategoryScale,
@@ -57,7 +52,7 @@ ChartJS.register(
   LineElement,
   BarElement,
   ArcElement,
-  ChartTooltip, // Use the renamed import here
+  ChartTooltip,
   Legend,
   Title,
   Filler,
@@ -69,9 +64,7 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.2, // Stagger children by 0.2 seconds
-    },
+    transition: { staggerChildren: 0.2 },
   },
   exit: { opacity: 0, transition: { duration: 0.3, ease: 'easeIn' } },
 };
@@ -81,38 +74,42 @@ const sectionVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 300,
-      damping: 20
-    }
+    transition: { type: 'spring', stiffness: 300, damping: 20 },
   },
 };
 
-// Insights Page Component
 const Insights = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Destructure contexts with default empty arrays to prevent undefined errors
+  // Destructure contexts (defaulting to empty arrays)
   const { moodEntries = [], loading: moodLoading, error: moodError } = useContext(MoodContext);
   const { activities = [], loading: activityLoading, error: activityError } = useContext(ActivityContext);
-  const { sleepLogs = [], loading: sleepLoading, error: sleepError } = useContext(SleepContext); // Use SleepContext
+  const { sleepLogs = [], loading: sleepLoading, error: sleepError } = useContext(SleepContext);
 
   // State for Filters
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedActivities, setSelectedActivities] = useState([]);
 
-  // State to Toggle Filter Section
+  // Toggle Filter Section
   const [showFilters, setShowFilters] = useState(false);
 
-  // Initialize refs for charts if needed in future (e.g., to reset zoom)
+  // AI Generated Insights States
+  const [aiInsights, setAiInsights] = useState('');
+  const [aiInsightsLoading, setAiInsightsLoading] = useState(false);
+  const [aiInsightsError, setAiInsightsError] = useState('');
+
+  // Chart refs for resetting zoom
   const moodOverTimeRef = useRef(null);
   const sleepDurationOverTimeRef = useRef(null);
 
-  // Handle Activity Selection
+  // Initialize the Gemini AI model using the API key
+  const genAI = useMemo(() => new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY), []);
+  const aiModel = useMemo(() => genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }), [genAI]);
+
+  // Handle Activity Selection using Chips
   const handleActivityChange = (event) => {
     const activityTitle = event.target.name;
     if (selectedActivities.includes(activityTitle)) {
@@ -153,25 +150,17 @@ const Insights = () => {
 
   // Prepare Data for Mood Over Time Chart
   const moodOverTimeData = useMemo(() => {
-    // Aggregate moods by date
     const moodMap = {};
-
     filteredMoodEntries.forEach(entry => {
       const date = format(parseISO(entry.timestamp), 'yyyy-MM-dd');
-      if (moodMap[date]) {
-        moodMap[date].push(entry.mood);
-      } else {
-        moodMap[date] = [entry.mood];
-      }
+      moodMap[date] ? moodMap[date].push(entry.mood) : (moodMap[date] = [entry.mood]);
     });
-
     const labels = Object.keys(moodMap).sort();
     const data = labels.map(date => {
       const moods = moodMap[date];
       const avgMood = moods.reduce((a, b) => a + b, 0) / moods.length;
       return parseFloat(avgMood.toFixed(2));
     });
-
     return {
       labels: labels.map(date => format(new Date(date), 'MMM d')),
       datasets: [
@@ -187,74 +176,34 @@ const Insights = () => {
         },
       ],
     };
-
   }, [filteredMoodEntries, theme.palette.primary]);
 
   const moodOverTimeOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: isSmallScreen ? 'bottom' : 'top', // Adjust legend position
-      },
-      title: {
-        display: true,
-        text: 'Mood Over Time',
-      },
-      tooltip: {
-        callbacks: {
-          label: context => `${context.parsed.y} ⭐`,
-        },
-      },
+      legend: { position: isSmallScreen ? 'bottom' : 'top' },
+      title: { display: true, text: 'Mood Over Time' },
+      tooltip: { callbacks: { label: context => `${context.parsed.y} ⭐` } },
       zoom: {
-        pan: {
-          enabled: true,
-          mode: 'x',
-        },
-        zoom: {
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true,
-          },
-          mode: 'x',
-        },
+        pan: { enabled: true, mode: 'x' },
+        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
       },
     },
     scales: {
-      y: {
-        min: 1,
-        max: 5,
-        ticks: {
-          stepSize: 1,
-          callback: value => `${value} ⭐`,
-        },
-      },
-      x: {
-        type: 'category',
-        ticks: {
-          maxTicksLimit: 10,
-        },
-      },
+      y: { min: 1, max: 5, ticks: { stepSize: 1, callback: value => `${value} ⭐` } },
+      x: { type: 'category', ticks: { maxTicksLimit: 10 } },
     },
-    maintainAspectRatio: false, // Allows the chart to adjust based on container size
+    maintainAspectRatio: false,
   };
 
   // Prepare Data for Activity Frequency Chart
   const activityFrequencyData = useMemo(() => {
     const activityCount = {};
-
     filteredActivities.forEach(activity => {
-      if (activityCount[activity.title]) {
-        activityCount[activity.title] += 1;
-      } else {
-        activityCount[activity.title] = 1;
-      }
+      activityCount[activity.title] = (activityCount[activity.title] || 0) + 1;
     });
-
     const labels = Object.keys(activityCount);
     const data = labels.map(title => activityCount[title]);
-
     return {
       labels,
       datasets: [
@@ -267,79 +216,38 @@ const Insights = () => {
         },
       ],
     };
-
   }, [filteredActivities, theme.palette.primary]);
 
   const activityFrequencyOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Activity Frequency',
-      },
-      tooltip: {
-        callbacks: {
-          label: context => `${context.parsed.y} activities`,
-        },
-      },
+      legend: { position: 'top' },
+      title: { display: true, text: 'Activity Frequency' },
+      tooltip: { callbacks: { label: context => `${context.parsed.y} activities` } },
       zoom: {
-        pan: {
-          enabled: true,
-          mode: 'x',
-        },
-        zoom: {
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true,
-          },
-          mode: 'x',
-        },
+        pan: { enabled: true, mode: 'x' },
+        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
       },
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          stepSize: 1,
-        },
-      },
-    },
-    maintainAspectRatio: false, // Allows the chart to adjust based on container size
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+    maintainAspectRatio: false,
   };
 
   // Prepare Data for Mood vs. Activity Correlation (Scatter Chart)
   const moodActivityCorrelationData = useMemo(() => {
-    // Map activities by date
     const activityMap = {};
-
     filteredActivities.forEach(activity => {
       const date = format(parseISO(activity.date), 'yyyy-MM-dd');
-      if (activityMap[date]) {
-        activityMap[date].push(activity.title);
-      } else {
-        activityMap[date] = [activity.title];
-      }
+      activityMap[date] ? activityMap[date].push(activity.title) : (activityMap[date] = [activity.title]);
     });
-
-    // Prepare scatter data: each point represents an activity with associated mood
     const scatterData = [];
-
     filteredMoodEntries.forEach(entry => {
       const date = format(parseISO(entry.timestamp), 'yyyy-MM-dd');
       const associatedActivities = activityMap[date] || [];
       associatedActivities.forEach(activityTitle => {
-        scatterData.push({
-          x: activityTitle,
-          y: entry.mood,
-        });
+        scatterData.push({ x: activityTitle, y: entry.mood });
       });
     });
-
     return {
       datasets: [
         {
@@ -349,90 +257,43 @@ const Insights = () => {
         },
       ],
     };
-
   }, [filteredMoodEntries, filteredActivities, theme.palette.secondary]);
 
   const moodActivityCorrelationOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: isSmallScreen ? 'bottom' : 'top', // Adjust legend position
-      },
-      title: {
-        display: true,
-        text: 'Mood vs. Activity Correlation',
-      },
-      tooltip: {
-        callbacks: {
-          label: context => `${context.parsed.y} ⭐`,
-        },
-      },
+      legend: { position: isSmallScreen ? 'bottom' : 'top' },
+      title: { display: true, text: 'Mood vs. Activity Correlation' },
+      tooltip: { callbacks: { label: context => `${context.parsed.y} ⭐` } },
       zoom: {
-        pan: {
-          enabled: true,
-          mode: 'xy',
-        },
-        zoom: {
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true,
-          },
-          mode: 'xy',
-        },
+        pan: { enabled: true, mode: 'xy' },
+        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
       },
     },
     scales: {
-      x: {
-        type: 'category',
-        title: {
-          display: true,
-          text: 'Activities',
-        },
-      },
-      y: {
-        min: 1,
-        max: 5,
-        title: {
-          display: true,
-          text: 'Mood Level',
-        },
-        ticks: {
-          stepSize: 1,
-          callback: value => `${value} ⭐`,
-        },
-      },
+      x: { type: 'category', title: { display: true, text: 'Activities' } },
+      y: { min: 1, max: 5, title: { display: true, text: 'Mood Level' }, ticks: { stepSize: 1, callback: value => `${value} ⭐` } },
     },
-    maintainAspectRatio: false, // Allows the chart to adjust based on container size
+    maintainAspectRatio: false,
   };
 
   // Prepare Data for Sleep Duration Over Time Chart
   const sleepDurationOverTimeData = useMemo(() => {
     const sleepDurationMap = {};
-
     filteredSleepLogs.forEach(log => {
       const date = format(parseISO(log.timestamp), 'yyyy-MM-dd');
       const startTime = parseISO(log.startTime);
       const endTime = parseISO(log.endTime);
-      // Calculate duration in minutes
       const durationMinutes = differenceInMinutes(endTime, startTime);
-      if (sleepDurationMap[date]) {
-        sleepDurationMap[date].push(durationMinutes);
-      } else {
-        sleepDurationMap[date] = [durationMinutes];
-      }
+      sleepDurationMap[date] ? sleepDurationMap[date].push(durationMinutes) : (sleepDurationMap[date] = [durationMinutes]);
     });
-
     const labels = Object.keys(sleepDurationMap).sort();
     const data = labels.map(date => {
       const durations = sleepDurationMap[date];
       const avgDurationMinutes = durations.reduce((a, b) => a + b, 0) / durations.length;
-      // Convert average duration to hours and minutes for display, or just hours as decimal
       const avgDurationHours = avgDurationMinutes / 60;
-      return parseFloat(avgDurationHours.toFixed(2)); // Average sleep duration in hours
+      return parseFloat(avgDurationHours.toFixed(2));
     });
-
     return {
       labels: labels.map(date => format(new Date(date), 'MMM d')),
       datasets: [
@@ -452,99 +313,166 @@ const Insights = () => {
   const sleepDurationOverTimeOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: isSmallScreen ? 'bottom' : 'top',
-      },
-      title: {
-        display: true,
-        text: 'Average Sleep Duration Over Time',
-      },
-      tooltip: {
-        callbacks: {
-          label: (context) => `${context.parsed.y} Hours`,
-        },
-      },
+      legend: { position: isSmallScreen ? 'bottom' : 'top' },
+      title: { display: true, text: 'Average Sleep Duration Over Time' },
+      tooltip: { callbacks: { label: context => `${context.parsed.y} Hours` } },
       zoom: {
-        pan: {
-          enabled: true,
-          mode: 'x',
-        },
-        zoom: {
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true,
-          },
-          mode: 'x',
-        },
+        pan: { enabled: true, mode: 'x' },
+        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
       },
     },
     scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Hours',
-        },
-      },
-      x: {
-        type: 'category',
-        ticks: {
-          maxTicksLimit: 10,
-        },
-      },
+      y: { beginAtZero: true, title: { display: true, text: 'Hours' } },
+      x: { type: 'category', ticks: { maxTicksLimit: 10 } },
     },
-    maintainAspectRatio: false, // Allows the chart to adjust based on container size
+    maintainAspectRatio: false,
   };
 
-  // Prepare Summary Statistics
+  // Prepare Summary Statistics (using filtered data)
   const summaryStatistics = useMemo(() => {
     const totalMoods = filteredMoodEntries.length;
-    const moodSum = filteredMoodEntries.reduce((sum, entry) => sum + (entry.mood || 0), 0); // Extract mood from each entry
+    const moodSum = filteredMoodEntries.reduce((sum, entry) => sum + (entry.mood || 0), 0);
     const averageMood = totalMoods > 0 ? (moodSum / totalMoods).toFixed(2) : 'N/A';
     const totalActivities = filteredActivities.length;
     const totalSleepLogs = filteredSleepLogs.length;
-
-    return {
-      totalMoods,
-      averageMood,
-      totalActivities,
-      totalSleepLogs, // Add total sleep logs to summary
-    };
+    return { totalMoods, averageMood, totalActivities, totalSleepLogs };
   }, [filteredMoodEntries, filteredActivities, filteredSleepLogs]);
 
   // Determine if Charts Have Data
   const hasMoodOverTimeData = useMemo(() => {
     return (
-      moodOverTimeData.labels && moodOverTimeData.labels.length > 0 &&
-      moodOverTimeData.datasets && moodOverTimeData.datasets.length > 0 &&
-      moodOverTimeData.datasets[0].data && moodOverTimeData.datasets[0].data.length > 0
+      moodOverTimeData.labels?.length > 0 &&
+      moodOverTimeData.datasets?.[0].data?.length > 0
     );
   }, [moodOverTimeData]);
 
   const hasActivityFrequencyData = useMemo(() => {
     return (
-      activityFrequencyData.labels && activityFrequencyData.labels.length > 0 &&
-      activityFrequencyData.datasets && activityFrequencyData.datasets.length > 0 &&
-      activityFrequencyData.datasets[0].data && activityFrequencyData.datasets[0].data.length > 0
+      activityFrequencyData.labels?.length > 0 &&
+      activityFrequencyData.datasets?.[0].data?.length > 0
     );
   }, [activityFrequencyData]);
 
   const hasMoodActivityCorrelationData = useMemo(() => {
     return (
-      moodActivityCorrelationData.datasets && moodActivityCorrelationData.datasets.length > 0 &&
-      moodActivityCorrelationData.datasets[0].data && moodActivityCorrelationData.datasets[0].data.length > 0
+      moodActivityCorrelationData.datasets?.[0].data?.length > 0
     );
   }, [moodActivityCorrelationData]);
 
   const hasSleepDurationOverTimeData = useMemo(() => {
     return (
-      sleepDurationOverTimeData.labels && sleepDurationOverTimeData.labels.length > 0 &&
-      sleepDurationOverTimeData.datasets && sleepDurationOverTimeData.datasets.length > 0 &&
-      sleepDurationOverTimeData.datasets[0].data && sleepDurationOverTimeData.datasets[0].data.length > 0
+      sleepDurationOverTimeData.labels?.length > 0 &&
+      sleepDurationOverTimeData.datasets?.[0].data?.length > 0
     );
   }, [sleepDurationOverTimeData]);
+
+  // ---- AI Generated Insights with Caching ----
+
+  // Function to fetch insights and update cache after a successful fetch.
+  const fetchAiInsights = async () => {
+    if (summaryStatistics.totalMoods === 0) return;
+    setAiInsightsLoading(true);
+    setAiInsightsError('');
+    try {
+      const prompt = `
+You are an expert mental health analyst. Based on the following data, provide a comprehensive and actionable analysis of the user's mental well-being along with suggestions for improvement, always make it short.
+
+**Summary Data:**
+- **Total Moods Logged:** ${summaryStatistics.totalMoods}
+- **Average Mood:** ${summaryStatistics.averageMood} (scale 1-5)
+- **Total Activities Logged:** ${summaryStatistics.totalActivities}
+- **Total Sleep Logs:** ${summaryStatistics.totalSleepLogs}
+
+Additionally, consider the trends from the charts:
+- *Mood Over Time* shows how the average mood varies day by day.
+- *Activity Frequency* indicates which activities are most common.
+- *Mood vs. Activity Correlation* shows the relationship between mood levels and specific activities.
+- *Sleep Duration Over Time* shows average sleep duration trends.
+
+Please provide insights that help the user understand their overall mental well-being and practical suggestions to maintain or improve it. Use **bold** for emphasis where needed.
+      `;
+      const chat = aiModel.startChat({ history: [{ role: 'user', parts: [{ text: prompt }] }] });
+      const result = await chat.sendMessage('');
+      const responseText = await result.response.text();
+      setAiInsights(responseText);
+      // Update cache with current raw counts and insights.
+      const cacheData = {
+        aiInsights: responseText,
+        moodCount: moodEntries.length,
+        activityCount: activities.length,
+        sleepCount: sleepLogs.length,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('aiInsightsCache', JSON.stringify(cacheData));
+    } catch (error) {
+      console.error('Error fetching AI insights:', error);
+      setAiInsightsError('Failed to generate AI insights.');
+    } finally {
+      setAiInsightsLoading(false);
+    }
+  };
+
+  // On initial mount (or when context data is loaded), check if cached insights exist and are valid.
+  useEffect(() => {
+    // Wait until all context data has finished loading.
+    if (moodLoading || activityLoading || sleepLoading) return;
+
+    const cached = localStorage.getItem('aiInsightsCache');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (
+          parsed.moodCount === moodEntries.length &&
+          parsed.activityCount === activities.length &&
+          parsed.sleepCount === sleepLogs.length
+        ) {
+          setAiInsights(parsed.aiInsights);
+          return; // Use cached insights and do not fetch again.
+        }
+      } catch (e) {
+        console.error('Error parsing cached AI insights:', e);
+      }
+    }
+    // If no valid cache exists, fetch insights.
+    if (moodEntries.length > 0 || activities.length > 0 || sleepLogs.length > 0) {
+      fetchAiInsights();
+    }
+  }, [
+    moodLoading,
+    activityLoading,
+    sleepLoading,
+    moodEntries.length,
+    activities.length,
+    sleepLogs.length,
+  ]);
+
+  // Use a ref to store previous counts and debounce updates when new logs are added.
+  const prevCountsRef = useRef({
+    mood: moodEntries.length,
+    activity: activities.length,
+    sleep: sleepLogs.length,
+  });
+
+  useEffect(() => {
+    const currentCounts = {
+      mood: moodEntries.length,
+      activity: activities.length,
+      sleep: sleepLogs.length,
+    };
+    if (
+      currentCounts.mood !== prevCountsRef.current.mood ||
+      currentCounts.activity !== prevCountsRef.current.activity ||
+      currentCounts.sleep !== prevCountsRef.current.sleep
+    ) {
+      const timer = setTimeout(() => {
+        prevCountsRef.current = currentCounts;
+        fetchAiInsights();
+      }, 5000); // Adjust debounce delay as needed.
+      return () => clearTimeout(timer);
+    }
+  }, [moodEntries.length, activities.length, sleepLogs.length, aiModel]);
+
+  // ---- End of AI insights modifications ----
 
   return (
     <PageLayout>
@@ -555,84 +483,71 @@ const Insights = () => {
         exit="exit"
         style={{
           minHeight: '100vh',
-          background: theme.palette.background.gradient || theme.palette.background.default, // Fallback to default if gradient not defined
+          background: theme.palette.background.gradient || theme.palette.background.default,
           paddingTop: theme.spacing(8),
           paddingBottom: theme.spacing(10),
-          color: theme.palette.text.primary, // Ensure text color adapts to theme
+          color: theme.palette.text.primary,
         }}
       >
         <Container maxWidth="lg">
-          {/* Page Header with Animated Text */}
+          {/* Page Header */}
           <Box textAlign="center" mb={6}>
-            <motion.div
-              variants={sectionVariants}
-              initial="hidden"
-              animate="visible"
-            >
+            <motion.div variants={sectionVariants} initial="hidden" animate="visible">
               <Typography
                 variant={isMobile ? 'h5' : 'h4'}
                 component="h1"
-                sx={{
-                  fontWeight: 800,
-                  color: theme.palette.text.primary,
-                }}
+                sx={{ fontWeight: 800, color: theme.palette.text.primary }}
                 gutterBottom
               >
                 Insights & Analytics 📊
               </Typography>
-              <Typography
-                variant="subtitle1"
-                color="textSecondary"
-                sx={{ maxWidth: 700, margin: '0 auto' }}
-              >
+              <Typography variant="subtitle1" color="textSecondary" sx={{ maxWidth: 700, margin: '0 auto' }}>
                 Dive deep into your mental well-being with detailed insights and analytics based on your logged moods, activities, and sleep.
               </Typography>
             </motion.div>
           </Box>
 
-          {/* **Toggle Filter Button** */}
-          <Box textAlign="center" mb={2}> {/* Reduced marginBottom */}
+          {/* Toggle Filter Button */}
+          <Box textAlign="center" mb={2}>
             <Tooltip title={showFilters ? "Hide Filters" : "Show Filters"} placement="top">
               <Button
-                variant="outlined" // Changed to outlined for a softer look
+                variant="outlined"
                 color="primary"
                 onClick={() => setShowFilters(prev => !prev)}
-                endIcon={<FilterListIcon />} // More intuitive filter icon
-                aria-expanded={showFilters} // Accessibility
-                aria-label={showFilters ? 'Hide filters' : 'Show filters'} // Accessibility
+                endIcon={<FilterListIcon />}
+                aria-expanded={showFilters}
+                aria-label={showFilters ? 'Hide filters' : 'Show filters'}
                 sx={{
-                  padding: isMobile ? '6px 12px' : '8px 16px', // Slightly smaller padding
-                  fontSize: isMobile ? '0.8rem' : '0.9rem', // Slightly smaller font size
-                  borderColor: theme.palette.primary.light, // Lighter border
+                  padding: isMobile ? '6px 12px' : '8px 16px',
+                  fontSize: isMobile ? '0.8rem' : '0.9rem',
+                  borderColor: theme.palette.primary.light,
                   '&:hover': {
-                    borderColor: theme.palette.primary.main, // Darker on hover
-                    backgroundColor: theme.palette.action.hover, // Add a subtle background hover effect
+                    borderColor: theme.palette.primary.main,
+                    backgroundColor: theme.palette.action.hover,
                   },
                 }}
-              >
-                {/* {showFilters ? 'Hide Filters' : 'Show Filters'} */} {/* Text removed, icon-based primarily now */}
-              </Button>
+              />
             </Tooltip>
           </Box>
 
-          {/* **Expandable Filters Section** */}
-          <Collapse in={showFilters} timeout="auto" unmountOnExit> {/* Using Collapse for smooth animation */}
+          {/* Expandable Filters Section */}
+          <Collapse in={showFilters} timeout="auto" unmountOnExit>
             <motion.div
               variants={{
-                hidden: { opacity: 0, y: -10 }, // Slight upward slide-in
+                hidden: { opacity: 0, y: -10 },
                 visible: { opacity: 1, y: 0 },
-                exit: { opacity: 0, y: -10 }, // Slight upward slide-out
+                exit: { opacity: 0, y: -10 },
               }}
               initial="hidden"
               animate="visible"
               exit="exit"
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              style={{ marginBottom: theme.spacing(4) }} // Add some margin below the filter section
+              style={{ marginBottom: theme.spacing(4) }}
             >
               <Paper
-                elevation={2} // Reduced elevation for a flatter design
+                elevation={2}
                 sx={{
-                  padding: theme.spacing(2), // Reduced padding inside paper
+                  padding: theme.spacing(2),
                   borderRadius: 2,
                   backgroundColor: theme.palette.background.paper,
                 }}
@@ -645,12 +560,10 @@ const Insights = () => {
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
+                      InputLabelProps={{ shrink: true }}
                       fullWidth
-                      size="small" // Use size="small" for compact fields
-                      margin="dense" // Use margin="dense" for tighter spacing
+                      size="small"
+                      margin="dense"
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={4}>
@@ -659,12 +572,10 @@ const Insights = () => {
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      InputLabelProps={{
-                        shrink: true,
-                      }}
+                      InputLabelProps={{ shrink: true }}
                       fullWidth
-                      size="small" // Use size="small" for compact fields
-                      margin="dense" // Use margin="dense" for tighter spacing
+                      size="small"
+                      margin="dense"
                     />
                   </Grid>
                   {/* Apply Filters Button */}
@@ -673,8 +584,6 @@ const Insights = () => {
                       variant="contained"
                       color="primary"
                       onClick={() => {
-                        // Optional: Implement any additional logic when filters are applied
-                        // For example, you might reset zoom on charts
                         if (moodOverTimeRef.current) {
                           moodOverTimeRef.current.resetZoom();
                         }
@@ -682,36 +591,33 @@ const Insights = () => {
                           sleepDurationOverTimeRef.current.resetZoom();
                         }
                       }}
-                      size="small" // Use size="small" for a more inline button
+                      size="small"
                       sx={{
-                        padding: isMobile ? '6px 12px' : '8px 16px', // Consistent padding
-                        fontSize: isMobile ? '0.8rem' : '0.9rem', // Consistent font size
+                        padding: isMobile ? '6px 12px' : '8px 16px',
+                        fontSize: isMobile ? '0.8rem' : '0.9rem',
                       }}
                     >
                       Apply
                     </Button>
                   </Grid>
-
                   {/* Activity Type Filters */}
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" color="textSecondary" gutterBottom>
                       Filter by Activities:
                     </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}> {/* Chip container */}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
                       {activities.map((activity) => (
                         <Chip
                           key={activity.title}
                           label={activity.title}
                           onClick={handleActivityChange}
-                          name={activity.title} // Important to pass name for handleActivityChange
+                          name={activity.title}
                           color={selectedActivities.includes(activity.title) ? "primary" : "default"}
-                          variant={selectedActivities.includes(activity.title) ? "contained" : "outlined"} // Visual toggle
+                          variant={selectedActivities.includes(activity.title) ? "contained" : "outlined"}
                           size="small"
                           sx={{
                             transition: 'transform 0.2s',
-                            '&:hover': {
-                              transform: 'scale(1.05)',
-                            },
+                            '&:hover': { transform: 'scale(1.05)' },
                           }}
                         />
                       ))}
@@ -722,16 +628,10 @@ const Insights = () => {
             </motion.div>
           </Collapse>
 
-
-          {/* **Handle Loading and Error States** */}
+          {/* Loading and Error States */}
           <AnimatePresence>
-            {(moodLoading || activityLoading || sleepLoading) && ( // Add sleepLoading
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
+            {(moodLoading || activityLoading || sleepLoading) && (
+              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <Box textAlign="center" mb={6}>
                   <CircularProgress />
                   <Typography variant="h6" sx={{ mt: 2 }}>
@@ -740,8 +640,7 @@ const Insights = () => {
                 </Box>
               </motion.div>
             )}
-
-            {(moodError || activityError || sleepError) && ( // Add sleepError
+            {(moodError || activityError || sleepError) && (
               <motion.div
                 key="error"
                 initial={{ opacity: 0, y: -10 }}
@@ -756,18 +655,13 @@ const Insights = () => {
             )}
           </AnimatePresence>
 
-          {/* **Render Insights Only When Data is Available and Not Loading** */}
-          {!moodLoading && !activityLoading && !sleepLoading && !moodError && !activityError && !sleepError && ( // Add sleepLoading, sleepError
+          {/* Render Insights When Data is Available */}
+          {!moodLoading && !activityLoading && !sleepLoading && !moodError && !activityError && !sleepError && (
             <>
-              {/* **Summary Statistics Section** */}
-              <motion.div
-                variants={sectionVariants}
-                initial="hidden"
-                animate="visible"
-                style={{ marginBottom: theme.spacing(6) }}
-              >
+              {/* Summary Statistics Section */}
+              <motion.div variants={sectionVariants} initial="hidden" animate="visible" style={{ marginBottom: theme.spacing(6) }}>
                 <Grid container spacing={4} justifyContent="center">
-                  <Grid item xs={12} sm={6} md={3}> {/* Adjusted Grid size for 4 items */}
+                  <Grid item xs={12} sm={6} md={3}>
                     <Paper
                       elevation={2}
                       sx={{
@@ -785,7 +679,7 @@ const Insights = () => {
                       </Typography>
                     </Paper>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3}> {/* Adjusted Grid size for 4 items */}
+                  <Grid item xs={12} sm={6} md={3}>
                     <Paper
                       elevation={2}
                       sx={{
@@ -803,7 +697,7 @@ const Insights = () => {
                       </Typography>
                     </Paper>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3}> {/* Adjusted Grid size for 4 items */}
+                  <Grid item xs={12} sm={6} md={3}>
                     <Paper
                       elevation={2}
                       sx={{
@@ -821,7 +715,7 @@ const Insights = () => {
                       </Typography>
                     </Paper>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3}> {/* Adjusted Grid size for 4 items */}
+                  <Grid item xs={12} sm={6} md={3}>
                     <Paper
                       elevation={2}
                       sx={{
@@ -834,7 +728,7 @@ const Insights = () => {
                       <Typography variant="h6" color="textSecondary" gutterBottom>
                         Total Sleep Logs
                       </Typography>
-                      <Typography variant="h4" sx={{ color: theme.palette.secondary.main }}> {/* Different color to differentiate */}
+                      <Typography variant="h4" sx={{ color: theme.palette.secondary.main }}>
                         {summaryStatistics.totalSleepLogs}
                       </Typography>
                     </Paper>
@@ -842,35 +736,31 @@ const Insights = () => {
                 </Grid>
               </motion.div>
 
-              {/* **Charts Section** */}
-              <motion.div
-                variants={sectionVariants}
-                initial="hidden"
-                animate="visible"
-              >
+              {/* Charts Section */}
+              <motion.div variants={sectionVariants} initial="hidden" animate="visible">
                 <Grid container spacing={6}>
-                  {/* **Mood Over Time Line Chart** */}
-                  <Grid item xs={12} lg={6}> {/* Adjust grid for layout */}
+                  {/* Mood Over Time Line Chart */}
+                  <Grid item xs={12} lg={6}>
                     <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
                       Mood Over Time
                     </Typography>
                     <Box
                       component={Paper}
-                      elevation={2} // Reduced elevation for charts
+                      elevation={2}
                       sx={{
-                        padding: theme.spacing(2), // Reduced padding for charts
+                        padding: theme.spacing(2),
                         borderRadius: 2,
                         backgroundColor: theme.palette.background.paper,
-                        height: isSmallScreen ? 300 : 400, // Adjust height based on screen size
+                        height: isSmallScreen ? 300 : 400,
                       }}
                     >
                       {hasMoodOverTimeData ? (
                         <Line
-                          ref={moodOverTimeRef} // Attach the ref here
+                          ref={moodOverTimeRef}
                           data={moodOverTimeData}
                           options={moodOverTimeOptions}
                           onClick={(event, elements) => {
-                            if (elements && elements.length > 0) { // Defensive check
+                            if (elements && elements.length > 0) {
                               const chart = event.chart;
                               const index = elements[0].index;
                               const label = chart.data.labels[index];
@@ -887,19 +777,19 @@ const Insights = () => {
                     </Box>
                   </Grid>
 
-                  {/* **Activity Frequency Bar Chart** */}
-                  <Grid item xs={12} lg={6}> {/* Adjust grid for layout */}
+                  {/* Activity Frequency Bar Chart */}
+                  <Grid item xs={12} lg={6}>
                     <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
                       Activity Frequency
                     </Typography>
                     <Box
                       component={Paper}
-                      elevation={2} // Reduced elevation for charts
+                      elevation={2}
                       sx={{
-                        padding: theme.spacing(2), // Reduced padding for charts
+                        padding: theme.spacing(2),
                         borderRadius: 2,
                         backgroundColor: theme.palette.background.paper,
-                        height: isSmallScreen ? 300 : 400, // Adjust height based on screen size
+                        height: isSmallScreen ? 300 : 400,
                       }}
                     >
                       {hasActivityFrequencyData ? (
@@ -907,7 +797,7 @@ const Insights = () => {
                           data={activityFrequencyData}
                           options={activityFrequencyOptions}
                           onClick={(event, elements) => {
-                            if (elements && elements.length > 0) { // Defensive check
+                            if (elements && elements.length > 0) {
                               const chart = event.chart;
                               const index = elements[0].index;
                               const label = chart.data.labels[index];
@@ -924,19 +814,19 @@ const Insights = () => {
                     </Box>
                   </Grid>
 
-                  {/* **Mood vs. Activity Correlation Scatter Chart** */}
-                  <Grid item xs={12} lg={6}> {/* Adjust grid for layout */}
+                  {/* Mood vs. Activity Correlation Scatter Chart */}
+                  <Grid item xs={12} lg={6}>
                     <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
                       Mood vs. Activity Correlation
                     </Typography>
                     <Box
                       component={Paper}
-                      elevation={2} // Reduced elevation for charts
+                      elevation={2}
                       sx={{
-                        padding: theme.spacing(2), // Reduced padding for charts
+                        padding: theme.spacing(2),
                         borderRadius: 2,
                         backgroundColor: theme.palette.background.paper,
-                        height: isSmallScreen ? 300 : 400, // Adjust height based on screen size
+                        height: isSmallScreen ? 300 : 400,
                       }}
                     >
                       {hasMoodActivityCorrelationData ? (
@@ -944,7 +834,7 @@ const Insights = () => {
                           data={moodActivityCorrelationData}
                           options={moodActivityCorrelationOptions}
                           onClick={(event, elements) => {
-                            if (elements && elements.length > 0) { // Defensive check
+                            if (elements && elements.length > 0) {
                               const chart = event.chart;
                               const index = elements[0].index;
                               const activity = chart.data.datasets[0].data[index].x;
@@ -961,28 +851,28 @@ const Insights = () => {
                     </Box>
                   </Grid>
 
-                  {/* **Sleep Duration Over Time Line Chart** */}
-                  <Grid item xs={12} lg={6}> {/* Adjust grid for layout */}
+                  {/* Sleep Duration Over Time Line Chart */}
+                  <Grid item xs={12} lg={6}>
                     <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
                       Sleep Duration Over Time
                     </Typography>
                     <Box
                       component={Paper}
-                      elevation={2} // Reduced elevation for charts
+                      elevation={2}
                       sx={{
-                        padding: theme.spacing(2), // Reduced padding for charts
+                        padding: theme.spacing(2),
                         borderRadius: 2,
                         backgroundColor: theme.palette.background.paper,
-                        height: isSmallScreen ? 300 : 400, // Adjust height based on screen size
+                        height: isSmallScreen ? 300 : 400,
                       }}
                     >
                       {hasSleepDurationOverTimeData ? (
                         <Line
-                          ref={sleepDurationOverTimeRef} // Attach the ref here
+                          ref={sleepDurationOverTimeRef}
                           data={sleepDurationOverTimeData}
                           options={sleepDurationOverTimeOptions}
                           onClick={(event, elements) => {
-                            if (elements && elements.length > 0) { // Defensive check
+                            if (elements && elements.length > 0) {
                               const chart = event.chart;
                               const index = elements[0].index;
                               const label = chart.data.labels[index];
@@ -1001,7 +891,7 @@ const Insights = () => {
                 </Grid>
               </motion.div>
 
-              {/* **Reset Zoom Button for Charts** */}
+              {/* Reset Zoom Button */}
               <Box textAlign="center" mt={4}>
                 <Button
                   variant="outlined"
@@ -1022,6 +912,39 @@ const Insights = () => {
                   Reset Zoom
                 </Button>
               </Box>
+
+              {/* AI Generated Insights Section */}
+              <motion.div
+                variants={sectionVariants}
+                initial="hidden"
+                animate="visible"
+                style={{ marginTop: theme.spacing(6) }}
+              >
+                <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
+                  AI Generated Insights
+                </Typography>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    padding: theme.spacing(3),
+                    borderRadius: 2,
+                    backgroundColor: theme.palette.background.paper,
+                  }}
+                >
+                  {aiInsightsLoading ? (
+                    <Box textAlign="center">
+                      <CircularProgress />
+                      <Typography variant="body1" sx={{ mt: 2 }}>
+                        Generating insights...
+                      </Typography>
+                    </Box>
+                  ) : aiInsightsError ? (
+                    <Alert severity="error">{aiInsightsError}</Alert>
+                  ) : (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiInsights}</ReactMarkdown>
+                  )}
+                </Paper>
+              </motion.div>
             </>
           )}
         </Container>

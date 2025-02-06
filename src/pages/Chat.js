@@ -9,7 +9,6 @@ import React, {
   useContext,
 } from 'react';
 import {
-  Container,
   Typography,
   Button,
   Grid,
@@ -34,7 +33,6 @@ import {
 import SettingsIcon from '@mui/icons-material/Settings';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
-import ImageIcon from '@mui/icons-material/Image';
 import ChatIcon from '@mui/icons-material/Chat';
 import MoodIcon from '@mui/icons-material/Mood';
 import Brightness4Icon from '@mui/icons-material/Brightness4'; // Theme toggle icon
@@ -45,8 +43,6 @@ import Message from '../components/Message';
 import { AuthContext } from '../contexts/AuthContext';
 import { ChatContext } from '../contexts/ChatContext';
 import { motion } from 'framer-motion';
-import { storage } from '../firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db } from '../firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
@@ -103,18 +99,6 @@ const Chat = ({ toggleTheme }) => {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  // Outer container styles for mobile
-  const outerContainerStyles = isMobile
-    ? {
-        position: 'relative',
-        height: '100vh',
-        width: '100vw',
-        background: theme.palette.background.gradient,
-        display: 'flex',
-        flexDirection: 'column',
-      }
-    : { background: theme.palette.background.gradient };
 
   // Create the GenAI model instance.
   const genAI = useMemo(
@@ -377,57 +361,6 @@ const Chat = ({ toggleTheme }) => {
     }
   };
 
-  // Image upload handlers
-  const fileInputRef = useRef(null);
-  const handleImageUploadClick = () => {
-    fileInputRef.current.click();
-  };
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
-      setSnackbar({
-        open: true,
-        message: 'Unsupported file type. Please upload an image.',
-        severity: 'error',
-      });
-      return;
-    }
-    const filePath = `chat_images/${user.uid}/${Date.now()}_${file.name}`;
-    const fileRef = storageRef(storage, filePath);
-    try {
-      await uploadBytes(fileRef, file);
-      const fileURL = await getDownloadURL(fileRef);
-      const imageMessage = fileURL;
-      const messageId = await addMessage(imageMessage, false, {
-        type: 'image',
-        timestamp: new Date().toISOString(),
-      });
-      if (!messageId) {
-        setSnackbar({
-          open: true,
-          message: 'Failed to upload image.',
-          severity: 'error',
-        });
-        return;
-      }
-      setSnackbar({
-        open: true,
-        message: 'Image uploaded successfully.',
-        severity: 'success',
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to upload image.',
-        severity: 'error',
-      });
-    }
-  };
-
   // Mood tracking handlers
   const openMoodDialog = () => {
     setMoodDialogOpen(true);
@@ -589,16 +522,24 @@ Quick Replies:
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.6 }}
-        style={outerContainerStyles}
+        style={{
+          position: 'relative',
+          height: '100vh',
+          width: '100vw',
+          background: theme.palette.background.gradient,
+          display: 'flex',
+          flexDirection: 'column',
+          paddingTop: theme.spacing(1), // Added padding at the top for mobile
+        }}
       >
-        {/* Header (minimal) */}
+        {/* Header (minimal) - Mobile */}
         <Box
           sx={{
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            p: 1,
+            padding: '8px 16px', // Reduced padding for mobile header
             backgroundColor: theme.palette.background.paper,
             boxShadow: 1,
           }}
@@ -607,15 +548,15 @@ Quick Replies:
             <Avatar
               sx={{
                 bgcolor: theme.palette.primary.main,
-                width: 40,
-                height: 40,
+                width: 36, // Smaller avatar size for mobile
+                height: 36,
                 mr: 1,
               }}
             >
-              <ChatIcon sx={{ color: 'white', fontSize: 24 }} />
+              <ChatIcon sx={{ color: 'white', fontSize: 22 }} /> {/* Smaller icon size */}
             </Avatar>
             <Box>
-              <Typography variant="h6" color="textPrimary" sax={{ fontWeight: 800 }}>
+              <Typography variant="h6" color="textPrimary" sx={{ fontWeight: 800, fontSize: '1.1rem' }}> {/* Reduced font size */}
                 MindEase
               </Typography>
               <Typography variant="caption" color="textSecondary">
@@ -624,24 +565,23 @@ Quick Replies:
             </Box>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title="Log Your Mood">
-              <IconButton onClick={openMoodDialog} aria-label="log mood" color="inherit">
+            <Tooltip title="Log Mood">
+              <IconButton onClick={openMoodDialog} aria-label="log mood" color="inherit" size="small">
                 <MoodIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Clear Chat History">
-              <IconButton onClick={handleClearChat} aria-label="clear chat history" color="inherit">
+            <Tooltip title="Clear Chat">
+              <IconButton onClick={handleClearChat} aria-label="clear chat history" color="inherit" size="small">
                 <DeleteIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Set Custom Instructions">
-              <IconButton onClick={openCustomInstructionsDialog} aria-label="set custom instructions" color="inherit">
+            <Tooltip title="Custom Instructions">
+              <IconButton onClick={openCustomInstructionsDialog} aria-label="set custom instructions" color="inherit" size="small">
                 <SettingsIcon />
               </IconButton>
             </Tooltip>
-            {/* Theme Toggle Button: Only on Mobile */}
             <Tooltip title="Toggle Theme">
-              <IconButton onClick={toggleTheme} aria-label="toggle theme" color="inherit">
+              <IconButton onClick={toggleTheme} aria-label="toggle theme" color="inherit" size="small">
                 <Brightness4Icon />
               </IconButton>
             </Tooltip>
@@ -656,7 +596,7 @@ Quick Replies:
             sx={{
               overflowY: 'auto',
               height: `calc(100vh - ${BOTTOM_NAV_HEIGHT + CHAT_INPUT_HEIGHT}px)`,
-              px: 1,
+              padding: '8px 16px', // Reduced padding for mobile chat area
             }}
             role="log"
             aria-live="polite"
@@ -692,7 +632,7 @@ Quick Replies:
                             variant="outlined"
                             size="small"
                             onClick={() => handleQuickReply(reply)}
-                            sx={{ borderRadius: '20px', textTransform: 'none' }}
+                            sx={{ borderRadius: '20px', textTransform: 'none', fontSize: '0.875rem', padding: '4px 10px' }} // Smaller button styles
                           >
                             {reply}
                           </Button>
@@ -709,35 +649,35 @@ Quick Replies:
                     animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
                     transition={{ duration: 0.6, repeat: Infinity }}
                     sx={{
-                      width: 12,
-                      height: 12,
+                      width: 10, // Smaller typing indicator for mobile
+                      height: 10,
                       bgcolor: 'primary.main',
                       borderRadius: '50%',
                       mr: 1,
                     }}
                   />
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}> {/* Smaller text */}
                     MindEase is typing...
                   </Typography>
                 </Box>
               )}
               {isFetchingQuickReplies && (
                 <Box display="flex" alignItems="center" mb={1}>
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}> {/* Smaller text */}
                     Loading quick replies...
                   </Typography>
                 </Box>
               )}
               {chatLoading && !isTyping && (
                 <Box display="flex" alignItems="center" mb={1}>
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}> {/* Smaller text */}
                     Loading messages...
                   </Typography>
                 </Box>
               )}
               {chatError && (
                 <Box display="flex" alignItems="center" mb={1}>
-                  <Typography variant="body2" color="error">
+                  <Typography variant="body2" color="error" sx={{ fontSize: '0.875rem' }}> {/* Smaller text */}
                     Error: {chatError}
                   </Typography>
                 </Box>
@@ -756,7 +696,7 @@ Quick Replies:
               right: 0,
               backgroundColor: theme.palette.background.paper,
               boxShadow: 4,
-              p: 1,
+              padding: '8px 16px', // Reduced padding for mobile input area
               height: CHAT_INPUT_HEIGHT,
               zIndex: 10,
             }}
@@ -789,7 +729,8 @@ Quick Replies:
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '30px',
                     backgroundColor: theme.palette.background.paper,
-                    padding: '6px 12px',
+                    padding: '4px 12px', // Reduced padding for mobile input
+                    fontSize: '0.875rem', // Smaller font size
                     '& fieldset': { borderColor: 'grey.400' },
                     '&:hover fieldset': { borderColor: theme.palette.primary.main },
                     '&.Mui-focused fieldset': {
@@ -799,18 +740,6 @@ Quick Replies:
                   overflow: 'hidden',
                 }}
               />
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleImageUpload}
-              />
-              <Tooltip title="Upload Image">
-                <IconButton onClick={handleImageUploadClick} aria-label="upload image" color="primary">
-                  <ImageIcon />
-                </IconButton>
-              </Tooltip>
               <Tooltip title="Send Message">
                 <GradientButton
                   variant="contained"
@@ -819,10 +748,10 @@ Quick Replies:
                   aria-label="Send message"
                   sx={{
                     borderRadius: '50%',
-                    padding: 1,
+                    padding: 0.5, // Reduced padding for mobile button
                     minWidth: 'auto',
-                    width: 48,
-                    height: 48,
+                    width: 40, // Smaller button size
+                    height: 40,
                     boxShadow: 3,
                     background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
                     '&:hover': {
@@ -837,8 +766,8 @@ Quick Replies:
                     viewBox="0 0 20 20"
                     fill="currentColor"
                     aria-hidden="true"
-                    width={24}
-                    height={24}
+                    width={20} // Smaller icon size
+                    height={20}
                   >
                     <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
                   </svg>
@@ -857,7 +786,7 @@ Quick Replies:
           transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         >
           {['👍', '❤️', '😂', '😮', '😢', '👏'].map((emoji) => (
-            <MenuItem key={emoji} onClick={() => handleAddReaction(emoji)} sx={{ fontSize: '1.5rem', padding: '0.5rem' }}>
+            <MenuItem key={emoji} onClick={() => handleAddReaction(emoji)} sx={{ fontSize: '1.25rem', padding: '0.4rem' }}> {/* Reduced reaction menu item size */}
               {emoji}
             </MenuItem>
           ))}
@@ -868,17 +797,17 @@ Quick Replies:
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
         >
-          <DialogTitle id="alert-dialog-title">{"Clear Chat History?"}</DialogTitle>
+          <DialogTitle id="alert-dialog-title" sx={{ fontSize: '1.25rem' }}>{"Clear Chat History?"}</DialogTitle> {/* Reduced dialog title size */}
           <DialogContent>
-            <DialogContentText id="alert-dialog-description">
+            <DialogContentText id="alert-dialog-description" sx={{ fontSize: '1rem' }}> {/* Reduced dialog content text size */}
               Are you sure you want to clear the chat history? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={cancelClearChat} color="primary">
+            <Button onClick={cancelClearChat} color="primary" size="small"> {/* Reduced button size */}
               Cancel
             </Button>
-            <Button onClick={confirmClearChat} color="primary" autoFocus>
+            <Button onClick={confirmClearChat} color="primary" autoFocus size="small"> {/* Reduced button size */}
               Clear Chat
             </Button>
           </DialogActions>
@@ -888,9 +817,9 @@ Quick Replies:
           onClose={closeCustomInstructionsDialog}
           aria-labelledby="custom-instructions-dialog-title"
         >
-          <DialogTitle id="custom-instructions-dialog-title">Set Custom Instructions</DialogTitle>
+          <DialogTitle id="custom-instructions-dialog-title" sx={{ fontSize: '1.25rem' }}>Set Custom Instructions</DialogTitle> {/* Reduced dialog title size */}
           <DialogContent>
-            <DialogContentText>
+            <DialogContentText sx={{ fontSize: '1rem' }}> {/* Reduced dialog content text size */}
               You can add custom instructions to tailor the AI's responses to better suit your needs. These instructions will be appended to the existing system instructions.
             </DialogContentText>
             <TextField
@@ -907,24 +836,26 @@ Quick Replies:
               onChange={(e) => setCustomInstructionsInput(e.target.value)}
               variant="outlined"
               placeholder="e.g., Please focus more on cognitive behavioral techniques."
+              InputProps={{ style: { fontSize: '0.9rem' } }} // Smaller input text size
+              InputLabelProps={{ style: { fontSize: '1rem' } }} // Smaller label size
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeCustomInstructionsDialog} color="primary">
+            <Button onClick={closeCustomInstructionsDialog} color="primary" size="small"> {/* Reduced button size */}
               Cancel
             </Button>
-            <Button onClick={handleCustomInstructionsSave} color="primary">
+            <Button onClick={handleCustomInstructionsSave} color="primary" size="small"> {/* Reduced button size */}
               Save
             </Button>
           </DialogActions>
         </Dialog>
         <Dialog open={moodDialogOpen} onClose={closeMoodDialog} aria-labelledby="mood-dialog-title">
-          <DialogTitle id="mood-dialog-title">How Are You Feeling?</DialogTitle>
+          <DialogTitle id="mood-dialog-title" sx={{ fontSize: '1.25rem' }}>How Are You Feeling?</DialogTitle> {/* Reduced dialog title size */}
           <DialogContent>
             <Grid container spacing={2}>
               {MOOD_OPTIONS.map((mood) => (
                 <Grid item xs={6} sm={4} key={mood.value}>
-                  <Button variant="outlined" fullWidth startIcon={<EmojiEmotionsIcon />} onClick={() => handleMoodSelect(mood.value)} sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
+                  <Button variant="outlined" fullWidth startIcon={<EmojiEmotionsIcon />} onClick={() => handleMoodSelect(mood.value)} sx={{ justifyContent: 'flex-start', textTransform: 'none', fontSize: '0.875rem', padding: '6px 12px' }}> {/* Smaller mood button styles */}
                     {mood.label}
                   </Button>
                 </Grid>
@@ -932,7 +863,7 @@ Quick Replies:
             </Grid>
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeMoodDialog} color="primary">
+            <Button onClick={closeMoodDialog} color="primary" size="small"> {/* Reduced button size */}
               Cancel
             </Button>
           </DialogActions>
@@ -943,7 +874,7 @@ Quick Replies:
           </Modal>
         )}
         <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleSnackbarClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-          <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }} variant="filled">
+          <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%', fontSize: '0.9rem' }} variant="filled"> {/* Reduced snackbar text size */}
             {snackbar.message}
           </Alert>
         </Snackbar>
@@ -952,7 +883,7 @@ Quick Replies:
   }
 
   // ----------------------------
-  // Desktop (or non-mobile) Layout
+  // Desktop (or non-mobile) Layout - Modern & Elegant
   // ----------------------------
   return (
     <motion.div
@@ -963,49 +894,62 @@ Quick Replies:
       style={{
         minHeight: '100vh',
         background: theme.palette.background.gradient,
-        paddingTop: theme.spacing(2),
-        paddingBottom: theme.spacing(2),
+        paddingTop: theme.spacing(5.5),
+        paddingBottom: theme.spacing(4),
+        display: 'flex',
+        justifyContent: 'center', // Center the chat box on desktop
+        alignItems: 'center',
       }}
     >
       <Toolbar />
-      <Container
-        maxWidth="md"
+      <Box // Using Box instead of Container, for more flexible layout control
+        maxWidth="md" // Still limit width for larger screens, but more control
         sx={{
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          pt: theme.spacing(4),
-          pb: theme.spacing(4),
-          px: theme.spacing(4),
-          borderRadius: '16px',
-          boxShadow: 6,
+          borderRadius: '24px', // More rounded corners for a softer look
+          boxShadow: '0px 10px 30px rgba(0,0,0,0.1)', // Refined shadow for depth
           backgroundColor: theme.palette.background.paper,
+          overflow: 'hidden', // Clip content for rounded corners to work properly
+          height: '90vh', // Occupy most of the viewport height
+          width: '100%', // Take full width within maxWidth
+          maxWidth: '800px', // Define max width here
+          marginTop: theme.spacing(4), // **Added marginTop here for desktop layout**
         }}
       >
-        {/* Header Section */}
-        <Grid container spacing={2} alignItems="center" justifyContent="space-between" mb={6} sx={{ textAlign: 'left' }}>
-          <Grid item sx={{ display: 'flex', alignItems: 'center' }}>
+        {/* Modern Header Section - Desktop */}
+        <Box
+          sx={{
+            padding: '24px', // Increased header padding for desktop
+            borderBottom: `1px solid ${theme.palette.divider}`, // Subtler divider
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Avatar
               sx={{
                 bgcolor: theme.palette.primary.main,
-                width: 56,
-                height: 56,
+                width: 60, // Slightly larger avatar for desktop
+                height: 60,
                 boxShadow: theme.shadows[2],
                 mr: 2,
               }}
             >
-              <ChatIcon sx={{ color: 'white', fontSize: 28 }} />
+              <ChatIcon sx={{ color: 'white', fontSize: 30 }} />
             </Avatar>
             <Box>
-              <Typography variant="h4" color="textPrimary" sx={{ fontWeight: 800 }}>
+              <Typography variant="h5" color="textPrimary" sx={{ fontWeight: 700 }}> {/* Slightly less bold */}
                 MindEase
               </Typography>
-              <Typography variant="subtitle1" color="textSecondary">
-                Your AI Therapist
+              <Typography variant="subtitle2" color="textSecondary"> {/* Subtler subtitle */}
+                Your AI Companion
               </Typography>
             </Box>
-          </Grid>
-          <Grid item sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+          </Box>
+          <Box sx={{ ml: 'auto', display: 'flex', gap: 1.5 }}> {/* Increased gap between icons */}
             <Tooltip title="Log Your Mood">
               <IconButton onClick={openMoodDialog} aria-label="log mood" color="inherit">
                 <MoodIcon />
@@ -1021,26 +965,22 @@ Quick Replies:
                 <SettingsIcon />
               </IconButton>
             </Tooltip>
-          </Grid>
-        </Grid>
-        {/* Chat Messages Container */}
+            <Tooltip title="Toggle Theme">
+              <IconButton onClick={toggleTheme} aria-label="toggle theme" color="inherit">
+                <Brightness4Icon />
+              </IconButton>
+            </Tooltip> {/* Theme toggle for desktop too if desired */}
+          </Box>
+        </Box>
+
+        {/* Chat Messages Container - Desktop - Modernized Box */}
         <ErrorBoundary>
           <Box
             ref={chatContentRef}
             sx={{
               flexGrow: 1,
-              height: { xs: '250px', sm: '300px', md: '500px' },
               overflowY: 'auto',
-              mb: 4,
-              border: '1px solid',
-              borderColor: 'grey.300',
-              borderRadius: '16px',
-              p: 2,
-              backgroundColor: theme.palette.background.paper,
-              boxShadow: 4,
-              '&::-webkit-scrollbar': { width: '6px' },
-              '&::-webkit-scrollbar-track': { background: theme.palette.background.paper, borderRadius: '3px' },
-              '&::-webkit-scrollbar-thumb': { backgroundColor: theme.palette.primary.main, borderRadius: '3px' },
+              padding: '24px', // Increased chat area padding for desktop
             }}
             role="log"
             aria-live="polite"
@@ -1070,7 +1010,7 @@ Quick Replies:
                   {msg.isBot && msg.quickReplies && (
                     <Box display="flex" flexWrap="wrap" gap={1} mt={1} mb={2} ml={8}>
                       {msg.quickReplies.map((reply, idx) => (
-                        <Button key={idx} variant="outlined" size="small" onClick={() => handleQuickReply(reply)} sx={{ borderRadius: '20px', textTransform: 'none' }}>
+                        <Button key={idx} variant="outlined" size="small" onClick={() => handleQuickReply(reply)} sx={{ borderRadius: '24px', textTransform: 'none', padding: '6px 16px' }}> {/* Slightly more padded buttons */}
                           {reply}
                         </Button>
                       ))}
@@ -1081,90 +1021,85 @@ Quick Replies:
             })}
           </Box>
         </ErrorBoundary>
-        {/* Desktop Chat Input Area */}
+
+        {/* Desktop Chat Input Area - Modernized Box */}
         <Box
-          display="flex"
-          alignItems="center"
-          gap={1}
           sx={{
-            mb: 4,
+            padding: '24px', // Increased input area padding
+            borderTop: `1px solid ${theme.palette.divider}`, // Subtler divider
           }}
         >
-          <TextField
-            inputRef={inputRef}
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            placeholder={`How are you feeling today, ${userName}?`}
-            variant="outlined"
-            multiline
-            minRows={1}
-            maxRows={4}
-            fullWidth
-            onKeyDown={handleKeyDown}
-            aria-label="User input"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '30px',
-                backgroundColor: theme.palette.background.paper,
-                '& fieldset': { borderColor: 'grey.400' },
-                '&:hover fieldset': { borderColor: theme.palette.primary.main },
-                '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
-              },
-            }}
-          />
-          <input
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            onChange={handleImageUpload}
-          />
-          <Tooltip title="Upload Image">
-            <IconButton onClick={handleImageUploadClick} aria-label="upload image" color="primary">
-              <ImageIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Send Message">
-            <GradientButton
-              variant="contained"
-              onClick={handleSend}
-              disabled={isTyping || !userInput.trim()}
-              aria-label="Send message"
+          <Box
+            display="flex"
+            alignItems="center"
+            gap={1.5} // Increased gap in input area
+          >
+            <TextField
+              inputRef={inputRef}
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder={`How are you feeling today, ${userName}?`}
+              variant="outlined"
+              multiline
+              minRows={1}
+              maxRows={4}
+              fullWidth
+              onKeyDown={handleKeyDown}
+              aria-label="User input"
               sx={{
-                borderRadius: '50%',
-                padding: 1,
-                minWidth: 'auto',
-                width: 48,
-                height: 48,
-                boxShadow: 3,
-                background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
-                '&:hover': {
-                  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '30px',
+                  backgroundColor: theme.palette.background.paper,
+                  '& fieldset': { borderColor: 'grey.400', borderRadius: '30px' }, // Rounded border for input
+                  '&:hover fieldset': { borderColor: theme.palette.primary.main },
+                  '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
                 },
               }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-                width={24}
-                height={24}
+            />
+            <Tooltip title="Send Message">
+              <GradientButton
+                variant="contained"
+                onClick={handleSend}
+                disabled={isTyping || !userInput.trim()}
+                aria-label="Send message"
+                sx={{
+                  borderRadius: '50%',
+                  padding: 1,
+                  minWidth: 'auto',
+                  width: 48,
+                  height: 48,
+                  boxShadow: 3,
+                  background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
+                  '&:hover': {
+                    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                  },
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
-              </svg>
-            </GradientButton>
-          </Tooltip>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  width={24}
+                  height={24}
+                >
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
+                </svg>
+              </GradientButton>
+            </Tooltip>
+          </Box>
+          {/* Footer Disclaimer - Moved to input area for better visual grouping*/}
+          <Box mt={2} textAlign="center">
+            <Typography variant="body2" color="textSecondary" fontStyle="italic">
+              MindEase provides supportive listening, not professional therapy.
+            </Typography>
+          </Box>
         </Box>
-        {/* Footer Disclaimer */}
-        <Box mt={4}>
-          <Typography variant="body2" color="textSecondary" align="center" fontStyle="italic">
-            MindEase provides supportive listening, not professional therapy.
-          </Typography>
-        </Box>
-      </Container>
+      </Box>
+
+      {/* Dialogs and Menus are the same as before */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleReactionClose} anchorOrigin={{ vertical: 'top', horizontal: 'left' }} transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}>
         {['👍', '❤️', '😂', '😮', '😢', '👏'].map((emoji) => (
           <MenuItem key={emoji} onClick={() => handleAddReaction(emoji)} sx={{ fontSize: '1.5rem', padding: '0.5rem' }}>

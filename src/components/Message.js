@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
+import ReactMarkdown from 'react-markdown';
 import { AuthContext } from '../contexts/AuthContext'; // Adjust the path as needed
 dayjs.extend(localizedFormat);
 
@@ -30,7 +31,7 @@ dayjs.extend(localizedFormat);
  *   - {string} mood - User's mood, applicable if the message type is 'mood'.
  */
 
- // Base options for all avatars, can be extended for bot and user specific settings
+// Base options for all avatars, can be extended for bot and user specific settings
 const avatarBaseOptions = {
   seed: 'mindEase-default-seed', // Fallback seed for avatar generation
 };
@@ -118,10 +119,7 @@ const Message = ({ msg }) => {
     >
       {/* Bot Avatar - displayed for bot messages */}
       {isBot && (
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          transition={{ duration: 0.2 }}
-        >
+        <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
           <Avatar
             src={botAvatarDiceBearUrl} // Use botAvatarDiceBearUrl for bot avatars
             alt="Bot Avatar"
@@ -137,13 +135,7 @@ const Message = ({ msg }) => {
       )}
 
       {/* Chat Bubble - contains the message content */}
-      <motion.div
-        whileHover={{
-          scale: 1.01,
-          boxShadow: 5, // Slightly elevate bubble on hover
-        }}
-        transition={{ duration: 0.15 }}
-      >
+      <motion.div whileHover={{ scale: 1.01, boxShadow: 5 }} transition={{ duration: 0.15 }}>
         <Box
           sx={{
             position: 'relative', // Needed for bubble tail positioning
@@ -153,8 +145,8 @@ const Message = ({ msg }) => {
             background: isEmergency
               ? theme.palette.error.main // Red background for emergency messages
               : isBot
-                ? `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})` // Gradient for bot messages
-                : `linear-gradient(135deg, ${theme.palette.success.light}, ${theme.palette.success.main})`, // Gradient for user messages
+              ? `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})` // Gradient for bot messages
+              : `linear-gradient(135deg, ${theme.palette.success.light}, ${theme.palette.success.main})`, // Gradient for user messages
             color: theme.palette.background.paper, // Text color for contrast
             boxShadow: 3, // Subtle shadow for depth
             transformOrigin: isBot ? 'bottom left' : 'bottom right', // Animation origin for scaling
@@ -176,22 +168,51 @@ const Message = ({ msg }) => {
         >
           {/* Message content based on type */}
           {msg.type === 'image' ? (
-            <img src={msg.text} alt="User upload" style={{ maxWidth: '100%', borderRadius: '8px' }} /> // Display image
+            <img
+              src={msg.text}
+              alt="User upload"
+              style={{ maxWidth: '100%', borderRadius: '8px' }}
+            />
           ) : msg.type === 'mood' ? (
-            <Typography variant="body1">I am feeling {msg.mood}.</Typography> // Display mood message
+            <Typography variant="body1">I am feeling {msg.mood}.</Typography>
           ) : (
-            <Typography
-              variant="body1"
-              sx={{
-                lineHeight: 1.5, // Comfortable line height for text
-                fontWeight: 400,
-                whiteSpace: 'pre-line', // Respect line breaks in message text
-                wordBreak: 'break-word', // Prevent text overflow
-                fontSize: '0.9rem', // Slightly smaller font size for body text
-              }}
-            >
-              {msg.text} {/* Display text message content */}
-            </Typography>
+            // For text messages, render with React Markdown if it's an AI message.
+            isBot ? (
+              <ReactMarkdown
+                components={{
+                  // Use MUI Typography for paragraph elements
+                  p: ({ node, ...props }) => (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        lineHeight: 1.5,
+                        fontWeight: 400,
+                        whiteSpace: 'pre-line',
+                        wordBreak: 'break-word',
+                        fontSize: '0.9rem',
+                      }}
+                      {...props}
+                    />
+                  ),
+                  // You can add additional custom renderers here if needed
+                }}
+              >
+                {msg.text}
+              </ReactMarkdown>
+            ) : (
+              <Typography
+                variant="body1"
+                sx={{
+                  lineHeight: 1.5,
+                  fontWeight: 400,
+                  whiteSpace: 'pre-line',
+                  wordBreak: 'break-word',
+                  fontSize: '0.9rem',
+                }}
+              >
+                {msg.text}
+              </Typography>
+            )
           )}
 
           {/* Reactions rendering */}
@@ -205,7 +226,7 @@ const Message = ({ msg }) => {
                     fontSize: '1.2rem', // Size of reaction emojis
                   }}
                 >
-                  {reaction} {/* Render each reaction emoji */}
+                  {reaction}
                 </Box>
               ))}
             </Box>
@@ -222,17 +243,14 @@ const Message = ({ msg }) => {
               fontSize: '0.7rem', // Smaller font size for timestamp
             }}
           >
-            {formatTimestamp(msg.timestamp)} {/* Formatted timestamp */}
+            {formatTimestamp(msg.timestamp)}
           </Typography>
         </Box>
       </motion.div>
 
       {/* User Avatar - displayed for user messages */}
       {!isBot && (
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          transition={{ duration: 0.2 }}
-        >
+        <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
           <Avatar
             // Use the authenticated user's avatar from AuthContext.
             // Falls back to a generated DiceBear avatar if not available.
