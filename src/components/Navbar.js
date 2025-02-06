@@ -51,35 +51,35 @@ const navLinks = [
         path: '/mood-tracker',
         icon: <MoodIcon />,
         photoUrl:
-          'images/navbar/aa.jpg',
+          'https://images.unsplash.com/photo-1543164904-8ff92670a192?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3',
       },
       {
         title: 'Activity Logging',
         path: '/activity-logging',
         icon: <ActivityIcon />,
         photoUrl:
-          'images/navbar/ac.jpg',
+          'https://images.unsplash.com/photo-1596066190600-3af9aadaaea1?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3',
       },
       {
         title: 'Sleep Tracker',
         path: '/sleep-tracker',
         icon: <HotelIcon />,
         photoUrl:
-          'images/navbar/sleep.jpg',
+          'https://images.unsplash.com/photo-1487300001871-12053913095d?w=500&auto=format&fit=crop&q=60',
       },
       {
         title: 'Reels',
         path: '/reels',
         icon: <OndemandVideoIcon />,
         photoUrl:
-          'images/navbar/reel.jpg',
+          'https://images.unsplash.com/photo-1565870100382-f0a510db3cd1?q=80&w=1931&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
       },
       {
         title: 'Meditation',
         path: '/meditations',
         icon: <MeditationIcon />,
         photoUrl:
-          'images/navbar/images.jpg',
+          'https://plus.unsplash.com/premium_photo-1682096492098-8745454126cf?q=80&w=2070&auto=format&fit=crop',
       },
     ],
   },
@@ -229,6 +229,7 @@ const Navbar = ({ toggleTheme }) => {
     },
   };
 
+  // Updated renderDropdown function with custom scrollbar styling
   const renderDropdown = (item) => (
     <AnimatePresence>
       {submenuOpen === item.title && (
@@ -258,7 +259,20 @@ const Navbar = ({ toggleTheme }) => {
               width: '70%',
               p: 1,
               overflowY: 'auto',
-              '&::-webkit-scrollbar': { display: 'none' },
+              // Custom scrollbar styling for Webkit browsers:
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: theme.palette.background.paper,
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: theme.palette.primary.main,
+                borderRadius: '4px',
+              },
+              // For Firefox
+              scrollbarWidth: 'thin',
+              scrollbarColor: `${theme.palette.primary.main} ${theme.palette.background.paper}`,
             }}
           >
             <List sx={{ p: 0 }}>
@@ -344,7 +358,7 @@ const Navbar = ({ toggleTheme }) => {
                 textShadow: mobileTextShadow,
               }}
             >
-              MindEase AI™
+              MindEase AI
             </Typography>
           </Button>
           {/* Show theme toggle on mobile if not on login/signup */}
@@ -396,7 +410,7 @@ const Navbar = ({ toggleTheme }) => {
                 transition: 'color 0s ease-in-out',
               }}
             >
-              MindEase AI™
+              MindEase AI
             </Typography>
           </Button>
         </Box>

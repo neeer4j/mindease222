@@ -4,7 +4,6 @@ import React, {
   useState,
   useEffect,
   useContext,
-  useRef,
   useMemo,
   useCallback,
 } from 'react';
@@ -29,7 +28,6 @@ import {
   ListItemText,
 } from '@mui/material';
 import {
-  EmojiEmotions as EmojiEmotionsIcon,
   Chat as ChatIcon,
   Assignment as AssignmentIcon,
   Insights as InsightsIcon,
@@ -40,8 +38,6 @@ import {
   Favorite as FavoriteIcon,
   Refresh as RefreshIcon,
   PsychologyAlt as PsychologyAltIcon,
-  LocationOn as LocationOnIcon,
-  Star as StarIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -301,6 +297,13 @@ const ActivityListItem = styled(ListItem)(({ theme }) => ({
   },
 }));
 
+const DashboardContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  width: '100%',
+  minHeight: '100vh',
+}));
+
 // =======================
 // Motion Variants
 // =======================
@@ -343,10 +346,8 @@ const DashboardPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Auth context
+  // Contexts
   const { user, logout } = useContext(AuthContext);
-
-  // Other contexts and data
   const { moodEntries, loading: moodLoading } = useContext(MoodContext);
   const { activities, loading: activityLoading, refreshActivities } = useContext(ActivityContext);
   const { sleepLogs, loading: sleepLoading, refreshSleepLogs } = useContext(SleepContext);
@@ -364,7 +365,7 @@ const DashboardPage = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-  // Local state for various sections
+  // Local states for various sections
   const [userName, setUserName] = useState('User');
   const [userAvatarUrl, setUserAvatarUrl] = useState('https://source.unsplash.com/random/50x50?sig=avatar');
   const [moodSummary, setMoodSummary] = useState('');
@@ -376,36 +377,44 @@ const DashboardPage = () => {
   const [heroQuote, setHeroQuote] = useState('');
   const [affirmation, setAffirmation] = useState('');
   const [chartBrushStartIndex, setChartBrushStartIndex] = useState(0);
+  const [quoteCategory, setQuoteCategory] = useState('general');
+  const [locationErrorState, setLocationErrorState] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedTherapist, setSelectedTherapist] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // For the Reels section wording
   const reelsSectionText =
     "Dive into quick, uplifting reels designed to spark inspiration and motivate you throughout your day.";
 
   // Daily Quotes categorized for mood-based hero section
-  const dailyQuotes = useMemo(() => ({
-    positive: [
-      'Every day is a fresh start.',
-      'Believe in your potential.',
-      'You have the power to create positive change.',
-    ],
-    neutral: [
-      'Find joy in the present moment.',
-      'Balance is key to wellbeing.',
-      'Take time to reflect and recharge.',
-    ],
-    negative: [
-      "It's okay to not be okay.",
-      'Reach out for support when you need it.',
-      'Small steps forward are still progress.',
-    ],
-    general: [
-      'The journey of a thousand miles begins with a single step.',
-      'Happiness is not by chance, but by choice.',
-      "Believe you can and you're halfway there.",
-      'The mind is everything. What you think you become.',
-      'Small steps forward are still steps forward.',
-    ],
-  }), []);
+  const dailyQuotes = useMemo(
+    () => ({
+      positive: [
+        'Every day is a fresh start.',
+        'Believe in your potential.',
+        'You have the power to create positive change.',
+      ],
+      neutral: [
+        'Find joy in the present moment.',
+        'Balance is key to wellbeing.',
+        'Take time to reflect and recharge.',
+      ],
+      negative: [
+        "It's okay to not be okay.",
+        'Reach out for support when you need it.',
+        'Small steps forward are still progress.',
+      ],
+      general: [
+        'The journey of a thousand miles begins with a single step.',
+        'Happiness is not by chance, but by choice.',
+        "Believe you can and you're halfway there.",
+        'The mind is everything. What you think you become.',
+        'Small steps forward are still steps forward.',
+      ],
+    }),
+    []
+  );
 
   // Helper: Generate a mood summary text based on the numeric mood value
   const getMoodSummaryText = useCallback((moodValue) => {
@@ -468,8 +477,7 @@ const DashboardPage = () => {
     showSnackbar('Chat data refreshed', 'info');
   }, [refreshMessages, showSnackbar]);
 
-  // Handle Refresh Quote (declared only once)
-  const [quoteCategory, setQuoteCategory] = useState('general');
+  // Handle Refresh Quote
   const handleRefreshQuote = useCallback(() => {
     const categoryQuotes = dailyQuotes[quoteCategory] || dailyQuotes.general;
     setHeroQuote(categoryQuotes[Math.floor(Math.random() * categoryQuotes.length)]);
@@ -507,7 +515,9 @@ const DashboardPage = () => {
   useEffect(() => {
     if (!moodLoading && moodEntries) {
       if (moodEntries.length > 0) {
-        const sortedMoods = [...moodEntries].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const sortedMoods = [...moodEntries].sort(
+          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+        );
         const latestMoodEntry = sortedMoods[sortedMoods.length - 1];
         const latestMood = parseFloat(latestMoodEntry.mood);
         setMoodSummary(getMoodSummaryText(latestMood));
@@ -529,11 +539,12 @@ const DashboardPage = () => {
             return {
               name: date.toLocaleDateString('en-US', { weekday: 'short' }),
               date,
-              mood: parseFloat((dailyMoodAverages[dateStr].sumMood / dailyMoodAverages[dateStr].count).toFixed(1)),
+              mood: parseFloat(
+                (dailyMoodAverages[dateStr].sumMood / dailyMoodAverages[dateStr].count).toFixed(1)
+              ),
             };
           });
         setMoodChartData(chartData);
-
         setChartBrushStartIndex(chartData.length > 7 ? chartData.length - 7 : 0);
       } else {
         setMoodSummary('No mood entries yet. Log your mood to track your well-being.');
@@ -579,7 +590,6 @@ const DashboardPage = () => {
           sender: message.sender === 'user' ? 'You:' : 'AI:',
         };
       });
-
       setLatestChatsPreview(
         processedChats.length > 0
           ? processedChats
@@ -635,17 +645,8 @@ const DashboardPage = () => {
     }
   }, []);
 
-  // Therapist refresh handling from TherapistFindContext
-  const [locationErrorState, setLocationErrorState] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  /**
-   * fetchData: Gets user's current location and uses the context's fetchTherapists
-   * method to fetch therapist recommendations.
-   * The force parameter bypasses caching.
-   */
+  // Therapist refresh handling
   const fetchData = (force = false) => {
-    // Removed automatic fetch on mount to avoid prompting for location.
     setLocationErrorState(null);
     setIsRefreshing(true);
     if (navigator.geolocation) {
@@ -672,8 +673,7 @@ const DashboardPage = () => {
     }
   };
 
-  // Removed the useEffect that automatically calls fetchData on mount.
-  // Therapist recommendations will now only be fetched manually via the refresh button.
+  // Removed auto-fetch on mount; therapists are fetched manually via refresh
 
   useEffect(() => {
     if (therapistError) {
@@ -681,18 +681,16 @@ const DashboardPage = () => {
     }
   }, [therapistError, showSnackbar]);
 
-  // Handle manual refresh: clear cached therapist data and force a new fetch.
+  // Handle manual refresh for therapists
   const handleRefresh = () => {
-    clearTherapists(); // Clear cached therapist data.
-    fetchData(true);   // Force a new API call.
+    clearTherapists();
+    fetchData(true);
     showSnackbar("Therapist recommendations refreshed.", "info");
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 1000);
   };
 
   // Open details dialog for the selected therapist.
-  const [selectedTherapist, setSelectedTherapist] = useState(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const handleDetailsClick = (therapist) => {
     setSelectedTherapist(therapist);
     setDialogOpen(true);
@@ -703,11 +701,6 @@ const DashboardPage = () => {
     setDialogOpen(false);
     setSelectedTherapist(null);
   };
-
-  // AI Generated Insights for Dashboard could be managed elsewhere.
-  // (This dashboard code does not include AI insights logic as in the Insights page.)
-  // If you need to include AI insights in the dashboard, you can integrate similar caching
-  // and fetching logic as in your Insights page.
 
   return (
     <DashboardContainer>
@@ -757,7 +750,9 @@ const DashboardPage = () => {
                           >
                             {moodEntries.length > 0 &&
                               parseFloat(
-                                moodEntries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))[moodEntries.length - 1].mood
+                                moodEntries.sort(
+                                  (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+                                )[moodEntries.length - 1].mood
                               ).toFixed(1)}{' '}
                             / 5
                           </Typography>
@@ -784,8 +779,20 @@ const DashboardPage = () => {
                                 labelStyle={{ color: theme.palette.text.secondary }}
                                 formatter={(value) => value}
                               />
-                              <Area type="monotone" dataKey="mood" stroke={theme.palette.primary.main} fillOpacity={1} fill="url(#colorMood)" />
-                              <Brush startIndex={chartBrushStartIndex} onChange={handleBrushChange} height={20} stroke={theme.palette.primary.light} travellerWidth={2} />
+                              <Area
+                                type="monotone"
+                                dataKey="mood"
+                                stroke={theme.palette.primary.main}
+                                fillOpacity={1}
+                                fill="url(#colorMood)"
+                              />
+                              <Brush
+                                startIndex={chartBrushStartIndex}
+                                onChange={handleBrushChange}
+                                height={20}
+                                stroke={theme.palette.primary.light}
+                                travellerWidth={2}
+                              />
                             </AreaChart>
                           </ResponsiveContainer>
                         ) : (
@@ -807,7 +814,7 @@ const DashboardPage = () => {
                     </WidgetCard>
                   </motion.div>
                 </Grid>
-  
+
                 {/* AI Chat Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
@@ -822,7 +829,13 @@ const DashboardPage = () => {
                         }}
                       >
                         {chatLoading ? (
-                          <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height={240}>
+                          <Box
+                            display="flex"
+                            flexDirection="column"
+                            justifyContent="center"
+                            alignItems="center"
+                            height={240}
+                          >
                             <Skeleton variant="rectangular" width="100%" height={60} sx={{ borderRadius: '12px', mb: 2 }} />
                             <Skeleton variant="rectangular" width="100%" height={30} sx={{ borderRadius: '12px', mb: 1 }} />
                             <Skeleton variant="rectangular" width="100%" height={30} sx={{ borderRadius: '12px' }} />
@@ -880,7 +893,15 @@ const DashboardPage = () => {
                             </CardActions>
                           </>
                         ) : (
-                          <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height={240} textAlign="center" px={2}>
+                          <Box
+                            display="flex"
+                            flexDirection="column"
+                            justifyContent="center"
+                            alignItems="center"
+                            height={240}
+                            textAlign="center"
+                            px={2}
+                          >
                             <ChatIcon color="action" sx={{ fontSize: 40, mb: 1 }} />
                             <Typography variant="body1" color="textSecondary" sx={{ fontSize: '0.9rem' }}>
                               Ready to explore your thoughts and feelings?
@@ -901,7 +922,7 @@ const DashboardPage = () => {
                     </WidgetCard>
                   </motion.div>
                 </Grid>
-  
+
                 {/* Activity Logging Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
@@ -916,7 +937,13 @@ const DashboardPage = () => {
                         }}
                       >
                         {activityLoading ? (
-                          <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height={240}>
+                          <Box
+                            display="flex"
+                            flexDirection="column"
+                            justifyContent="center"
+                            alignItems="center"
+                            height={240}
+                          >
                             <Skeleton variant="rectangular" width="100%" height={100} sx={{ borderRadius: '12px', mb: 2 }} />
                             <Skeleton variant="rectangular" width="100%" height={30} sx={{ borderRadius: '12px' }} />
                           </Box>
@@ -953,7 +980,15 @@ const DashboardPage = () => {
                             </CardActions>
                           </>
                         ) : (
-                          <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height={240} textAlign="center" px={2}>
+                          <Box
+                            display="flex"
+                            flexDirection="column"
+                            justifyContent="center"
+                            alignItems="center"
+                            height={240}
+                            textAlign="center"
+                            px={2}
+                          >
                             <AssignmentIcon color="action" sx={{ fontSize: 40, mb: 1 }} />
                             <Typography variant="body1" color="textSecondary" sx={{ fontSize: '0.9rem' }}>
                               Log your daily activities to reflect on your day and habits.
@@ -974,7 +1009,7 @@ const DashboardPage = () => {
                     </WidgetCard>
                   </motion.div>
                 </Grid>
-  
+
                 {/* Sleep Quality Monitor Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
@@ -989,7 +1024,13 @@ const DashboardPage = () => {
                         }}
                       >
                         {sleepLoading ? (
-                          <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height={240}>
+                          <Box
+                            display="flex"
+                            flexDirection="column"
+                            justifyContent="center"
+                            alignItems="center"
+                            height={240}
+                          >
                             <Skeleton variant="rectangular" width="100%" height={120} sx={{ borderRadius: '12px', mb: 2 }} />
                             <Skeleton variant="rectangular" width="100%" height={30} sx={{ borderRadius: '12px' }} />
                           </Box>
@@ -1013,7 +1054,15 @@ const DashboardPage = () => {
                             </CardActions>
                           </>
                         ) : (
-                          <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" height={240} textAlign="center" px={2}>
+                          <Box
+                            display="flex"
+                            flexDirection="column"
+                            justifyContent="center"
+                            alignItems="center"
+                            height={240}
+                            textAlign="center"
+                            px={2}
+                          >
                             <BedtimeIcon color="action" sx={{ fontSize: 40, mb: 1 }} />
                             <Typography variant="body1" color="textSecondary" sx={{ fontSize: '0.9rem' }}>
                               Track your sleep to understand your rest and energy levels.
@@ -1034,7 +1083,7 @@ const DashboardPage = () => {
                     </WidgetCard>
                   </motion.div>
                 </Grid>
-  
+
                 {/* Daily Affirmation Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
@@ -1066,7 +1115,7 @@ const DashboardPage = () => {
                     </WidgetCard>
                   </motion.div>
                 </Grid>
-  
+
                 {/* Breathing Exercise Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
@@ -1086,7 +1135,7 @@ const DashboardPage = () => {
                     </WidgetCard>
                   </motion.div>
                 </Grid>
-  
+
                 {/* Inspiration Reels Widget */}
                 <Grid item xs={12}>
                   <motion.div variants={widgetItemVariants}>
@@ -1119,8 +1168,8 @@ const DashboardPage = () => {
                     </WidgetCard>
                   </motion.div>
                 </Grid>
-  
-                {/* Feeling Overwhelmed? Widget - Full Width */}
+
+                {/* Feeling Overwhelmed? Widget */}
                 <Grid item xs={12}>
                   <motion.div variants={widgetItemVariants}>
                     <WidgetCard>
@@ -1155,7 +1204,7 @@ const DashboardPage = () => {
                     </WidgetCard>
                   </motion.div>
                 </Grid>
-  
+
                 {/* Daily Insight Widget */}
                 <Grid item xs={12}>
                   <motion.div variants={widgetItemVariants}>
@@ -1232,13 +1281,5 @@ const DashboardPage = () => {
     </DashboardContainer>
   );
 };
-
-// Full width container for the dashboard
-const DashboardContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  width: '100%',
-  minHeight: '100vh',
-}));
 
 export default DashboardPage;

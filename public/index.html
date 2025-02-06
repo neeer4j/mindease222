@@ -34,9 +34,11 @@
     <!-- Title -->
     <title>MindEase AI</title>
 
-    <!-- Google Maps JavaScript API with Places Library -->
-    <!-- The %REACT_APP_GOOGLE_API_KEY% placeholder will be replaced with your key from the .env file -->
-    
+    <!-- 
+      Removed Google Maps API Script:
+      The Google Maps API will now be lazy-loaded from within your React code.
+      This avoids duplicate loads and centralizes the API key usage.
+    -->
   </head>
   <body>
     <div id="root"></div>
