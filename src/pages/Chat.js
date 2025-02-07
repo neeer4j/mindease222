@@ -35,7 +35,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
 import ChatIcon from '@mui/icons-material/Chat';
 import MoodIcon from '@mui/icons-material/Mood';
-import Brightness4Icon from '@mui/icons-material/Brightness4'; // Theme toggle icon
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import ErrorBoundary from '../components/ErrorBoundary';
 import Modal from '../components/Modal';
@@ -45,13 +47,27 @@ import { ChatContext } from '../contexts/ChatContext';
 import { motion } from 'framer-motion';
 import { db } from '../firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { MoodContext } from "../contexts/MoodContext";
+import { SleepContext } from "../contexts/SleepContext";
 
 const GradientButton = motion(Button);
 
+// Crisis keywords and emergency resources
 const CRISIS_KEYWORDS = ['suicide', 'self-harm', 'kill myself'];
 const EMERGENCY_RESOURCES = [
   'DISHA Helpline: 1056/ 104 (24X7)',
-  ' 0471-2552056, 0471-2551056',
+  '0471-2552056, 0471-2551056',
+];
+
+// Negative sentiment keywords for enhanced mood prompting
+const NEGATIVE_SENTIMENT_WORDS = [
+  'sad',
+  'depressed',
+  'lonely',
+  'miserable',
+  'down',
+  'unhappy',
+  'anxious',
 ];
 
 const MOOD_OPTIONS = [
@@ -63,9 +79,8 @@ const MOOD_OPTIONS = [
   { label: '😕 Neutral', value: 'neutral' },
 ];
 
-// Define the BottomNav and Chat Input heights (in pixels)
 const BOTTOM_NAV_HEIGHT = 56;
-const CHAT_INPUT_HEIGHT = 60; // Adjust as needed
+const CHAT_INPUT_HEIGHT = 60;
 
 const Chat = ({ toggleTheme }) => {
   const { user } = useContext(AuthContext);
@@ -77,6 +92,8 @@ const Chat = ({ toggleTheme }) => {
     clearChat,
     addReaction,
   } = useContext(ChatContext);
+  const { moodEntries, addMood } = useContext(MoodContext);
+  const { sleepLogs } = useContext(SleepContext);
 
   const [userInput, setUserInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -85,7 +102,7 @@ const Chat = ({ toggleTheme }) => {
   const [modalContent, setModalContent] = useState(null);
   const [clearConfirmationOpen, setClearConfirmationOpen] = useState(false);
   const [moodDialogOpen, setMoodDialogOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null); // For reactions
+  const [anchorEl, setAnchorEl] = useState(null);
   const [selectedMessageId, setSelectedMessageId] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -96,11 +113,13 @@ const Chat = ({ toggleTheme }) => {
   const [customInstructions, setCustomInstructions] = useState('');
   const [customInstructionsDialogOpen, setCustomInstructionsDialogOpen] = useState(false);
   const [customInstructionsInput, setCustomInstructionsInput] = useState('');
+  const [isListening, setIsListening] = useState(false);
 
+  const recognitionRef = useRef(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Create the GenAI model instance.
+  // Create the Gemini API model instance.
   const genAI = useMemo(
     () => new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY),
     []
@@ -115,17 +134,28 @@ const Chat = ({ toggleTheme }) => {
 
   const inputRef = useRef(null);
   const chatContentRef = useRef(null);
-
-  // Access user's display name
   const userName = user?.displayName || 'there';
 
+  // Include mood logs and sleep context in system instructions.
   const systemInstructionContent = useMemo(() => {
-    let instructions = `You are MindEase, a compassionate AI therapist. The user's name is ${userName}. Provide empathetic and supportive responses, offer general advice and coping strategies when appropriate, and ask open-ended questions to understand the user's feelings. Always act like a good dear friend.`;
+    const latestMood = moodEntries && moodEntries.length
+      ? moodEntries[moodEntries.length - 1].mood
+      : "unknown";
+    const recentMoods = moodEntries && moodEntries.length > 0
+      ? moodEntries.slice(-3).map((entry) => entry.mood).join(", ")
+      : "No recent mood logs";
+    const latestSleep = sleepLogs && sleepLogs.length
+      ? sleepLogs[sleepLogs.length - 1]
+      : null;
+    const sleepInfo = latestSleep
+      ? ` SLEPT from ${latestSleep.startTime} to ${latestSleep.endTime} with quality ${latestSleep.qualityRating}.`
+      : "";
+    let instructions = `You are MindEase, a compassionate AI therapist. The user's name is ${userName}. They are currently feeling ${latestMood}. Recent mood logs: ${recentMoods}.${sleepInfo} Always consider the user's recent mood and sleep context when chatting.`;
     if (customInstructions && customInstructions.trim() !== '') {
       instructions += ` ${customInstructions}`;
     }
     return instructions;
-  }, [userName, customInstructions]);
+  }, [userName, customInstructions, moodEntries, sleepLogs]);
 
   const chatHistory = useMemo(() => {
     const historyMessages = messages
@@ -144,7 +174,7 @@ const Chat = ({ toggleTheme }) => {
     ];
   }, [messages, systemInstructionContent]);
 
-  // Send greeting if not already present
+  // Send a greeting if none exists.
   useEffect(() => {
     if (chatLoading) return;
     const hasGreeting = messages.some((msg) => msg.isBot && msg.isWelcome);
@@ -157,7 +187,7 @@ const Chat = ({ toggleTheme }) => {
     }
   }, [user, messages, addMessage, userName, chatLoading]);
 
-  // Fetch custom instructions from Firestore on mount
+  // Fetch custom instructions from Firestore.
   useEffect(() => {
     const fetchCustomInstructions = async () => {
       if (!user) return;
@@ -182,18 +212,95 @@ const Chat = ({ toggleTheme }) => {
     fetchCustomInstructions();
   }, [user]);
 
-  // Auto-scroll: scroll the messages container to the bottom whenever messages update.
+  // Auto-scroll to the bottom when messages update.
   useEffect(() => {
     if (chatContentRef.current) {
       chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
     }
   }, [messages]);
 
+  // Setup voice-to-text using Chrome's Web Speech API.
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window) {
+      const recognition = new window.webkitSpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        // Update the chat input with the final transcript (or interim if final is empty)
+        setUserInput(finalTranscript || interimTranscript);
+      };
+
+      recognitionRef.current = recognition;
+    } else {
+      console.warn('Web Speech API is not supported in this browser.');
+    }
+  }, []);
+
+  const handleVoiceInput = () => {
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+  };
+
+  // Enhanced mood prompt: Check if a mood has been logged today or if negative sentiment is detected.
+  const checkAndPromptMood = useCallback(() => {
+    if (!user) return;
+    const today = new Date().toDateString();
+    const lastMood = moodEntries[moodEntries.length - 1];
+    const hasLoggedToday = lastMood && new Date(lastMood.timestamp).toDateString() === today;
+
+    const lastUserMessage = messages.slice().reverse().find((msg) => !msg.isBot);
+    let negativeDetected = false;
+    if (lastUserMessage && typeof lastUserMessage.text === 'string') {
+      const text = lastUserMessage.text.toLowerCase();
+      for (let word of NEGATIVE_SENTIMENT_WORDS) {
+        if (text.includes(word)) {
+          negativeDetected = true;
+          break;
+        }
+      }
+    }
+    if ((!hasLoggedToday || negativeDetected) && !moodDialogOpen) {
+      openMoodDialog();
+    }
+  }, [user, moodEntries, messages, moodDialogOpen]);
+
+  // Uncomment the following effect if you want periodic mood prompting (e.g., every 15 minutes).
+  // useEffect(() => {
+  //   const timer = setInterval(() => {
+  //     checkAndPromptMood();
+  //   }, 15 * 60 * 1000);
+  //   return () => clearInterval(timer);
+  // }, [checkAndPromptMood]);
+
   const handleSend = useCallback(async () => {
     const trimmedInput = userInput.trim();
     if (!trimmedInput || isTyping) return;
     setUserIsTyping(false);
 
+    // Check for crisis keywords.
     const containsCrisis = CRISIS_KEYWORDS.some((kw) =>
       trimmedInput.toLowerCase().includes(kw)
     );
@@ -284,8 +391,10 @@ const Chat = ({ toggleTheme }) => {
     } finally {
       setIsTyping(false);
       if (!isMobile) inputRef.current?.focus();
+      // Check and prompt for mood logging after sending a message.
+      checkAndPromptMood();
     }
-  }, [userInput, isTyping, chatHistory, model, isMobile, addMessage, userName]);
+  }, [userInput, isTyping, chatHistory, model, isMobile, addMessage, userName, checkAndPromptMood]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -361,7 +470,7 @@ const Chat = ({ toggleTheme }) => {
     }
   };
 
-  // Mood tracking handlers
+  // Mood tracking handlers.
   const openMoodDialog = () => {
     setMoodDialogOpen(true);
   };
@@ -371,9 +480,11 @@ const Chat = ({ toggleTheme }) => {
   };
 
   const handleMoodSelect = (mood) => {
-    addMessage(`I am feeling "${mood}" logged.`, false, {
+    addMood(mood, "Logged via chat interface");
+    addMessage(`Mood "${mood}" logged.`, false, {
       timestamp: new Date().toISOString(),
     });
+    closeMoodDialog();
   };
 
   const handleQuickReply = async (reply) => {
@@ -381,7 +492,7 @@ const Chat = ({ toggleTheme }) => {
     await handleSend();
   };
 
-  // Reaction handlers
+  // Reaction handlers.
   const handleReactionClick = (event, messageId) => {
     setAnchorEl(event.currentTarget);
     setSelectedMessageId(messageId);
@@ -404,7 +515,7 @@ const Chat = ({ toggleTheme }) => {
     handleReactionClose();
   };
 
-  // Snackbar handler
+  // Snackbar handler.
   const handleSnackbarClose = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
@@ -474,7 +585,7 @@ Quick Replies:
     }
   };
 
-  // Handlers for Custom Instructions Dialog
+  // Handlers for Custom Instructions Dialog.
   const openCustomInstructionsDialog = () => {
     setCustomInstructionsInput(customInstructions);
     setCustomInstructionsDialogOpen(true);
@@ -513,9 +624,7 @@ Quick Replies:
   // Mobile Layout
   // ----------------------------
   if (isMobile) {
-    // Define a slightly lower maxRows for the TextField so it doesn’t expand too far on mobile.
     const MOBILE_MAX_ROWS = 3;
-
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -529,17 +638,17 @@ Quick Replies:
           background: theme.palette.background.gradient,
           display: 'flex',
           flexDirection: 'column',
-          paddingTop: theme.spacing(1), // Added padding at the top for mobile
+          paddingTop: theme.spacing(1),
         }}
       >
-        {/* Header (minimal) - Mobile */}
+        {/* Mobile Header */}
         <Box
           sx={{
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '8px 16px', // Reduced padding for mobile header
+            padding: '8px 16px',
             backgroundColor: theme.palette.background.paper,
             boxShadow: 1,
           }}
@@ -548,12 +657,12 @@ Quick Replies:
             <Avatar
               sx={{
                 bgcolor: theme.palette.primary.main,
-                width: 36, // Smaller avatar size for mobile
+                width: 36,
                 height: 36,
                 mr: 1,
               }}
             >
-              <ChatIcon sx={{ color: 'white', fontSize: 22 }} /> {/* Smaller icon size */}
+              <ChatIcon sx={{ color: 'white', fontSize: 22 }} />
             </Avatar>
             <Box>
               <Typography variant="h6" color="textPrimary" sx={{ fontWeight: 800, fontSize: '1.1rem' }}>
@@ -588,15 +697,14 @@ Quick Replies:
           </Box>
         </Box>
 
-        {/* Container wrapping messages and chat input */}
         <Box sx={{ position: 'relative', flexGrow: 1 }}>
-          {/* Scrollable Chat Messages Area */}
+          {/* Mobile Chat Messages */}
           <Box
             ref={chatContentRef}
             sx={{
               overflowY: 'auto',
               height: `calc(100vh - ${BOTTOM_NAV_HEIGHT + CHAT_INPUT_HEIGHT}px)`,
-              padding: '8px 16px', // Reduced padding for mobile chat area
+              padding: '8px 16px',
             }}
             role="log"
             aria-live="polite"
@@ -682,12 +790,11 @@ Quick Replies:
                   </Typography>
                 </Box>
               )}
-              {/* Extra spacer so messages are not hidden behind the input */}
               <Box sx={{ height: CHAT_INPUT_HEIGHT + 20 }} />
             </ErrorBoundary>
           </Box>
 
-          {/* Chat Input Area: Fixed above the BottomNav */}
+          {/* Mobile Chat Input */}
           <Box
             sx={{
               position: 'absolute',
@@ -740,6 +847,29 @@ Quick Replies:
                   overflow: 'hidden',
                 }}
               />
+              <Tooltip title={isListening ? "Stop Listening" : "Start Listening"}>
+                <GradientButton
+                  variant="contained"
+                  onClick={handleVoiceInput}
+                  aria-label="Voice Input"
+                  sx={{
+                    borderRadius: '50%',
+                    padding: 0.5,
+                    minWidth: 'auto',
+                    width: 40,
+                    height: 40,
+                    boxShadow: 3,
+                    background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
+                    '&:hover': {
+                      background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                    },
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {isListening ? <MicOffIcon /> : <MicIcon />}
+                </GradientButton>
+              </Tooltip>
               <Tooltip title="Send Message">
                 <GradientButton
                   variant="contained"
@@ -777,7 +907,7 @@ Quick Replies:
           </Box>
         </Box>
 
-        {/* Reaction Menu, Dialogs, and Snackbar */}
+        {/* Mobile Reaction Menu, Dialogs, and Snackbar */}
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
@@ -850,12 +980,12 @@ Quick Replies:
           </DialogActions>
         </Dialog>
         <Dialog open={moodDialogOpen} onClose={closeMoodDialog} aria-labelledby="mood-dialog-title">
-          <DialogTitle id="mood-dialog-title" sx={{ fontSize: '1.25rem' }}>How Are You Feeling?</DialogTitle>
+          <DialogTitle id="mood-dialog-title">How Are You Feeling?</DialogTitle>
           <DialogContent>
             <Grid container spacing={2}>
               {MOOD_OPTIONS.map((mood) => (
                 <Grid item xs={6} sm={4} key={mood.value}>
-                  <Button variant="outlined" fullWidth startIcon={<EmojiEmotionsIcon />} onClick={() => handleMoodSelect(mood.value)} sx={{ justifyContent: 'flex-start', textTransform: 'none', fontSize: '0.875rem', padding: '6px 12px' }}>
+                  <Button variant="outlined" fullWidth startIcon={<EmojiEmotionsIcon />} onClick={() => handleMoodSelect(mood.value)} sx={{ justifyContent: 'flex-start', textTransform: 'none' }}>
                     {mood.label}
                   </Button>
                 </Grid>
@@ -863,7 +993,7 @@ Quick Replies:
             </Grid>
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeMoodDialog} color="primary" size="small">
+            <Button onClick={closeMoodDialog} color="primary">
               Cancel
             </Button>
           </DialogActions>
@@ -883,7 +1013,7 @@ Quick Replies:
   }
 
   // ----------------------------
-  // Desktop (or non-mobile) Layout - Modern & Elegant
+  // Desktop (Non-Mobile) Layout
   // ----------------------------
   return (
     <motion.div
@@ -918,7 +1048,7 @@ Quick Replies:
           marginTop: theme.spacing(4),
         }}
       >
-        {/* Modern Header Section - Desktop */}
+        {/* Desktop Header */}
         <Box
           sx={{
             padding: '24px',
@@ -965,11 +1095,11 @@ Quick Replies:
                 <SettingsIcon />
               </IconButton>
             </Tooltip>
-            {/* Theme toggle removed from desktop version */}
+            {/* Theme toggle is omitted in desktop version */}
           </Box>
         </Box>
 
-        {/* Chat Messages Container - Desktop */}
+        {/* Desktop Chat Messages */}
         <ErrorBoundary>
           <Box
             ref={chatContentRef}
@@ -1018,7 +1148,7 @@ Quick Replies:
           </Box>
         </ErrorBoundary>
 
-        {/* Desktop Chat Input Area */}
+        {/* Desktop Chat Input */}
         <Box
           sx={{
             padding: '24px',
@@ -1048,6 +1178,29 @@ Quick Replies:
                 },
               }}
             />
+            <Tooltip title={isListening ? "Stop Listening" : "Start Listening"}>
+              <GradientButton
+                variant="contained"
+                onClick={handleVoiceInput}
+                aria-label="Voice Input"
+                sx={{
+                  borderRadius: '50%',
+                  padding: 1,
+                  minWidth: 'auto',
+                  width: 48,
+                  height: 48,
+                  boxShadow: 3,
+                  background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
+                  '&:hover': {
+                    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                  },
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isListening ? <MicOffIcon /> : <MicIcon />}
+              </GradientButton>
+            </Tooltip>
             <Tooltip title="Send Message">
               <GradientButton
                 variant="contained"
@@ -1082,7 +1235,6 @@ Quick Replies:
               </GradientButton>
             </Tooltip>
           </Box>
-          {/* Footer Disclaimer */}
           <Box mt={2} textAlign="center">
             <Typography variant="body2" color="textSecondary" fontStyle="italic">
               MindEase provides supportive listening, not professional therapy.
@@ -1091,7 +1243,7 @@ Quick Replies:
         </Box>
       </Box>
 
-      {/* Dialogs and Menus */}
+      {/* Desktop Dialogs and Menus */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleReactionClose} anchorOrigin={{ vertical: 'top', horizontal: 'left' }} transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}>
         {['👍', '❤️', '😂', '😮', '😢', '👏'].map((emoji) => (
           <MenuItem key={emoji} onClick={() => handleAddReaction(emoji)} sx={{ fontSize: '1.5rem', padding: '0.5rem' }}>
