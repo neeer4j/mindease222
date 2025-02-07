@@ -307,7 +307,6 @@ const TherapistRecommendations = () => {
    * The force parameter bypasses caching.
    */
   const fetchData = (force = false) => {
-    if (!force && therapists.length > 0) return;
     setLocationError(null);
     setIsRefreshing(true);
     if (navigator.geolocation) {
@@ -328,7 +327,9 @@ const TherapistRecommendations = () => {
           setSnackbarSeverity("warning");
           setSnackbarOpen(true);
           setIsRefreshing(false);
-        }
+        },
+        // New options for higher accuracy.
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
       setLocationError("Geolocation is not supported by this browser.");
@@ -362,8 +363,6 @@ const TherapistRecommendations = () => {
     setSnackbarMessage("Therapist recommendations refreshed.");
     setSnackbarSeverity("info");
     setSnackbarOpen(true);
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
   };
 
   const handleSnackbarClose = (event, reason) => {
