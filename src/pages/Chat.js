@@ -40,26 +40,25 @@ import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import ErrorBoundary from '../components/ErrorBoundary';
-import Modal from '../components/Modal';
 import Message from '../components/Message';
 import { AuthContext } from '../contexts/AuthContext';
 import { ChatContext } from '../contexts/ChatContext';
+import { MoodContext } from "../contexts/MoodContext";
+import { SleepContext } from "../contexts/SleepContext";
 import { motion } from 'framer-motion';
 import { db } from '../firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
-import { MoodContext } from "../contexts/MoodContext";
-import { SleepContext } from "../contexts/SleepContext";
 
 const GradientButton = motion(Button);
 
-// Crisis keywords and emergency resources
+// Crisis and emergency constants
 const CRISIS_KEYWORDS = ['suicide', 'self-harm', 'kill myself'];
 const EMERGENCY_RESOURCES = [
   'DISHA Helpline: 1056/ 104 (24X7)',
   '0471-2552056, 0471-2551056',
 ];
 
-// Negative sentiment keywords for enhanced mood prompting
+// Negative sentiment keywords (used for triggering mood prompts)
 const NEGATIVE_SENTIMENT_WORDS = [
   'sad',
   'depressed',
@@ -83,23 +82,16 @@ const BOTTOM_NAV_HEIGHT = 56;
 const CHAT_INPUT_HEIGHT = 60;
 
 const Chat = ({ toggleTheme }) => {
+  // Contexts
   const { user } = useContext(AuthContext);
-  const {
-    messages,
-    addMessage,
-    loading: chatLoading,
-    error: chatError,
-    clearChat,
-    addReaction,
-  } = useContext(ChatContext);
+  const { messages, addMessage, loading: chatLoading, error: chatError, clearChat, addReaction } = useContext(ChatContext);
   const { moodEntries, addMood } = useContext(MoodContext);
   const { sleepLogs } = useContext(SleepContext);
 
+  // Local state
   const [userInput, setUserInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [userIsTyping, setUserIsTyping] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState(null);
   const [clearConfirmationOpen, setClearConfirmationOpen] = useState(false);
   const [moodDialogOpen, setMoodDialogOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -115,75 +107,66 @@ const Chat = ({ toggleTheme }) => {
   const [customInstructionsInput, setCustomInstructionsInput] = useState('');
   const [isListening, setIsListening] = useState(false);
 
+  // Refs and responsive helpers
   const recognitionRef = useRef(null);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  // Create the Gemini API model instance.
-  const genAI = useMemo(
-    () => new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY),
-    []
-  );
-  const model = useMemo(
-    () =>
-      genAI.getGenerativeModel({
-        model: 'gemini-2.0-flash-exp',
-      }),
-    [genAI]
-  );
-
   const inputRef = useRef(null);
   const chatContentRef = useRef(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const userName = user?.displayName || 'there';
 
-  // Include mood logs and sleep context in system instructions.
+  // Create the Gemini API model instance.
+  const genAI = useMemo(() => new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY), []);
+  const model = useMemo(() => genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }), [genAI]);
+
+  // Build full mood data string (including all entries).
+  const fullMoodData = useMemo(() => {
+    if (moodEntries && moodEntries.length > 0) {
+      return moodEntries
+        .map(entry => {
+          const dateStr = new Date(entry.timestamp).toLocaleString();
+          const notes = entry.notes ? `, Notes: ${entry.notes}` : "";
+          return `Date: ${dateStr}, Mood: ${entry.mood}${notes}`;
+        })
+        .join(" | ");
+    } else {
+      return "No mood entries logged.";
+    }
+  }, [moodEntries]);
+
+  // Build full sleep data string (including all entries).
+  const fullSleepData = useMemo(() => {
+    if (sleepLogs && sleepLogs.length > 0) {
+      return sleepLogs
+        .map(log => {
+          const dateStr = new Date(log.timestamp).toLocaleString();
+          const duration = log.duration ? `, Duration: ${log.duration}` : "";
+          const notes = log.notes ? `, Notes: ${log.notes}` : "";
+          return `Date: ${dateStr}, SLEPT from ${log.startTime} to ${log.endTime} with quality ${log.qualityRating}${duration}${notes}`;
+        })
+        .join(" | ");
+    } else {
+      return "No sleep logs recorded.";
+    }
+  }, [sleepLogs]);
+
+  // System instructions for the AI.
+  // The AI is told to keep the full mood and sleep data in mind but not to bring it up unless requested.
   const systemInstructionContent = useMemo(() => {
-    const latestMood = moodEntries && moodEntries.length
-      ? moodEntries[moodEntries.length - 1].mood
-      : "unknown";
-    const recentMoods = moodEntries && moodEntries.length > 0
-      ? moodEntries.slice(-3).map((entry) => entry.mood).join(", ")
-      : "No recent mood logs";
-    const latestSleep = sleepLogs && sleepLogs.length
-      ? sleepLogs[sleepLogs.length - 1]
-      : null;
-    const sleepInfo = latestSleep
-      ? ` SLEPT from ${latestSleep.startTime} to ${latestSleep.endTime} with quality ${latestSleep.qualityRating}.`
-      : "";
-    let instructions = `You are MindEase, a compassionate AI therapist. The user's name is ${userName}. They are currently feeling ${latestMood}. Recent mood logs: ${recentMoods}.${sleepInfo} Always consider the user's recent mood and sleep context when chatting.`;
+    let instructions = `You are MindEase, a warm, empathetic, and supportive AI therapist. The user's name is ${userName}. You have full access to the user's mood and sleep history. Use this information subtly to offer personalized, gentle, and practical guidance—just like a caring human therapist would. Avoid explicitly mentioning the raw data unless the user specifically asks for insights.`;
     if (customInstructions && customInstructions.trim() !== '') {
       instructions += ` ${customInstructions}`;
     }
     return instructions;
-  }, [userName, customInstructions, moodEntries, sleepLogs]);
+  }, [userName, customInstructions]);
 
-  const chatHistory = useMemo(() => {
-    const historyMessages = messages
-      .filter((msg) => !msg.isWelcome)
-      .map((msg) => ({
-        role: msg.isBot ? 'model' : 'user',
-        parts: [{ text: msg.text }],
-      }));
-
-    return [
-      {
-        role: 'user',
-        parts: [{ text: systemInstructionContent }],
-      },
-      ...historyMessages,
-    ];
-  }, [messages, systemInstructionContent]);
-
-  // Send a greeting if none exists.
+  // Send greeting message if none has been sent.
   useEffect(() => {
     if (chatLoading) return;
     const hasGreeting = messages.some((msg) => msg.isBot && msg.isWelcome);
     if (user && !hasGreeting) {
       const greetingMessage = `Hello ${userName}! I'm MindEase, your AI therapist. How can I assist you today?`;
-      addMessage(greetingMessage, true, {
-        isWelcome: true,
-        timestamp: new Date().toISOString(),
-      });
+      addMessage(greetingMessage, true, { isWelcome: true, timestamp: new Date().toISOString() });
     }
   }, [user, messages, addMessage, userName, chatLoading]);
 
@@ -202,43 +185,31 @@ const Chat = ({ toggleTheme }) => {
         }
       } catch (error) {
         console.error('Error fetching custom instructions:', error);
-        setSnackbar({
-          open: true,
-          message: 'Failed to load custom instructions.',
-          severity: 'error',
-        });
+        setSnackbar({ open: true, message: 'Failed to load custom instructions.', severity: 'error' });
       }
     };
     fetchCustomInstructions();
   }, [user]);
 
-  // Auto-scroll to the bottom when messages update.
+  // Auto-scroll the chat messages area whenever new messages are added.
   useEffect(() => {
     if (chatContentRef.current) {
       chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // Setup voice-to-text using Chrome's Web Speech API.
+  // Set up voice-to-text using Chrome's Web Speech API.
   useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
       const recognition = new window.webkitSpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
-
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
+      recognition.onstart = () => { setIsListening(true); };
+      recognition.onend = () => { setIsListening(false); };
       recognition.onresult = (event) => {
         let interimTranscript = '';
         let finalTranscript = '';
-
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
@@ -246,16 +217,15 @@ const Chat = ({ toggleTheme }) => {
             interimTranscript += event.results[i][0].transcript;
           }
         }
-        // Update the chat input with the final transcript (or interim if final is empty)
         setUserInput(finalTranscript || interimTranscript);
       };
-
       recognitionRef.current = recognition;
     } else {
       console.warn('Web Speech API is not supported in this browser.');
     }
   }, []);
 
+  // Handler to start/stop voice input.
   const handleVoiceInput = () => {
     if (isListening) {
       recognitionRef.current.stop();
@@ -264,13 +234,18 @@ const Chat = ({ toggleTheme }) => {
     }
   };
 
-  // Enhanced mood prompt: Check if a mood has been logged today or if negative sentiment is detected.
+  // For mood prompting, record the last prompt time.
+  const lastMoodPromptTimeRef = useRef(0);
+  const MOOD_PROMPT_INTERVAL = 15 * 60 * 1000; // 15 minutes
+
+  // Check if a mood has been logged today or if negative sentiment is detected.
   const checkAndPromptMood = useCallback(() => {
     if (!user) return;
+    const now = Date.now();
+    if (now - lastMoodPromptTimeRef.current < MOOD_PROMPT_INTERVAL) return;
     const today = new Date().toDateString();
     const lastMood = moodEntries[moodEntries.length - 1];
     const hasLoggedToday = lastMood && new Date(lastMood.timestamp).toDateString() === today;
-
     const lastUserMessage = messages.slice().reverse().find((msg) => !msg.isBot);
     let negativeDetected = false;
     if (lastUserMessage && typeof lastUserMessage.text === 'string') {
@@ -283,18 +258,14 @@ const Chat = ({ toggleTheme }) => {
       }
     }
     if ((!hasLoggedToday || negativeDetected) && !moodDialogOpen) {
-      openMoodDialog();
+      setMoodDialogOpen(true);
+      lastMoodPromptTimeRef.current = now;
     }
   }, [user, moodEntries, messages, moodDialogOpen]);
 
-  // Uncomment the following effect if you want periodic mood prompting (e.g., every 15 minutes).
-  // useEffect(() => {
-  //   const timer = setInterval(() => {
-  //     checkAndPromptMood();
-  //   }, 15 * 60 * 1000);
-  //   return () => clearInterval(timer);
-  // }, [checkAndPromptMood]);
-
+  // ----------------------------
+  // Handler for sending a message.
+  // ----------------------------
   const handleSend = useCallback(async () => {
     const trimmedInput = userInput.trim();
     if (!trimmedInput || isTyping) return;
@@ -316,11 +287,7 @@ const Chat = ({ toggleTheme }) => {
         timestamp: emergencyMessage.timestamp,
       });
       if (!messageId) {
-        setSnackbar({
-          open: true,
-          message: 'Failed to send emergency message.',
-          severity: 'error',
-        });
+        setSnackbar({ open: true, message: 'Failed to send emergency message.', severity: 'error' });
         return;
       }
       setUserInput('');
@@ -328,28 +295,43 @@ const Chat = ({ toggleTheme }) => {
       return;
     }
 
-    const newMessageText = trimmedInput;
+    // Add the user message to our context.
     const userMessage = {
-      text: newMessageText,
+      text: trimmedInput,
       isBot: false,
       timestamp: new Date().toISOString(),
     };
-    const messageId = await addMessage(userMessage.text, userMessage.isBot, {
-      timestamp: userMessage.timestamp,
-    });
+    const messageId = await addMessage(userMessage.text, userMessage.isBot, { timestamp: userMessage.timestamp });
     if (!messageId) {
-      setSnackbar({
-        open: true,
-        message: 'Failed to send message.',
-        severity: 'error',
-      });
+      setSnackbar({ open: true, message: 'Failed to send message.', severity: 'error' });
       return;
     }
     setUserInput('');
     setIsTyping(true);
 
     try {
-      const chat = model.startChat({ history: chatHistory });
+      // Reinitialize the Gemini Chat with Updated System Instructions.
+      // Compute the timestamp of the latest mood entry (if any).
+      const lastMoodTimestamp = moodEntries.length > 0 ? new Date(moodEntries[moodEntries.length - 1].timestamp) : null;
+      // Filter conversation messages to include only those after the last mood update.
+      const filteredMessages = lastMoodTimestamp
+        ? messages.filter(
+            (msg) => !msg.isWelcome && new Date(msg.timestamp) > lastMoodTimestamp
+          )
+        : messages.filter((msg) => !msg.isWelcome);
+      // Build updated chat history—starting with a new system instruction message.
+      const updatedChatHistory = [
+        {
+          role: 'user',
+          parts: [{ text: systemInstructionContent }],
+        },
+        ...filteredMessages.map((msg) => ({
+          role: msg.isBot ? 'model' : 'user',
+          parts: [{ text: msg.text }],
+        })),
+      ];
+
+      const chat = model.startChat({ history: updatedChatHistory });
       const result = await chat.sendMessage(trimmedInput);
       const response = await result.response;
       const text = response.text();
@@ -364,11 +346,7 @@ const Chat = ({ toggleTheme }) => {
         timestamp: botMessage.timestamp,
       });
       if (!botMessageId) {
-        setSnackbar({
-          open: true,
-          message: 'Failed to receive AI response.',
-          severity: 'error',
-        });
+        setSnackbar({ open: true, message: 'Failed to receive AI response.', severity: 'error' });
         return;
       }
       const quickReplies = await fetchQuickReplies(trimmedInput, text);
@@ -384,17 +362,25 @@ const Chat = ({ toggleTheme }) => {
         isEmergency: false,
         isError: true,
       };
-      await addMessage(errorMessage.text, errorMessage.isBot, {
-        isError: true,
-        timestamp: errorMessage.timestamp,
-      });
+      await addMessage(errorMessage.text, errorMessage.isBot, { isError: true, timestamp: errorMessage.timestamp });
     } finally {
       setIsTyping(false);
       if (!isMobile) inputRef.current?.focus();
-      // Check and prompt for mood logging after sending a message.
+      // After sending, check whether to prompt mood logging.
       checkAndPromptMood();
     }
-  }, [userInput, isTyping, chatHistory, model, isMobile, addMessage, userName, checkAndPromptMood]);
+  }, [
+    userInput,
+    isTyping,
+    model,
+    isMobile,
+    addMessage,
+    userName,
+    checkAndPromptMood,
+    moodEntries,
+    messages,
+    systemInstructionContent,
+  ]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -412,25 +398,11 @@ const Chat = ({ toggleTheme }) => {
   const confirmClearChat = async () => {
     await clearChat();
     setClearConfirmationOpen(false);
-    setSnackbar({
-      open: true,
-      message: 'Chat history cleared.',
-      severity: 'info',
-    });
+    setSnackbar({ open: true, message: 'Chat history cleared.', severity: 'info' });
   };
 
   const cancelClearChat = () => {
     setClearConfirmationOpen(false);
-  };
-
-  const openModal = (content) => {
-    setModalContent(content);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setModalContent(null);
   };
 
   const isSameTimeGroup = (prevMessage, currentMessage) => {
@@ -454,11 +426,7 @@ const Chat = ({ toggleTheme }) => {
         console.warn('Timestamp is undefined or null:', timestamp);
         return '—';
       }
-      const date = timestamp.toDate
-        ? timestamp.toDate()
-        : timestamp instanceof Date
-        ? timestamp
-        : new Date(timestamp);
+      const date = timestamp.toDate ? timestamp.toDate() : timestamp instanceof Date ? timestamp : new Date(timestamp);
       if (isNaN(date.getTime())) {
         console.error('Invalid date:', date);
         return 'Invalid Date';
@@ -481,9 +449,7 @@ const Chat = ({ toggleTheme }) => {
 
   const handleMoodSelect = (mood) => {
     addMood(mood, "Logged via chat interface");
-    addMessage(`Mood "${mood}" logged.`, false, {
-      timestamp: new Date().toISOString(),
-    });
+    addMessage(`Mood "${mood}" logged.`, false, { timestamp: new Date().toISOString() });
     closeMoodDialog();
   };
 
@@ -506,11 +472,7 @@ const Chat = ({ toggleTheme }) => {
   const handleAddReaction = (reaction) => {
     if (selectedMessageId) {
       addReaction(selectedMessageId, reaction);
-      setSnackbar({
-        open: true,
-        message: 'Reaction added.',
-        severity: 'success',
-      });
+      setSnackbar({ open: true, message: 'Reaction added.', severity: 'success' });
     }
     handleReactionClose();
   };
@@ -572,20 +534,13 @@ Quick Replies:
     if (!user) return;
     try {
       const messageRef = doc(db, 'users', user.uid, 'messages', messageId);
-      await updateDoc(messageRef, {
-        quickReplies: quickReplies,
-      });
+      await updateDoc(messageRef, { quickReplies });
     } catch (error) {
       console.error('Error adding quick replies:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to load quick replies.',
-        severity: 'error',
-      });
+      setSnackbar({ open: true, message: 'Failed to load quick replies.', severity: 'error' });
     }
   };
 
-  // Handlers for Custom Instructions Dialog.
   const openCustomInstructionsDialog = () => {
     setCustomInstructionsInput(customInstructions);
     setCustomInstructionsDialogOpen(true);
@@ -600,23 +555,13 @@ Quick Replies:
     if (!user) return;
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, {
-        customInstructions: customInstructionsInput.trim(),
-      });
+      await updateDoc(userDocRef, { customInstructions: customInstructionsInput.trim() });
       setCustomInstructions(customInstructionsInput.trim());
-      setSnackbar({
-        open: true,
-        message: 'Custom instructions saved successfully.',
-        severity: 'success',
-      });
+      setSnackbar({ open: true, message: 'Custom instructions saved successfully.', severity: 'success' });
       closeCustomInstructionsDialog();
     } catch (error) {
       console.error('Error saving custom instructions:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to save custom instructions.',
-        severity: 'error',
-      });
+      setSnackbar({ open: true, message: 'Failed to save custom instructions.', severity: 'error' });
     }
   };
 
@@ -840,9 +785,7 @@ Quick Replies:
                     fontSize: '0.875rem',
                     '& fieldset': { borderColor: 'grey.400' },
                     '&:hover fieldset': { borderColor: theme.palette.primary.main },
-                    '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
-                    },
+                    '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
                   },
                   overflow: 'hidden',
                 }}
@@ -907,7 +850,7 @@ Quick Replies:
           </Box>
         </Box>
 
-        {/* Mobile Reaction Menu, Dialogs, and Snackbar */}
+        {/* Mobile Menus and Dialogs */}
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
@@ -921,12 +864,7 @@ Quick Replies:
             </MenuItem>
           ))}
         </Menu>
-        <Dialog
-          open={clearConfirmationOpen}
-          onClose={cancelClearChat}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
+        <Dialog open={clearConfirmationOpen} onClose={cancelClearChat} aria-labelledby="alert-dialog-title" aria-describedby="alert-dialog-description">
           <DialogTitle id="alert-dialog-title" sx={{ fontSize: '1.25rem' }}>{"Clear Chat History?"}</DialogTitle>
           <DialogContent>
             <DialogContentText id="alert-dialog-description" sx={{ fontSize: '1rem' }}>
@@ -942,11 +880,7 @@ Quick Replies:
             </Button>
           </DialogActions>
         </Dialog>
-        <Dialog
-          open={customInstructionsDialogOpen}
-          onClose={closeCustomInstructionsDialog}
-          aria-labelledby="custom-instructions-dialog-title"
-        >
+        <Dialog open={customInstructionsDialogOpen} onClose={closeCustomInstructionsDialog} aria-labelledby="custom-instructions-dialog-title">
           <DialogTitle id="custom-instructions-dialog-title" sx={{ fontSize: '1.25rem' }}>Set Custom Instructions</DialogTitle>
           <DialogContent>
             <DialogContentText sx={{ fontSize: '1rem' }}>
@@ -966,15 +900,13 @@ Quick Replies:
               onChange={(e) => setCustomInstructionsInput(e.target.value)}
               variant="outlined"
               placeholder="e.g., Please focus more on cognitive behavioral techniques."
-              InputProps={{ style: { fontSize: '0.9rem' } }}
-              InputLabelProps={{ style: { fontSize: '1rem' } }}
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeCustomInstructionsDialog} color="primary" size="small">
+            <Button onClick={closeCustomInstructionsDialog} color="primary">
               Cancel
             </Button>
-            <Button onClick={handleCustomInstructionsSave} color="primary" size="small">
+            <Button onClick={handleCustomInstructionsSave} color="primary">
               Save
             </Button>
           </DialogActions>
@@ -998,11 +930,6 @@ Quick Replies:
             </Button>
           </DialogActions>
         </Dialog>
-        {isModalOpen && modalContent && (
-          <Modal onClose={closeModal}>
-            {modalContent}
-          </Modal>
-        )}
         <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleSnackbarClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
           <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%', fontSize: '0.9rem' }} variant="filled">
             {snackbar.message}
@@ -1095,7 +1022,6 @@ Quick Replies:
                 <SettingsIcon />
               </IconButton>
             </Tooltip>
-            {/* Theme toggle is omitted in desktop version */}
           </Box>
         </Box>
 
@@ -1243,7 +1169,7 @@ Quick Replies:
         </Box>
       </Box>
 
-      {/* Desktop Dialogs and Menus */}
+      {/* Desktop Menus and Dialogs */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleReactionClose} anchorOrigin={{ vertical: 'top', horizontal: 'left' }} transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}>
         {['👍', '❤️', '😂', '😮', '😢', '👏'].map((emoji) => (
           <MenuItem key={emoji} onClick={() => handleAddReaction(emoji)} sx={{ fontSize: '1.5rem', padding: '0.5rem' }}>
@@ -1317,11 +1243,6 @@ Quick Replies:
           </Button>
         </DialogActions>
       </Dialog>
-      {isModalOpen && modalContent && (
-        <Modal onClose={closeModal}>
-          {modalContent}
-        </Modal>
-      )}
       <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={handleSnackbarClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }} variant="filled">
           {snackbar.message}
