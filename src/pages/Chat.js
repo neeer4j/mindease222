@@ -78,8 +78,8 @@ const MOOD_OPTIONS = [
   { label: '😕 Neutral', value: 'neutral' },
 ];
 
-const BOTTOM_NAV_HEIGHT = 56;
-const CHAT_INPUT_HEIGHT = 60;
+const BOTTOM_NAV_HEIGHT = 48; // Updated from 56
+const CHAT_INPUT_HEIGHT = 52; // Slightly reduced for better proportions
 
 const Chat = ({ toggleTheme }) => {
   // Contexts
@@ -575,281 +575,281 @@ Quick Replies:
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.3 }}
         style={{
-          position: 'relative',
-          height: '100vh',
-          width: '100vw',
-          background: theme.palette.background.gradient,
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: theme.palette.background.default,
           display: 'flex',
           flexDirection: 'column',
-          paddingTop: theme.spacing(1),
         }}
       >
-        {/* Mobile Header */}
+        {/* Mobile Header - Updated styling */}
         <Box
           sx={{
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '8px 16px',
-            backgroundColor: theme.palette.background.paper,
-            boxShadow: 1,
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+            background: theme.palette.mode === 'light' 
+              ? 'rgba(255, 255, 255, 0.8)'
+              : 'rgba(18, 18, 18, 0.8)',
+            backdropFilter: 'blur(10px)',
+            borderBottom: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Avatar
-              sx={{
-                bgcolor: theme.palette.primary.main,
-                width: 36,
-                height: 36,
-                mr: 1,
-              }}
-            >
-              <ChatIcon sx={{ color: 'white', fontSize: 22 }} />
-            </Avatar>
-            <Box>
-              <Typography variant="h6" color="textPrimary" sx={{ fontWeight: 800, fontSize: '1.1rem' }}>
-                MindEase
-              </Typography>
-              <Typography variant="caption" color="textSecondary">
-                AI Therapist
-              </Typography>
-            </Box>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Tooltip title="Log Mood">
-              <IconButton onClick={openMoodDialog} aria-label="log mood" color="inherit" size="small">
-                <MoodIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Clear Chat">
-              <IconButton onClick={handleClearChat} aria-label="clear chat history" color="inherit" size="small">
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Custom Instructions">
-              <IconButton onClick={openCustomInstructionsDialog} aria-label="set custom instructions" color="inherit" size="small">
-                <SettingsIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Toggle Theme">
-              <IconButton onClick={toggleTheme} aria-label="toggle theme" color="inherit" size="small">
-                <Brightness4Icon />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </Box>
-
-        <Box sx={{ position: 'relative', flexGrow: 1 }}>
-          {/* Mobile Chat Messages */}
-          <Box
-            ref={chatContentRef}
-            sx={{
-              overflowY: 'auto',
-              height: `calc(100vh - ${BOTTOM_NAV_HEIGHT + CHAT_INPUT_HEIGHT}px)`,
-              padding: '8px 16px',
-            }}
-            role="log"
-            aria-live="polite"
-          >
-            <ErrorBoundary>
-              {messages.map((msg, index) => {
-                const showTimestamp = !isSameTimeGroup(messages[index - 1], msg);
-                return (
-                  <React.Fragment key={msg.id || index}>
-                    {showTimestamp && !msg.isWelcome && (
-                      <Box textAlign="center" my={1}>
-                        <Typography variant="caption" color="textSecondary">
-                          {formatTime(msg.timestamp)}
-                        </Typography>
-                      </Box>
-                    )}
-                    <motion.div
-                      initial={{ opacity: 0, translateY: 10 }}
-                      animate={{ opacity: 1, translateY: 0 }}
-                      transition={{ duration: 0.2, delay: index * 0.02 }}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        handleReactionClick(e, msg.id);
-                      }}
-                    >
-                      <Message msg={msg} />
-                    </motion.div>
-                    {msg.isBot && msg.quickReplies && (
-                      <Box display="flex" flexWrap="wrap" gap={1} mt={1} mb={1}>
-                        {msg.quickReplies.map((reply, idx) => (
-                          <Button
-                            key={idx}
-                            variant="outlined"
-                            size="small"
-                            onClick={() => handleQuickReply(reply)}
-                            sx={{ borderRadius: '20px', textTransform: 'none', fontSize: '0.875rem', padding: '4px 10px' }}
-                          >
-                            {reply}
-                          </Button>
-                        ))}
-                      </Box>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-              {isTyping && (
-                <Box display="flex" alignItems="center" mb={1}>
-                  <Box
-                    component={motion.div}
-                    animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
-                    transition={{ duration: 0.6, repeat: Infinity }}
-                    sx={{
-                      width: 10,
-                      height: 10,
-                      bgcolor: 'primary.main',
-                      borderRadius: '50%',
-                      mr: 1,
-                    }}
-                  />
-                  <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
-                    MindEase is typing...
-                  </Typography>
-                </Box>
-              )}
-              {isFetchingQuickReplies && (
-                <Box display="flex" alignItems="center" mb={1}>
-                  <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
-                    Loading quick replies...
-                  </Typography>
-                </Box>
-              )}
-              {chatLoading && !isTyping && (
-                <Box display="flex" alignItems="center" mb={1}>
-                  <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
-                    Loading messages...
-                  </Typography>
-                </Box>
-              )}
-              {chatError && (
-                <Box display="flex" alignItems="center" mb={1}>
-                  <Typography variant="body2" color="error" sx={{ fontSize: '0.875rem' }}>
-                    Error: {chatError}
-                  </Typography>
-                </Box>
-              )}
-              <Box sx={{ height: CHAT_INPUT_HEIGHT + 20 }} />
-            </ErrorBoundary>
-          </Box>
-
-          {/* Mobile Chat Input */}
           <Box
             sx={{
-              position: 'absolute',
-              bottom: BOTTOM_NAV_HEIGHT,
-              left: 0,
-              right: 0,
-              backgroundColor: theme.palette.background.paper,
-              boxShadow: 4,
-              padding: '8px 16px',
-              height: CHAT_INPUT_HEIGHT,
-              zIndex: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 2,
+              py: 1.5,
+              gap: 1,
             }}
           >
-            <Box
-              component={motion.div}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
-              display="flex"
-              flexDirection="row"
-              alignItems="center"
-              gap={1}
-              sx={{ height: '100%' }}
-            >
-              <TextField
-                inputRef={inputRef}
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                placeholder={`How are you feeling today, ${userName}?`}
-                variant="outlined"
-                multiline
-                minRows={1}
-                maxRows={MOBILE_MAX_ROWS}
-                fullWidth
-                onKeyDown={handleKeyDown}
-                aria-label="User input"
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Avatar
                 sx={{
-                  flex: 1,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '30px',
-                    backgroundColor: theme.palette.background.paper,
-                    padding: '4px 12px',
-                    fontSize: '0.875rem',
-                    '& fieldset': { borderColor: 'grey.400' },
-                    '&:hover fieldset': { borderColor: theme.palette.primary.main },
-                    '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
-                  },
-                  overflow: 'hidden',
+                  bgcolor: 'primary.main',
+                  width: 38,
+                  height: 38,
                 }}
-              />
-              <Tooltip title={isListening ? "Stop Listening" : "Start Listening"}>
-                <GradientButton
-                  variant="contained"
-                  onClick={handleVoiceInput}
-                  aria-label="Voice Input"
-                  sx={{
-                    borderRadius: '50%',
-                    padding: 0.5,
-                    minWidth: 'auto',
-                    width: 40,
-                    height: 40,
-                    boxShadow: 3,
-                    background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
-                    '&:hover': {
-                      background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                    },
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {isListening ? <MicOffIcon /> : <MicIcon />}
-                </GradientButton>
-              </Tooltip>
-              <Tooltip title="Send Message">
-                <GradientButton
-                  variant="contained"
-                  onClick={handleSend}
-                  disabled={isTyping || !userInput.trim()}
-                  aria-label="Send message"
-                  sx={{
-                    borderRadius: '50%',
-                    padding: 0.5,
-                    minWidth: 'auto',
-                    width: 40,
-                    height: 40,
-                    boxShadow: 3,
-                    background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
-                    '&:hover': {
-                      background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                    },
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                    width={20}
-                    height={20}
-                  >
-                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
-                  </svg>
-                </GradientButton>
-              </Tooltip>
+              >
+                <ChatIcon sx={{ fontSize: 20 }} />
+              </Avatar>
+              <Box>
+                <Typography variant="subtitle1" fontWeight="600">
+                  MindEase
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  AI Therapist
+                </Typography>
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <IconButton
+                size="small"
+                onClick={openMoodDialog}
+                sx={{ color: 'primary.main' }}
+              >
+                <MoodIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={handleClearChat}
+                sx={{ color: 'text.secondary' }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={toggleTheme}
+                sx={{ color: 'text.secondary' }}
+              >
+                <Brightness4Icon fontSize="small" />
+              </IconButton>
             </Box>
           </Box>
         </Box>
 
+        {/* Chat Messages Container - Updated styling */}
+        <Box
+          ref={chatContentRef}
+          sx={{
+            flex: 1,
+            overflowY: 'auto',
+            px: 2,
+            pt: 2,
+            pb: `${BOTTOM_NAV_HEIGHT + CHAT_INPUT_HEIGHT - 32}px`, // Reduced from 16px to 8px
+            scrollBehavior: 'smooth',
+            '::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '::-webkit-scrollbar-thumb': {
+              background: 'rgba(128, 128, 128, 0.3)',
+              borderRadius: '3px',
+            },
+          }}
+        >
+          <ErrorBoundary>
+            {messages.map((msg, index) => {
+              const showTimestamp = !isSameTimeGroup(messages[index - 1], msg);
+              return (
+                <React.Fragment key={msg.id || index}>
+                  {showTimestamp && !msg.isWelcome && (
+                    <Box textAlign="center" my={1}>
+                      <Typography variant="caption" color="textSecondary">
+                        {formatTime(msg.timestamp)}
+                      </Typography>
+                    </Box>
+                  )}
+                  <motion.div
+                    initial={{ opacity: 0, translateY: 10 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.02 }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      handleReactionClick(e, msg.id);
+                    }}
+                  >
+                    <Message msg={msg} />
+                  </motion.div>
+                  {msg.isBot && msg.quickReplies && (
+                    <Box display="flex" flexWrap="wrap" gap={1} mt={1} mb={1}>
+                      {msg.quickReplies.map((reply, idx) => (
+                        <Button
+                          key={idx}
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleQuickReply(reply)}
+                          sx={{ borderRadius: '20px', textTransform: 'none', fontSize: '0.875rem', padding: '4px 10px' }}
+                        >
+                          {reply}
+                        </Button>
+                      ))}
+                    </Box>
+                  )}
+                </React.Fragment>
+              );
+            })}
+            {isTyping && (
+              <Box display="flex" alignItems="center" mb={1}>
+                <Box
+                  component={motion.div}
+                  animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
+                  transition={{ duration: 0.6, repeat: Infinity }}
+                  sx={{
+                    width: 10,
+                    height: 10,
+                    bgcolor: 'primary.main',
+                    borderRadius: '50%',
+                    mr: 1,
+                  }}
+                />
+                <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
+                  MindEase is typing...
+                </Typography>
+              </Box>
+            )}
+            {isFetchingQuickReplies && (
+              <Box display="flex" alignItems="center" mb={1}>
+                <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
+                  Loading quick replies...
+                </Typography>
+              </Box>
+            )}
+            {chatLoading && !isTyping && (
+              <Box display="flex" alignItems="center" mb={1}>
+                <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
+                  Loading messages...
+                </Typography>
+              </Box>
+            )}
+            {chatError && (
+              <Box display="flex" alignItems="center" mb={1}>
+                <Typography variant="body2" color="error" sx={{ fontSize: '0.875rem' }}>
+                  Error: {chatError}
+                </Typography>
+              </Box>
+            )}
+            <Box sx={{ height: CHAT_INPUT_HEIGHT + 8 }} /> {/* Reduced from 20px to 8px */}
+          </ErrorBoundary>
+        </Box>
+
+        {/* Chat Input - Updated styling */}
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: BOTTOM_NAV_HEIGHT,
+            left: 0,
+            right: 0,
+            background: theme.palette.mode === 'light'
+              ? 'rgba(255, 255, 255, 0.8)'
+              : 'rgba(18, 18, 18, 0.8)',
+            backdropFilter: 'blur(10px)',
+            borderTop: `1px solid ${theme.palette.divider}`,
+            px: 2,
+            py: 1, // Reduced from 1 to 0.75
+            zIndex: 2,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1,
+              alignItems: 'flex-end',
+            }}
+          >
+            <TextField
+              inputRef={inputRef}
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder={`Message MindEase...`}
+              multiline
+              maxRows={3}
+              fullWidth
+              variant="outlined"
+              size="small"
+              onKeyDown={handleKeyDown}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '20px',
+                  backgroundColor: theme.palette.background.paper,
+                  fontSize: '0.925rem',
+                  '& fieldset': {
+                    borderWidth: '1px',
+                    borderColor: 'divider',
+                  },
+                },
+              }}
+            />
+            <Box sx={{ display: 'flex', gap: 1, pb: 0.5 }}>
+              <IconButton
+                size="small"
+                onClick={handleVoiceInput}
+                color={isListening ? 'primary' : 'default'}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  backgroundColor: 'background.paper',
+                }}
+              >
+                {isListening ? <MicOffIcon /> : <MicIcon />}
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={handleSend}
+                disabled={!userInput.trim() || isTyping}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                  '&.Mui-disabled': {
+                    backgroundColor: 'action.disabledBackground',
+                  },
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  width={20}
+                  height={20}
+                >
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
+                </svg>
+              </IconButton>
+            </Box>
+          </Box>
+        </Box>
+        
         {/* Mobile Menus and Dialogs */}
         <Menu
           anchorEl={anchorEl}
