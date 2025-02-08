@@ -22,7 +22,7 @@ import {
   LinearProgress,
   Avatar,
 } from '@mui/material';
-import { styled } from '@mui/system';
+import { styled, alpha } from '@mui/system';
 import { AuthContext } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -39,9 +39,16 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 const ProfileContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
   marginTop: theme.spacing(4),
-  boxShadow: theme.shadows[3],
-  borderRadius: theme.spacing(3),
-  background: theme.palette.background.paper,
+  borderRadius: '24px',
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+  backdropFilter: 'blur(10px)',
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+  transition: 'all 0.3s ease-in-out',
+  '&:hover': {
+    boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+    transform: 'translateY(-6px)',
+  },
 }));
 
 const GradientButton = styled(Button)(({ theme }) => ({
@@ -265,6 +272,7 @@ const UserProfile = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        color: theme.palette.text.primary,
       }}
     >
       <Container maxWidth="md">

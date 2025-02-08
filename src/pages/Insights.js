@@ -17,6 +17,7 @@ import {
   Tooltip,
   Chip,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Line, Bar, Scatter } from 'react-chartjs-2';
 import {
@@ -677,7 +678,15 @@ Please provide insights that help the user understand their overall mental well-
                         padding: theme.spacing(2),
                         textAlign: 'center',
                         borderRadius: 2,
-                        backgroundColor: theme.palette.background.paper,
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          transform: 'translateY(-6px)',
+                        },
                       }}
                     >
                       <Typography variant="h6" color="textSecondary" gutterBottom>
@@ -695,7 +704,15 @@ Please provide insights that help the user understand their overall mental well-
                         padding: theme.spacing(2),
                         textAlign: 'center',
                         borderRadius: 2,
-                        backgroundColor: theme.palette.background.paper,
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          transform: 'translateY(-6px)',
+                        },
                       }}
                     >
                       <Typography variant="h6" color="textSecondary" gutterBottom>
@@ -713,7 +730,15 @@ Please provide insights that help the user understand their overall mental well-
                         padding: theme.spacing(2),
                         textAlign: 'center',
                         borderRadius: 2,
-                        backgroundColor: theme.palette.background.paper,
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          transform: 'translateY(-6px)',
+                        },
                       }}
                     >
                       <Typography variant="h6" color="textSecondary" gutterBottom>
@@ -731,7 +756,15 @@ Please provide insights that help the user understand their overall mental well-
                         padding: theme.spacing(2),
                         textAlign: 'center',
                         borderRadius: 2,
-                        backgroundColor: theme.palette.background.paper,
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          transform: 'translateY(-6px)',
+                        },
                       }}
                     >
                       <Typography variant="h6" color="textSecondary" gutterBottom>
@@ -759,8 +792,16 @@ Please provide insights that help the user understand their overall mental well-
                       sx={{
                         padding: theme.spacing(2),
                         borderRadius: 2,
-                        backgroundColor: theme.palette.background.paper,
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
                         height: isSmallScreen ? 300 : 400,
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          transform: 'translateY(-6px)',
+                        },
                       }}
                     >
                       {hasMoodOverTimeData ? (
@@ -797,8 +838,16 @@ Please provide insights that help the user understand their overall mental well-
                       sx={{
                         padding: theme.spacing(2),
                         borderRadius: 2,
-                        backgroundColor: theme.palette.background.paper,
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
                         height: isSmallScreen ? 300 : 400,
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          transform: 'translateY(-6px)',
+                        },
                       }}
                     >
                       {hasActivityFrequencyData ? (
@@ -834,8 +883,16 @@ Please provide insights that help the user understand their overall mental well-
                       sx={{
                         padding: theme.spacing(2),
                         borderRadius: 2,
-                        backgroundColor: theme.palette.background.paper,
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
                         height: isSmallScreen ? 300 : 400,
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          transform: 'translateY(-6px)',
+                        },
                       }}
                     >
                       {hasMoodActivityCorrelationData ? (
@@ -871,8 +928,16 @@ Please provide insights that help the user understand their overall mental well-
                       sx={{
                         padding: theme.spacing(2),
                         borderRadius: 2,
-                        backgroundColor: theme.palette.background.paper,
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
                         height: isSmallScreen ? 300 : 400,
+                        transition: 'all 0.3s ease-in-out',
+                        '&:hover': {
+                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          transform: 'translateY(-6px)',
+                        },
                       }}
                     >
                       {hasSleepDurationOverTimeData ? (
@@ -937,7 +1002,15 @@ Please provide insights that help the user understand their overall mental well-
                   sx={{
                     padding: theme.spacing(3),
                     borderRadius: 2,
-                    backgroundColor: theme.palette.background.paper,
+                    background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                    backdropFilter: 'blur(10px)',
+                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                    boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                    transition: 'all 0.3s ease-in-out',
+                    '&:hover': {
+                      boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                      transform: 'translateY(-6px)',
+                    },
                   }}
                 >
                   {aiInsightsLoading ? (

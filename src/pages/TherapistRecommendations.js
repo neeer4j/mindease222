@@ -27,7 +27,7 @@ import {
   Visibility as VisibilityIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { styled } from '@mui/system';
+import { styled, alpha } from '@mui/system';
 import { motion } from 'framer-motion';
 import PageLayout from '../components/PageLayout';
 import { TherapistFindContext } from '../contexts/TherapistFindContext';
@@ -36,23 +36,45 @@ import { TherapistFindContext } from '../contexts/TherapistFindContext';
 // Styled Components
 // -----------------------
 
+// Update the DashboardContainer styling
 const DashboardContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   minHeight: '100vh',
+  '& > *': {
+    overflowY: 'auto',
+    scrollBehavior: 'smooth',
+    '&::-webkit-scrollbar': {
+      width: '8px',
+    },
+    '&::-webkit-scrollbar-track': {
+      background: alpha(theme.palette.background.paper, 0.1),
+      borderRadius: '8px',
+    },
+    '&::-webkit-scrollbar-thumb': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.2),
+      borderRadius: '8px',
+      '&:hover': {
+        backgroundColor: alpha(theme.palette.primary.main, 0.3),
+      },
+    },
+  }
 }));
 
 const WidgetCard = styled(Card)(({ theme }) => ({
-  borderRadius: '16px',
-  boxShadow: theme.shadows[3],
+  borderRadius: '24px',
+  boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
   height: 240,
-  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+  backdropFilter: 'blur(10px)',
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  transition: 'all 0.3s ease-in-out',
   '&:hover': {
-    transform: 'scale(1.02)',
-    boxShadow: theme.shadows[5],
+    boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+    transform: 'translateY(-6px)',
   },
 }));
 
@@ -60,9 +82,21 @@ const WidgetContent = styled(CardContent)(({ theme }) => ({
   padding: theme.spacing(2),
   flexGrow: 1,
   overflowY: 'auto',
-  '&::-webkit-scrollbar': { display: 'none' },
-  '-ms-overflow-style': 'none',
-  'scrollbar-width': 'none',
+  scrollBehavior: 'smooth',
+  '&::-webkit-scrollbar': {
+    width: '6px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: alpha(theme.palette.background.paper, 0.1),
+    borderRadius: '6px',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.2),
+    borderRadius: '6px',
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.3),
+    },
+  },
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'flex-start',
@@ -87,13 +121,19 @@ const HeroSection = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(3),
   padding: theme.spacing(4),
   borderRadius: '24px',
-  background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-  color: theme.palette.common.white,
-  boxShadow: theme.shadows[4],
-  backdropFilter: 'blur(8px)',
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+  backdropFilter: 'blur(10px)',
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+  color: theme.palette.text.primary,
   display: 'flex',
   alignItems: 'center',
   position: 'relative',
+  transition: 'all 0.3s ease-in-out',
+  '&:hover': {
+    boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+    transform: 'translateY(-6px)',
+  },
   [theme.breakpoints.down('sm')]: {
     flexDirection: 'column',
     textAlign: 'center',
