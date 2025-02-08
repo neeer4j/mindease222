@@ -17,7 +17,7 @@ import {
   useMediaQuery,
   Card,
   CardContent,
-  CardActions,
+  CardActions as MuiCardActions,
   Avatar,
   IconButton,
   Snackbar,
@@ -41,7 +41,7 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { styled } from '@mui/system';
+import { styled, alpha } from '@mui/system';
 import {
   AreaChart,
   Area,
@@ -108,16 +108,18 @@ const formatDateToRelativeTime = (date) => {
 // Styled Components
 // =======================
 const GradientButton = styled(Button)(({ theme }) => ({
-  background: `linear-gradient(45deg, ${theme.palette.primary.light} 30%, ${theme.palette.primary.main} 90%)`,
+  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
   color: theme.palette.primary.contrastText,
   borderRadius: '12px',
-  padding: '10px 22px',
-  boxShadow: theme.shadows[4],
-  transition: 'background 0.4s ease-out, box-shadow 0.3s ease-out, transform 0.3s ease-out',
+  padding: '8px 16px',
+  boxShadow: `0 2px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+  transition: 'all 0.3s ease-out',
+  textTransform: 'none',
+  fontWeight: 500,
   '&:hover': {
-    background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-    boxShadow: theme.shadows[7],
-    transform: 'scale(1.05)',
+    background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+    boxShadow: `0 4px 15px ${alpha(theme.palette.primary.main, 0.4)}`,
+    transform: 'scale(1.03)',
   },
 }));
 
@@ -125,10 +127,13 @@ const SubtleButton = styled(Button)(({ theme }) => ({
   color: theme.palette.text.secondary,
   borderRadius: '12px',
   padding: '8px 16px',
-  transition: 'background-color 0.3s ease-out, color 0.3s ease-out, transform 0.2s ease-out',
+  backgroundColor: 'transparent',
+  transition: 'all 0.3s ease-out',
+  textTransform: 'none',
+  fontWeight: 500,
   '&:hover': {
-    backgroundColor: theme.palette.action.hover,
-    color: theme.palette.text.primary,
+    backgroundColor: alpha(theme.palette.action.hover, 0.1),
+    color: theme.palette.primary.main,
     transform: 'scale(1.03)',
   },
 }));
@@ -235,11 +240,14 @@ const HeroSubtitle = styled(Typography)(({ theme, variant = 'default' }) => ({
 const WidgetCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(2),
   borderRadius: '24px',
-  boxShadow: theme.shadows[3],
+  boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
   overflow: 'hidden',
-  transition: 'box-shadow 0.3s ease-out, transform 0.3s ease-out',
+  transition: 'all 0.3s ease-in-out',
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+  backdropFilter: 'blur(10px)',
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
   '&:hover': {
-    boxShadow: theme.shadows[8],
+    boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
     transform: 'translateY(-6px)',
   },
 }));
@@ -247,12 +255,18 @@ const WidgetCard = styled(Card)(({ theme }) => ({
 const WidgetTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 700,
   color: theme.palette.text.primary,
-  padding: theme.spacing(1, 2),
-  borderBottom: `1px solid ${theme.palette.divider}`,
-  fontSize: '1rem',
+  padding: theme.spacing(2, 2.5),
+  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  fontSize: '1.1rem',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
+  letterSpacing: '0.5px',
+}));
+
+const CardActions = styled(MuiCardActions)(({ theme }) => ({
+  borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  padding: theme.spacing(1.5, 2),
 }));
 
 const MoodHeader = styled(Box)(({ theme }) => ({
@@ -271,29 +285,31 @@ const ChatListScrollableBox = styled(Box)(({ theme }) => ({
   maxHeight: '120px',
   overflowY: 'auto',
   paddingRight: theme.spacing(0.5),
-  transition: 'padding-right 0.3s ease-out',
+  transition: 'all 0.3s ease-out',
   '&::-webkit-scrollbar': {
-    width: '6px',
+    width: '4px',
   },
   '&::-webkit-scrollbar-track': {
-    background: theme.palette.background.paper,
-    borderRadius: '12px',
+    background: alpha(theme.palette.background.paper, 0.5),
+    borderRadius: '10px',
   },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: theme.palette.primary.main,
-    borderRadius: '12px',
-    border: `1px solid ${theme.palette.background.paper}`,
+    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+    borderRadius: '10px',
+    border: 'none',
   },
   '&::-webkit-scrollbar-thumb:hover': {
-    backgroundColor: theme.palette.primary.dark,
+    background: theme.palette.primary.dark,
   },
 }));
 
 const ActivityListItem = styled(ListItem)(({ theme }) => ({
   padding: theme.spacing(1, 0),
+  borderRadius: '8px',
+  transition: 'all 0.2s ease-out',
   '&:hover': {
-    backgroundColor: theme.palette.action.hover,
-    borderRadius: '8px',
+    backgroundColor: alpha(theme.palette.action.hover, 0.1),
+    transform: 'translateX(4px)',
   },
 }));
 
