@@ -639,6 +639,13 @@ Quick Replies:
               </IconButton>
               <IconButton
                 size="small"
+                onClick={openCustomInstructionsDialog}
+                sx={{ color: 'text.secondary' }}
+              >
+                <SettingsIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
                 onClick={handleClearChat}
                 sx={{ color: 'text.secondary' }}
               >
