@@ -36,6 +36,7 @@ import {
   HelpOutline as HelpOutlineIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
+import { alpha } from '@mui/material/styles';
 import Chart from 'react-apexcharts';
 import { SleepContext } from '../contexts/SleepContext';
 import PageLayout from '../components/PageLayout';
@@ -700,8 +701,16 @@ const SleepQualityMonitor = () => {
         <Container maxWidth="md">
           <Paper elevation={3} sx={{
             padding: theme.spacing(4),
-            borderRadius: '20px',
-            backgroundColor: theme.palette.background.paper,
+            borderRadius: '24px',
+            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+            transition: 'all 0.3s ease-in-out',
+            '&:hover': {
+              boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+              transform: 'translateY(-6px)',
+            },
             color: theme.palette.text.primary
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>

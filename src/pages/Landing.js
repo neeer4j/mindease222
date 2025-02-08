@@ -31,7 +31,7 @@ import {
   Insights as InsightsIcon,
   OndemandVideo as OndemandVideoIcon,
 } from '@mui/icons-material';
-import { styled } from '@mui/system';
+import { styled, alpha } from '@mui/material/styles';
 import { AuthContext } from '../contexts/AuthContext';
 import PageLayout from '../components/PageLayout';
 
@@ -498,24 +498,21 @@ const Landing = () => {
                   >
                     <Card
                       sx={{
-                        background: theme.palette.background.paper,
-                        backdropFilter: 'blur(8px)',
-                        borderRadius: '28px',
-                        boxShadow: theme.shadows[3],
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        borderRadius: '24px',
+                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
                         overflow: 'hidden',
-                        transition:
-                          'transform 0.3s ease, boxShadow 0.3s ease, backdropFilter 0.3s ease',
+                        transition: 'all 0.3s ease-in-out',
                         height: '100%',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
                         padding: theme.spacing(3),
-                        border: `1px solid ${theme.palette.divider}`,
                         '&:hover': {
-                          transform: 'translateY(-7px)',
-                          boxShadow: theme.shadows[7],
-                          backdropFilter: 'none',
-                          border: `1px solid ${theme.palette.primary.light}`,
+                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          transform: 'translateY(-6px)',
                         },
                         minHeight: 450,
                       }}
@@ -717,19 +714,20 @@ const Landing = () => {
                       <Grid item xs={12} md={isMobile ? 12 : 4} key={index}>
                         <Card
                           sx={{
-                            background: theme.palette.background.paper,
-                            borderRadius: '28px',
-                            boxShadow: theme.shadows[3],
+                            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                            backdropFilter: 'blur(10px)',
+                            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                            borderRadius: '24px',
+                            boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
                             padding: theme.spacing(4),
                             height: '100%',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
-                            transition:
-                              'box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease',
+                            transition: 'all 0.3s ease-in-out',
                             '&:hover': {
-                              boxShadow: theme.shadows[5],
-                              transform: 'scale(1.03)',
+                              boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                              transform: 'translateY(-6px)',
                             },
                             position: 'relative',
                             zIndex: 2,
@@ -890,20 +888,21 @@ const Landing = () => {
                   >
                     <Card
                       sx={{
-                        background: theme.palette.background.paper,
-                        borderRadius: '28px',
-                        boxShadow: theme.shadows[3],
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                        backdropFilter: 'blur(10px)',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        borderRadius: '24px',
+                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
                         padding: theme.spacing(4),
                         height: '100%',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        transition:
-                          'box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease',
+                        transition: 'all 0.3s ease-in-out',
                         '&:hover': {
-                          boxShadow: theme.shadows[5],
-                          transform: 'scale(1.03)',
+                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          transform: 'translateY(-6px)',
                         },
                         position: 'relative',
                         zIndex: 2,
