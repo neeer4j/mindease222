@@ -1,6 +1,6 @@
 // src/contexts/TherapistFindContext.jsx
 
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
 
 // Create the context
@@ -8,11 +8,17 @@ export const TherapistFindContext = createContext();
 
 // Provider component
 export const TherapistFindProvider = ({ children }) => {
-  const [therapists, setTherapists] = useState([]);
+  // Initialize state from localStorage to avoid API call on page refresh
+  const [therapists, setTherapists] = useState(() => {
+    const cached = localStorage.getItem("therapists");
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [lastFetched, setLastFetched] = useState(() => {
+    const cached = localStorage.getItem("lastFetched");
+    return cached ? Number(cached) : 0;
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  // Keep track of when data was last fetched (in milliseconds)
-  const [lastFetched, setLastFetched] = useState(0);
   const { user } = useContext(AuthContext);
 
   // Retrieve API key from environment variables
@@ -32,8 +38,21 @@ export const TherapistFindProvider = ({ children }) => {
         resolve(window.google);
         return;
       }
-      // Create the script element.
+      // Check if the script already exists.
+      const existingScript = document.getElementById("google-maps-script");
+      if (existingScript) {
+        existingScript.addEventListener("load", () => {
+          if (window.google && window.google.maps) resolve(window.google);
+          else reject(new Error("Google Maps API loaded but not available."));
+        });
+        existingScript.addEventListener("error", () =>
+          reject(new Error("Google Maps API failed to load."))
+        );
+        return;
+      }
+      // Create the script element with a unique id.
       const script = document.createElement("script");
+      script.id = "google-maps-script";
       script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}&libraries=places`;
       script.async = true;
       script.defer = true;
@@ -88,13 +107,7 @@ export const TherapistFindProvider = ({ children }) => {
    */
   const fetchTherapists = async (latitude, longitude, forceRefresh = false) => {
     // If not forcing refresh and data is already cached within 10 minutes, skip refetching.
-    if (
-      !forceRefresh &&
-      therapists.length > 0 &&
-      Date.now() - lastFetched < 600000
-    ) {
-      return;
-    }
+    if (!forceRefresh && therapists.length > 0) return;
 
     setLoading(true);
     setError(null);
@@ -144,6 +157,8 @@ export const TherapistFindProvider = ({ children }) => {
       if (results.length === 0) {
         setError("No therapists found nearby.");
         setTherapists([]);
+        localStorage.removeItem("therapists");
+        localStorage.removeItem("lastFetched");
         return;
       }
 
@@ -176,6 +191,9 @@ export const TherapistFindProvider = ({ children }) => {
 
       setTherapists(mappedData);
       setLastFetched(Date.now());
+      // Cache the results in localStorage
+      localStorage.setItem("therapists", JSON.stringify(mappedData));
+      localStorage.setItem("lastFetched", Date.now().toString());
     } catch (err) {
       console.error("Error fetching therapists:", err);
       setError(err.message || "Failed to fetch therapists.");
@@ -192,6 +210,8 @@ export const TherapistFindProvider = ({ children }) => {
     setTherapists([]);
     setError(null);
     setLastFetched(0);
+    localStorage.removeItem("therapists");
+    localStorage.removeItem("lastFetched");
   };
 
   return (
