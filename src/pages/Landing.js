@@ -28,6 +28,8 @@ import {
   SupportAgent as SupportAgentIcon,
   ArrowBackIos,
   ArrowForwardIos,
+  Insights as InsightsIcon,
+  OndemandVideo as OndemandVideoIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/system';
 import { AuthContext } from '../contexts/AuthContext';
@@ -101,13 +103,22 @@ const Landing = () => {
       alt: 'Person sleeping peacefully',
     },
     {
-      icon: <InsertChartOutlinedIcon fontSize="large" color="inherit" />,
-      title: 'Progress Reports',
+      icon: <InsightsIcon fontSize="large" color="inherit" />,
+      title: 'Insights',
       description:
-        'Visualize your emotional journey with detailed progress reports and charts. See your improvements and stay motivated on your wellness path.',
-      action: () => navigate('/progress-reports'),
-      imageUrl: 'images/rt.jpg',
-      alt: 'Graph showing progress over time',
+        'Gain deeper understanding of your mood patterns with personalized insights.',
+      action: () => navigate('/insights'),
+      imageUrl: 'images/insights.jpg',
+      alt: 'Visual representation of user insights',
+    },
+    {
+      icon: <OndemandVideoIcon fontSize="large" color="inherit" />,
+      title: 'Reels',
+      description:
+        'Explore quick, engaging reels for mental wellness tips and guidance.',
+      action: () => navigate('/reels'),
+      imageUrl: 'images/reels.jpg',
+      alt: 'Video reel widget',
     },
   ];
 
