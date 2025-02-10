@@ -84,7 +84,7 @@ const Insights = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Destructure contexts (defaulting to empty arrays)
+  // Contexts (with defaults)
   const { moodEntries = [], loading: moodLoading, error: moodError } = useContext(MoodContext);
   const { activities = [], loading: activityLoading, error: activityError } = useContext(ActivityContext);
   const { sleepLogs = [], loading: sleepLoading, error: sleepError } = useContext(SleepContext);
@@ -415,7 +415,6 @@ Please provide insights that help the user understand their overall mental well-
 
   // On initial mount (or when context data is loaded), check if cached insights exist and are valid.
   useEffect(() => {
-    // Wait until all context data has finished loading.
     if (moodLoading || activityLoading || sleepLoading) return;
 
     const currentCounts = {
@@ -434,15 +433,13 @@ Please provide insights that help the user understand their overall mental well-
           parsed.sleepCount === currentCounts.sleep
         ) {
           setAiInsights(parsed.aiInsights);
-          // Update our previous counts to avoid triggering the debounced update.
           prevCountsRef.current = currentCounts;
-          return; // Use cached insights and do not fetch again.
+          return;
         }
       } catch (e) {
         console.error('Error parsing cached AI insights:', e);
       }
     }
-    // If no valid cache exists, fetch insights.
     if (currentCounts.mood > 0 || currentCounts.activity > 0 || currentCounts.sleep > 0) {
       prevCountsRef.current = currentCounts;
       fetchAiInsights();
@@ -477,7 +474,7 @@ Please provide insights that help the user understand their overall mental well-
       const timer = setTimeout(() => {
         prevCountsRef.current = currentCounts;
         fetchAiInsights();
-      }, 5000); // Adjust debounce delay as needed.
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [moodEntries.length, activities.length, sleepLogs.length, aiModel]);
@@ -671,110 +668,54 @@ Please provide insights that help the user understand their overall mental well-
               {/* Summary Statistics Section */}
               <motion.div variants={sectionVariants} initial="hidden" animate="visible" style={{ marginBottom: theme.spacing(6) }}>
                 <Grid container spacing={4} justifyContent="center">
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Paper
-                      elevation={2}
-                      sx={{
-                        padding: theme.spacing(2),
-                        textAlign: 'center',
-                        borderRadius: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        backdropFilter: 'blur(10px)',
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
-                          transform: 'translateY(-6px)',
-                        },
-                      }}
-                    >
-                      <Typography variant="h6" color="textSecondary" gutterBottom>
-                        Total Moods Logged
-                      </Typography>
-                      <Typography variant="h4" sx={{ color: theme.palette.primary.main }}>
-                        {summaryStatistics.totalMoods}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Paper
-                      elevation={2}
-                      sx={{
-                        padding: theme.spacing(2),
-                        textAlign: 'center',
-                        borderRadius: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        backdropFilter: 'blur(10px)',
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
-                          transform: 'translateY(-6px)',
-                        },
-                      }}
-                    >
-                      <Typography variant="h6" color="textSecondary" gutterBottom>
-                        Average Mood
-                      </Typography>
-                      <Typography variant="h4" sx={{ color: theme.palette.primary.main }}>
-                        {summaryStatistics.averageMood} ⭐
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Paper
-                      elevation={2}
-                      sx={{
-                        padding: theme.spacing(2),
-                        textAlign: 'center',
-                        borderRadius: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        backdropFilter: 'blur(10px)',
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
-                          transform: 'translateY(-6px)',
-                        },
-                      }}
-                    >
-                      <Typography variant="h6" color="textSecondary" gutterBottom>
-                        Total Activities Logged
-                      </Typography>
-                      <Typography variant="h4" sx={{ color: theme.palette.primary.main }}>
-                        {summaryStatistics.totalActivities}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Paper
-                      elevation={2}
-                      sx={{
-                        padding: theme.spacing(2),
-                        textAlign: 'center',
-                        borderRadius: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        backdropFilter: 'blur(10px)',
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
-                          transform: 'translateY(-6px)',
-                        },
-                      }}
-                    >
-                      <Typography variant="h6" color="textSecondary" gutterBottom>
-                        Total Sleep Logs
-                      </Typography>
-                      <Typography variant="h4" sx={{ color: theme.palette.secondary.main }}>
-                        {summaryStatistics.totalSleepLogs}
-                      </Typography>
-                    </Paper>
-                  </Grid>
+                  {[
+                    {
+                      label: 'Total Moods Logged',
+                      value: summaryStatistics.totalMoods,
+                      color: theme.palette.primary.main,
+                    },
+                    {
+                      label: 'Average Mood',
+                      value: `${summaryStatistics.averageMood} ⭐`,
+                      color: theme.palette.primary.main,
+                    },
+                    {
+                      label: 'Total Activities Logged',
+                      value: summaryStatistics.totalActivities,
+                      color: theme.palette.primary.main,
+                    },
+                    {
+                      label: 'Total Sleep Logs',
+                      value: summaryStatistics.totalSleepLogs,
+                      color: theme.palette.secondary.main,
+                    },
+                  ].map((stat, idx) => (
+                    <Grid item xs={12} sm={6} md={3} key={idx}>
+                      <Paper
+                        elevation={2}
+                        sx={{
+                          padding: theme.spacing(2),
+                          textAlign: 'center',
+                          borderRadius: 2,
+                          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                          boxShadow: theme.shadows[3],
+                          transition: 'all 0.3s ease-in-out',
+                          '&:hover': {
+                            boxShadow: theme.shadows[8],
+                            transform: 'translateY(-6px)',
+                          },
+                        }}
+                      >
+                        <Typography variant="h6" color="textSecondary" gutterBottom>
+                          {stat.label}
+                        </Typography>
+                        <Typography variant="h4" sx={{ color: stat.color }}>
+                          {stat.value}
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  ))}
                 </Grid>
               </motion.div>
 
@@ -793,13 +734,12 @@ Please provide insights that help the user understand their overall mental well-
                         padding: theme.spacing(2),
                         borderRadius: 2,
                         background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        backdropFilter: 'blur(10px)',
                         border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                        boxShadow: theme.shadows[3],
                         height: isSmallScreen ? 300 : 400,
                         transition: 'all 0.3s ease-in-out',
                         '&:hover': {
-                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          boxShadow: theme.shadows[8],
                           transform: 'translateY(-6px)',
                         },
                       }}
@@ -839,13 +779,12 @@ Please provide insights that help the user understand their overall mental well-
                         padding: theme.spacing(2),
                         borderRadius: 2,
                         background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        backdropFilter: 'blur(10px)',
                         border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                        boxShadow: theme.shadows[3],
                         height: isSmallScreen ? 300 : 400,
                         transition: 'all 0.3s ease-in-out',
                         '&:hover': {
-                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          boxShadow: theme.shadows[8],
                           transform: 'translateY(-6px)',
                         },
                       }}
@@ -884,13 +823,12 @@ Please provide insights that help the user understand their overall mental well-
                         padding: theme.spacing(2),
                         borderRadius: 2,
                         background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        backdropFilter: 'blur(10px)',
                         border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                        boxShadow: theme.shadows[3],
                         height: isSmallScreen ? 300 : 400,
                         transition: 'all 0.3s ease-in-out',
                         '&:hover': {
-                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          boxShadow: theme.shadows[8],
                           transform: 'translateY(-6px)',
                         },
                       }}
@@ -929,13 +867,12 @@ Please provide insights that help the user understand their overall mental well-
                         padding: theme.spacing(2),
                         borderRadius: 2,
                         background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        backdropFilter: 'blur(10px)',
                         border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                        boxShadow: theme.shadows[3],
                         height: isSmallScreen ? 300 : 400,
                         transition: 'all 0.3s ease-in-out',
                         '&:hover': {
-                          boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                          boxShadow: theme.shadows[8],
                           transform: 'translateY(-6px)',
                         },
                       }}
@@ -1003,12 +940,11 @@ Please provide insights that help the user understand their overall mental well-
                     padding: theme.spacing(3),
                     borderRadius: 2,
                     background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                    backdropFilter: 'blur(10px)',
                     border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                    boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+                    boxShadow: theme.shadows[3],
                     transition: 'all 0.3s ease-in-out',
                     '&:hover': {
-                      boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+                      boxShadow: theme.shadows[8],
                       transform: 'translateY(-6px)',
                     },
                   }}

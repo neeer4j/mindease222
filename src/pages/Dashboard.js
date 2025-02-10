@@ -107,19 +107,21 @@ const formatDateToRelativeTime = (date) => {
 // =======================
 // Styled Components
 // =======================
+
+// Use a smoother GradientButton (from your old code's smooth feel)
 const GradientButton = styled(Button)(({ theme }) => ({
-  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+  background: `linear-gradient(45deg, ${theme.palette.primary.light} 30%, ${theme.palette.primary.main} 90%)`,
   color: theme.palette.primary.contrastText,
   borderRadius: '12px',
-  padding: '8px 16px',
-  boxShadow: `0 2px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
-  transition: 'all 0.3s ease-out',
+  padding: '10px 22px',
+  boxShadow: theme.shadows[4],
+  transition: 'background 0.4s ease-out, box-shadow 0.3s ease-out, transform 0.3s ease-out',
   textTransform: 'none',
   fontWeight: 500,
   '&:hover': {
-    background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
-    boxShadow: `0 4px 15px ${alpha(theme.palette.primary.main, 0.4)}`,
-    transform: 'scale(1.03)',
+    background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
+    boxShadow: theme.shadows[7],
+    transform: 'scale(1.05)',
   },
 }));
 
@@ -128,12 +130,12 @@ const SubtleButton = styled(Button)(({ theme }) => ({
   borderRadius: '12px',
   padding: '8px 16px',
   backgroundColor: 'transparent',
-  transition: 'all 0.3s ease-out',
+  transition: 'background-color 0.3s ease-out, color 0.3s ease-out, transform 0.2s ease-out',
   textTransform: 'none',
   fontWeight: 500,
   '&:hover': {
-    backgroundColor: alpha(theme.palette.action.hover, 0.1),
-    color: theme.palette.primary.main,
+    backgroundColor: theme.palette.action.hover,
+    color: theme.palette.text.primary,
     transform: 'scale(1.03)',
   },
 }));
@@ -153,6 +155,7 @@ const MainContent = styled(motion.main)(({ theme }) => ({
   flex: 1,
 }));
 
+// HeroSectionCard – retaining the color palette but removing backdropFilter for performance
 const HeroSectionCard = styled(Card)(({ theme, variant = 'default' }) => {
   let backgroundColor = theme.palette.background.paper;
   let textColor = theme.palette.text.primary;
@@ -173,7 +176,7 @@ const HeroSectionCard = styled(Card)(({ theme, variant = 'default' }) => {
     background: backgroundColor,
     color: textColor,
     boxShadow: theme.shadows[3],
-    backdropFilter: 'blur(8px)',
+    // Removed expensive backdropFilter
     textAlign: 'left',
     display: 'flex',
     alignItems: 'center',
@@ -237,17 +240,22 @@ const HeroSubtitle = styled(Typography)(({ theme, variant = 'default' }) => ({
   ...(variant !== 'default' && { color: theme.palette.getContrastText(theme.palette[variant].light) }),
 }));
 
+/* 
+  UPDATED WidgetCard:
+  - Retains the old color palette (linear gradient background and border)
+  - Removes the backdropFilter and heavy custom box-shadow for smoother rendering
+  - Uses theme.shadows for hover effects
+*/
 const WidgetCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(2),
   borderRadius: '24px',
-  boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+  boxShadow: theme.shadows[3],
   overflow: 'hidden',
-  transition: 'all 0.3s ease-in-out',
+  transition: 'box-shadow 0.3s ease-out, transform 0.3s ease-out',
   background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-  backdropFilter: 'blur(10px)',
   border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
   '&:hover': {
-    boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+    boxShadow: theme.shadows[8],
     transform: 'translateY(-6px)',
   },
 }));
@@ -281,35 +289,34 @@ const ChartContainer = styled(Box)(({ theme }) => ({
   height: 160,
 }));
 
+// Use the smoother ChatListScrollableBox from the old code
 const ChatListScrollableBox = styled(Box)(({ theme }) => ({
   maxHeight: '120px',
   overflowY: 'auto',
   paddingRight: theme.spacing(0.5),
-  transition: 'all 0.3s ease-out',
+  transition: 'padding-right 0.3s ease-out',
   '&::-webkit-scrollbar': {
-    width: '4px',
+    width: '6px',
   },
   '&::-webkit-scrollbar-track': {
-    background: alpha(theme.palette.background.paper, 0.5),
-    borderRadius: '10px',
+    background: theme.palette.background.paper,
+    borderRadius: '12px',
   },
   '&::-webkit-scrollbar-thumb': {
-    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-    borderRadius: '10px',
-    border: 'none',
+    backgroundColor: theme.palette.primary.main,
+    borderRadius: '12px',
+    border: `1px solid ${theme.palette.background.paper}`,
   },
   '&::-webkit-scrollbar-thumb:hover': {
-    background: theme.palette.primary.dark,
+    backgroundColor: theme.palette.primary.dark,
   },
 }));
 
 const ActivityListItem = styled(ListItem)(({ theme }) => ({
   padding: theme.spacing(1, 0),
-  borderRadius: '8px',
-  transition: 'all 0.2s ease-out',
   '&:hover': {
-    backgroundColor: alpha(theme.palette.action.hover, 0.1),
-    transform: 'translateX(4px)',
+    backgroundColor: theme.palette.action.hover,
+    borderRadius: '8px',
   },
 }));
 
