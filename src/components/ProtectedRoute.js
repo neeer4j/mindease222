@@ -4,9 +4,10 @@ import React, { useContext } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import { Box, CircularProgress } from '@mui/material';
+import BannedUserScreen from './BannedUserScreen';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useContext(AuthContext);
+  const { isAuthenticated, loading, isBanned } = useContext(AuthContext);
 
   if (loading) {
     return (
@@ -25,6 +26,10 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (isBanned) {
+    return <BannedUserScreen />;
   }
 
   return children;

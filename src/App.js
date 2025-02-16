@@ -15,7 +15,7 @@ import {
   GlobalStyles,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { MoodProvider } from "./contexts/MoodContext";
 import { ActivityProvider } from "./contexts/ActivityContext";
 import { SleepProvider } from "./contexts/SleepContext";
@@ -47,6 +47,13 @@ import getTheme from "./theme";
 import { AnimatePresence } from "framer-motion";
 import BottomNav from "./components/BottomNav";
 import ScrollToTop from "./components/ScrollToTop"; // NEW: Import ScrollToTop
+import AdminRoute from './components/AdminRoute';
+import AdminDashboard from './pages/AdminDashboard';
+import { SnackbarProvider } from 'notistack';
+import ContactUs from './pages/ContactUs';
+import ChatAbuseAnalysis from './pages/ChatAbuseAnalysis';
+import WelcomeSplash from './components/WelcomeSplash';
+import FirestoreErrorBoundary from './components/FirestoreErrorBoundary';
 
 // Debugging log
 console.log("Rendering App...");
@@ -165,6 +172,30 @@ function AppRoutes({ toggleTheme }) {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
+        <Route 
+          path="/contact" 
+          element={
+            <ProtectedRoute>
+              <ContactUs />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/chat-abuse" 
+          element={
+            <ProtectedRoute adminOnly>
+              <ChatAbuseAnalysis />
+            </ProtectedRoute>
+          } 
+        />
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -174,6 +205,17 @@ function AppRoutes({ toggleTheme }) {
 
 function RedirectHandler() {
   const navigate = useNavigate();
+  const { isAdmin, showSplash, setShowSplash } = useAuth();
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    // Navigate after splash screen
+    if (isAdmin) {
+      navigate("/admin");
+    } else {
+      navigate("/dashboard");
+    }
+  };
 
   useEffect(() => {
     const handleRedirectResult = async () => {
@@ -182,17 +224,29 @@ function RedirectHandler() {
         if (result) {
           const firebaseUser = result.user;
           console.log("Redirect Sign-In User:", firebaseUser);
-          navigate("/dashboard");
+          // Navigation will be handled by the splash screen if it's shown
+          // Otherwise navigate directly
+          if (!showSplash) {
+            if (isAdmin) {
+              navigate("/admin");
+            } else {
+              navigate("/dashboard");
+            }
+          }
         }
       } catch (err) {
         console.error("Error handling redirect result:", err);
+        setShowSplash(false);
       }
     };
 
     handleRedirectResult();
-  }, [navigate]);
+  }, [navigate, isAdmin, showSplash, setShowSplash]);
 
-  return null;
+  // Only render splash screen if showSplash is true
+  if (!showSplash) return null;
+
+  return <WelcomeSplash onComplete={handleSplashComplete} />;
 }
 
 const MainContent = ({ toggleTheme, mode }) => {
@@ -240,38 +294,42 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <GlobalStyles
-        styles={{
-          "::-webkit-scrollbar": {
-            width: "6px",
-          },
-          "::-webkit-scrollbar-track": {
-            background: theme.palette.background.paper,
-            borderRadius: "3px",
-          },
-          "::-webkit-scrollbar-thumb": {
-            backgroundColor: theme.palette.primary.main,
-            borderRadius: "3px",
-          },
-        }}
-      />
-      <AuthProvider>
-        <MoodProvider>
-          <ActivityProvider>
-            <SleepProvider>
-              <ChatProvider>
-                <TherapistFindProvider>
-                  <Router>
-                    <MainContent toggleTheme={toggleTheme} mode={mode} />
-                    {isMobile && <BottomNav />}
-                  </Router>
-                </TherapistFindProvider>
-              </ChatProvider>
-            </SleepProvider>
-          </ActivityProvider>
-        </MoodProvider>
-      </AuthProvider>
+      <SnackbarProvider maxSnack={3}>
+        <CssBaseline />
+        <GlobalStyles
+          styles={{
+            "::-webkit-scrollbar": {
+              width: "6px",
+            },
+            "::-webkit-scrollbar-track": {
+              background: theme.palette.background.paper,
+              borderRadius: "3px",
+            },
+            "::-webkit-scrollbar-thumb": {
+              backgroundColor: theme.palette.primary.main,
+              borderRadius: "3px",
+            },
+          }}
+        />
+        <AuthProvider>
+          <FirestoreErrorBoundary>
+            <TherapistFindProvider>
+              <MoodProvider>
+                <ActivityProvider>
+                  <SleepProvider>
+                    <ChatProvider>
+                      <Router>
+                        <MainContent toggleTheme={toggleTheme} mode={mode} />
+                        {isMobile && <BottomNav />}
+                      </Router>
+                    </ChatProvider>
+                  </SleepProvider>
+                </ActivityProvider>
+              </MoodProvider>
+            </TherapistFindProvider>
+          </FirestoreErrorBoundary>
+        </AuthProvider>
+      </SnackbarProvider>
     </ThemeProvider>
   );
 }

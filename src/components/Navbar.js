@@ -16,9 +16,11 @@ import {
   useMediaQuery,
   Typography,
   useTheme,
+  Tooltip,
+  Switch,
 } from '@mui/material';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+import { AuthContext, useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Import required icons
@@ -34,59 +36,19 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import HotelIcon from '@mui/icons-material/Hotel';
 import MeditationIcon from '@mui/icons-material/SelfImprovement';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital'; // NEW: Therapist icon
-import OndemandVideoIcon from '@mui/icons-material/OndemandVideo'; // NEW: Reels icon
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import AccountBoxIcon from '@mui/icons-material/AccountBox';
 
-const navLinks = [
-  { title: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-  { title: 'Chat', path: '/chat', icon: <ChatIcon /> },
-  {
-    title: 'Features',
-    icon: <MoodIcon />,
-    children: [
-      {
-        title: 'Mood Tracker',
-        path: '/mood-tracker',
-        icon: <MoodIcon />,
-        photoUrl:
-          'images/navbar/aa.jpg',
-      },
-      {
-        title: 'Activity Logging',
-        path: '/activity-logging',
-        icon: <ActivityIcon />,
-        photoUrl:
-          'images/navbar/ac.jpg',
-      },
-      {
-        title: 'Sleep Tracker',
-        path: '/sleep-tracker',
-        icon: <HotelIcon />,
-        photoUrl:
-          'images/navbar/sleep.jpg',
-      },
-      {
-        title: 'Reels',
-        path: '/reels',
-        icon: <OndemandVideoIcon />,
-        photoUrl:
-          'images/navbar/reel.jpg',
-      },
-      {
-        title: 'Meditation',
-        path: '/meditations',
-        icon: <MeditationIcon />,
-        photoUrl:
-          'images/navbar/images.jpg',
-      },
-    ],
-  },
-  { title: 'Insights', path: '/insights', icon: <InsightsIcon /> },
-  { title: 'Therapists', path: '/therapist-recommendations', icon: <LocalHospitalIcon /> },
-  { title: 'Profile', path: '/profile', icon: <ProfileIcon /> },
-];
+const NavToolsStyling = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 1,
+};
 
 const Navbar = ({ toggleTheme }) => {
   const { isAuthenticated, logout } = useContext(AuthContext);
@@ -94,6 +56,7 @@ const Navbar = ({ toggleTheme }) => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { user, isAdmin, isInAdminMode, toggleAdminMode } = useAuth();
 
   // Determine if we should hide the theme toggle (on login/signup pages)
   const hideToggle = location.pathname === '/login' || location.pathname === '/signup';
@@ -106,7 +69,6 @@ const Navbar = ({ toggleTheme }) => {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      // Hide title when scrolling down past 50px; show when scrolling up.
       if (currentScrollY > lastScrollY && currentScrollY > 50) {
         setShowTitle(false);
       } else {
@@ -119,10 +81,7 @@ const Navbar = ({ toggleTheme }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // Check if the current mobile route is the reels page.
-  const isReelsPageOnMobile = isMobile && location.pathname === '/reels';
-
-  // Define a mobile-specific background gradient.
+  // Define mobile-specific background gradient.
   const mobileNavbarBg =
     theme.palette.mode === 'light'
       ? 'linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 40%, transparent 90%)'
@@ -136,10 +95,79 @@ const Navbar = ({ toggleTheme }) => {
 
   const [submenuOpen, setSubmenuOpen] = useState(null);
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
-  const [activePhoto, setActivePhoto] = useState(
-    navLinks.find((link) => link.title === 'Features')?.children[0]?.photoUrl || ''
-  );
+  const [activePhoto, setActivePhoto] = useState('');
 
+  // Define handleFeatureClick inside Navbar so that navigate is available
+  const handleFeatureClick = (path) => {
+    // Check if user has seen the tutorial for this feature
+    const tutorialFlags = {
+      '/mood-tracker': 'moodTrackerTutorialSeen',
+      '/activity-logging': 'activityLoggingTutorialSeen',
+      '/meditations': 'meditationsTutorialSeen',
+      '/sleep-tracker': 'sleepMonitorTutorialSeen',
+    };
+
+    const flag = tutorialFlags[path];
+    if (flag) {
+      const hasSeenTutorial = localStorage.getItem(flag);
+      if (!hasSeenTutorial) {
+        localStorage.removeItem(flag); // Reset the flag to ensure splash shows
+      }
+    }
+    navigate(path);
+  };
+
+  // Define navLinks inside Navbar so that onClick can reference handleFeatureClick
+  const navLinks = [
+    { title: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+    { title: 'Chat', path: '/chat', icon: <ChatIcon /> },
+    {
+      title: 'Features',
+      icon: <MoodIcon />,
+      children: [
+        {
+          title: 'Mood Tracker',
+          path: '/mood-tracker',
+          icon: <MoodIcon />,
+          photoUrl: 'images/navbar/aa.jpg',
+          onClick: () => handleFeatureClick('/mood-tracker'),
+        },
+        {
+          title: 'Activity Logging',
+          path: '/activity-logging',
+          icon: <ActivityIcon />,
+          photoUrl: 'images/navbar/ac.jpg',
+          onClick: () => handleFeatureClick('/activity-logging'),
+        },
+        {
+          title: 'Sleep Tracker',
+          path: '/sleep-tracker',
+          icon: <HotelIcon />,
+          photoUrl: 'images/navbar/sleep.jpg',
+          onClick: () => handleFeatureClick('/sleep-tracker'),
+        },
+        {
+          title: 'Reels',
+          path: '/reels',
+          icon: <OndemandVideoIcon />,
+          photoUrl: 'images/navbar/reel.jpg',
+        },
+        {
+          title: 'Meditation',
+          path: '/meditations',
+          icon: <MeditationIcon />,
+          photoUrl: 'images/navbar/images.jpg',
+          onClick: () => handleFeatureClick('/meditations'),
+        },
+      ],
+    },
+    { title: 'Insights', path: '/insights', icon: <InsightsIcon /> },
+    { title: 'Therapists', path: '/therapist-recommendations', icon: <LocalHospitalIcon /> },
+    { title: 'Profile', path: '/profile', icon: <ProfileIcon /> },
+    // Removed the "Contact Support" link from here.
+  ];
+
+  // Preload images for features
   useEffect(() => {
     const featuresLink = navLinks.find((link) => link.title === 'Features');
     if (featuresLink && featuresLink.children) {
@@ -148,9 +176,13 @@ const Navbar = ({ toggleTheme }) => {
         img.src = child.photoUrl;
       });
     }
-  }, []);
+    // Set an initial active photo if available
+    if (featuresLink && featuresLink.children && featuresLink.children.length > 0) {
+      setActivePhoto(featuresLink.children[0].photoUrl);
+    }
+  }, [navLinks]);
 
-  // Hide the Navbar on mobile when on the '/chat' route.
+  // Hide Navbar on mobile when on '/chat'
   if (isMobile && location.pathname === '/chat') {
     return null;
   }
@@ -229,7 +261,7 @@ const Navbar = ({ toggleTheme }) => {
     },
   };
 
-  // Updated renderDropdown function with custom scrollbar styling
+  // Dropdown for nav items with children
   const renderDropdown = (item) => (
     <AnimatePresence>
       {submenuOpen === item.title && (
@@ -259,32 +291,16 @@ const Navbar = ({ toggleTheme }) => {
               width: '70%',
               p: 1,
               overflowY: 'auto',
-              // Custom scrollbar styling for Webkit browsers:
-              '&::-webkit-scrollbar': {
-                width: '8px',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: theme.palette.background.paper,
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: theme.palette.primary.main,
-                borderRadius: '4px',
-              },
-              // For Firefox
+              '&::-webkit-scrollbar': { width: '8px' },
+              '&::-webkit-scrollbar-track': { background: theme.palette.background.paper },
+              '&::-webkit-scrollbar-thumb': { backgroundColor: theme.palette.primary.main, borderRadius: '4px' },
               scrollbarWidth: 'thin',
               scrollbarColor: `${theme.palette.primary.main} ${theme.palette.background.paper}`,
             }}
           >
             <List sx={{ p: 0 }}>
               {item.children.map((child, i) => (
-                <motion.div
-                  key={child.title}
-                  custom={i}
-                  initial="hidden"
-                  animate="visible"
-                  exit="hidden"
-                  variants={submenuItemVariants}
-                >
+                <motion.div key={child.title} custom={i} initial="hidden" animate="visible" exit="hidden" variants={submenuItemVariants}>
                   <ListItem disablePadding>
                     <ListItemButton
                       component={child.path.startsWith('http') ? 'a' : Link}
@@ -292,7 +308,12 @@ const Navbar = ({ toggleTheme }) => {
                       href={child.path.startsWith('http') ? child.path : undefined}
                       target={child.path.startsWith('http') ? '_blank' : '_self'}
                       onMouseEnter={() => setActivePhoto(child.photoUrl)}
-                      onClick={() => setSubmenuOpen(null)}
+                      onClick={() => {
+                        setSubmenuOpen(null);
+                        if (child.onClick) {
+                          child.onClick();
+                        }
+                      }}
                       sx={{ pl: 2, borderRadius: '8px' }}
                     >
                       <ListItemIcon>{child.icon}</ListItemIcon>
@@ -328,7 +349,7 @@ const Navbar = ({ toggleTheme }) => {
 
   return (
     <>
-      {/* Mobile Navbar Container with Themed Gradient Background */}
+      {/* Mobile Navbar */}
       {isMobile && (
         <Box
           sx={{
@@ -358,10 +379,9 @@ const Navbar = ({ toggleTheme }) => {
                 textShadow: mobileTextShadow,
               }}
             >
-              MindEase AI™
+              {(isAdmin && isInAdminMode) ? 'Admin Dashboard' : 'MindEase AI™'}
             </Typography>
           </Button>
-          {/* Show theme toggle on mobile if not on login/signup */}
           {!hideToggle && (
             <motion.div
               whileTap={{ scale: 0.9 }}
@@ -374,10 +394,7 @@ const Navbar = ({ toggleTheme }) => {
                 aria-label="Toggle light and dark mode"
                 disableRipple
                 disableFocusRipple
-                sx={{
-                  '&:hover': { backgroundColor: 'transparent' },
-                  transition: 'color 0s ease-in-out',
-                }}
+                sx={{ '&:hover': { backgroundColor: 'transparent' }, transition: 'color 0s ease-in-out' }}
               >
                 {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
               </IconButton>
@@ -405,12 +422,11 @@ const Navbar = ({ toggleTheme }) => {
                 fontFamily: '"Roboto", sans-serif',
                 fontWeight: 700,
                 color: theme.palette.text.primary,
-                // Increased text shadow for better contrast on desktop
                 textShadow: '4px 4px 8px rgba(0,0,0,0.8)',
                 transition: 'color 0s ease-in-out',
               }}
             >
-              MindEase AI™
+              {(isAdmin && isInAdminMode) ? 'Admin Dashboard' : 'MindEase AI™'}
             </Typography>
           </Button>
         </Box>
@@ -430,13 +446,7 @@ const Navbar = ({ toggleTheme }) => {
               justifyContent: 'center',
             }}
           >
-            <motion.div
-              variants={navbarVariants}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              style={{ pointerEvents: 'auto' }}
-            >
+            <motion.div variants={navbarVariants} initial="hidden" animate="visible" exit="hidden" style={{ pointerEvents: 'auto' }}>
               <AppBar
                 position="static"
                 color="transparent"
@@ -444,77 +454,94 @@ const Navbar = ({ toggleTheme }) => {
                 sx={{
                   backdropFilter: 'blur(10px)',
                   borderRadius: '16px',
-                  boxShadow:
-                    theme.palette.mode === 'dark'
-                      ? '0 4px 16px 0 rgba(255, 255, 255, 0.1)'
-                      : '0 8px 16px 0 rgba(0, 0, 0, 0.2)',
+                  boxShadow: theme.palette.mode === 'dark'
+                    ? '0 4px 16px 0 rgba(255, 255, 255, 0.1)'
+                    : '0 8px 16px 0 rgba(0, 0, 0, 0.2)',
                   background: theme.palette.background.gradient,
                   px: theme.spacing(3),
                   height: '64px',
                   width: 'fit-content',
-                  border:
-                    theme.palette.mode === 'dark'
-                      ? '1px solid rgba(255, 255, 255, 0.05)'
-                      : '1px solid rgba(0, 0, 0, 0.1)',
+                  border: theme.palette.mode === 'dark'
+                    ? '1px solid rgba(255, 255, 255, 0.05)'
+                    : '1px solid rgba(0, 0, 0, 0.1)',
                   transition: 'all 0.05s ease-in-out',
                 }}
               >
                 <Toolbar sx={{ justifyContent: 'center', p: 0, height: '100%' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    {isAuthenticated &&
-                      navLinks.map((link, index) =>
-                        link.children ? (
-                          <Box key={link.title} sx={{ position: 'relative' }}>
-                            <motion.div custom={index} initial="hidden" animate="visible" variants={navItemVariants}>
-                              <Button
-                                color="inherit"
-                                startIcon={link.icon}
-                                onClick={() => handleSubmenuToggle(link.title)}
-                                aria-controls={submenuOpen === link.title ? 'submenu' : undefined}
-                                aria-haspopup="true"
-                                aria-expanded={submenuOpen === link.title ? 'true' : undefined}
-                                sx={{
-                                  ...commonButtonSx,
-                                  position: 'relative',
-                                  ...(isActiveLink(link) && activeLinkSx),
-                                }}
-                              >
-                                {link.title}
-                              </Button>
-                            </motion.div>
-                            {renderDropdown(link)}
-                          </Box>
-                        ) : (
-                          <motion.div key={link.title} custom={index} initial="hidden" animate="visible" variants={navItemVariants}>
+                    {isAuthenticated ? (
+                      (isAdmin && isInAdminMode) ? (
+                        <motion.div initial="hidden" animate="visible" variants={navItemVariants}>
+                          <Button color="inherit" startIcon={<AdminPanelSettingsIcon />} component={Link} to="/admin" sx={{ ...commonButtonSx, position: 'relative' }}>
+                            Admin Dashboard
+                          </Button>
+                        </motion.div>
+                      ) : (
+                        <>
+                          {navLinks.map((link, index) =>
+                            link.children ? (
+                              <Box key={link.title} sx={{ position: 'relative' }}>
+                                <motion.div custom={index} initial="hidden" animate="visible" variants={navItemVariants}>
+                                  <Button
+                                    color="inherit"
+                                    startIcon={link.icon}
+                                    onClick={() => handleSubmenuToggle(link.title)}
+                                    aria-controls={submenuOpen === link.title ? 'submenu' : undefined}
+                                    aria-haspopup="true"
+                                    aria-expanded={submenuOpen === link.title ? 'true' : undefined}
+                                    sx={{ ...commonButtonSx, position: 'relative', ...(isActiveLink(link) && activeLinkSx) }}
+                                  >
+                                    {link.title}
+                                  </Button>
+                                </motion.div>
+                                {renderDropdown(link)}
+                              </Box>
+                            ) : (
+                              <motion.div key={link.title} custom={index} initial="hidden" animate="visible" variants={navItemVariants}>
+                                <Button
+                                  color="inherit"
+                                  startIcon={link.icon}
+                                  component={Link}
+                                  to={link.path}
+                                  sx={{ ...commonButtonSx, position: 'relative', ...(isActiveLink(link) && activeLinkSx) }}
+                                >
+                                  {link.title}
+                                </Button>
+                              </motion.div>
+                            )
+                          )}
+                          <motion.div whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}>
+                            <IconButton onClick={toggleNavbarVisibility} color="inherit" aria-label="Toggle navbar" sx={{ ...commonButtonSx }}>
+                              <CloseIcon />
+                            </IconButton>
+                          </motion.div>
+                          <motion.div initial="hidden" animate="visible" variants={navItemVariants}>
                             <Button
                               color="inherit"
-                              startIcon={link.icon}
-                              component={Link}
-                              to={link.path}
-                              sx={{
-                                ...commonButtonSx,
-                                position: 'relative',
-                                ...(isActiveLink(link) && activeLinkSx),
-                              }}
+                              startIcon={<LogoutIcon />}
+                              onClick={handleLogout}
+                              sx={{ ...commonButtonSx, position: 'relative', ...(isActiveLink({ path: '/logout' }) && activeLinkSx) }}
                             >
-                              {link.title}
+                              Logout
                             </Button>
                           </motion.div>
-                        )
-                      )}
-
-                    {!isAuthenticated && (
+                          {isAdmin && (
+                            <Tooltip title="Admin Panel">
+                              <IconButton color="inherit" onClick={() => navigate('/admin')} sx={{ ml: 1 }}>
+                                <AdminPanelSettingsIcon />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </>
+                      )
+                    ) : (
                       <>
                         <motion.div initial="hidden" animate="visible" variants={navItemVariants}>
                           <Button
                             color="inherit"
                             component={Link}
                             to="/signup"
-                            sx={{
-                              ...commonButtonSx,
-                              position: 'relative',
-                              ...(location.pathname === '/signup' && activeLinkSx),
-                            }}
+                            sx={{ ...commonButtonSx, position: 'relative', ...(location.pathname === '/signup' && activeLinkSx) }}
                           >
                             Sign Up
                           </Button>
@@ -524,11 +551,7 @@ const Navbar = ({ toggleTheme }) => {
                             color="inherit"
                             component={Link}
                             to="/login"
-                            sx={{
-                              ...commonButtonSx,
-                              position: 'relative',
-                              ...(location.pathname === '/login' && activeLinkSx),
-                            }}
+                            sx={{ ...commonButtonSx, position: 'relative', ...(location.pathname === '/login' && activeLinkSx) }}
                           >
                             Login
                           </Button>
@@ -536,31 +559,30 @@ const Navbar = ({ toggleTheme }) => {
                       </>
                     )}
 
-                    {isAuthenticated && (
-                      <>
-                        <motion.div whileTap={{ scale: 0.95 }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}>
-                          <IconButton onClick={toggleNavbarVisibility} color="inherit" aria-label="Toggle navbar" sx={{ ...commonButtonSx }}>
-                            <CloseIcon />
-                          </IconButton>
-                        </motion.div>
-                        <motion.div initial="hidden" animate="visible" variants={navItemVariants}>
-                          <Button
-                            color="inherit"
-                            startIcon={<LogoutIcon />}
-                            onClick={handleLogout}
-                            sx={{
-                              ...commonButtonSx,
-                              position: 'relative',
-                              ...(isActiveLink({ path: '/logout' }) && activeLinkSx),
-                            }}
-                          >
-                            Logout
-                          </Button>
-                        </motion.div>
-                      </>
+                    {/* Admin Mode Toggle with redirection on change */}
+                    {isAdmin && (
+                      <Box sx={NavToolsStyling}>
+                        <Tooltip title={isInAdminMode ? 'Switch to User Mode' : 'Switch to Admin Mode'}>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            {isInAdminMode ? <AdminPanelSettingsIcon color="primary" /> : <AccountBoxIcon />}
+                            <Switch
+                              checked={isInAdminMode}
+                              onChange={(e) => {
+                                toggleAdminMode();
+                                if (e.target.checked) {
+                                  navigate('/admin');
+                                } else {
+                                  navigate('/dashboard');
+                                }
+                              }}
+                              color="primary"
+                              size="small"
+                            />
+                          </Box>
+                        </Tooltip>
+                      </Box>
                     )}
-                    
-                    {/* Show theme toggle button if not on login/signup */}
+
                     {!hideToggle && (
                       <motion.div
                         whileTap={{ scale: 0.9 }}
@@ -573,10 +595,7 @@ const Navbar = ({ toggleTheme }) => {
                           aria-label="Toggle light and dark mode"
                           disableRipple
                           disableFocusRipple
-                          sx={{
-                            '&:hover': { backgroundColor: 'transparent' },
-                            transition: 'color 0s ease-in-out',
-                          }}
+                          sx={{ '&:hover': { backgroundColor: 'transparent' }, transition: 'color 0s ease-in-out' }}
                         >
                           {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
                         </IconButton>
@@ -590,9 +609,9 @@ const Navbar = ({ toggleTheme }) => {
         )}
       </AnimatePresence>
 
-      {/* Desktop Navbar Toggle Button (authenticated users only) */}
+      {/* Desktop Navbar Toggle Button (only for non-admin mode) */}
       <AnimatePresence>
-        {isAuthenticated && !isNavbarVisible && !isMobile && (
+        {isAuthenticated && !(isAdmin && isInAdminMode) && !isNavbarVisible && !isMobile && (
           <motion.div
             variants={toggleButtonVariants}
             initial="hidden"
