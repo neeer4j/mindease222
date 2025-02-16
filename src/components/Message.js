@@ -21,13 +21,13 @@ dayjs.extend(localizedFormat);
  * @param {object} props - Component properties.
  * @param {object} props.msg - Message object with the following structure:
  *   - {string} id - Unique message ID.
- *   - {string} text - The content of the message.
+ *   - {string|object} text - The content of the message. Can be a string or an object with keys { system, text }.
  *   - {boolean} isBot - Indicates if the message is from the bot (true) or the user (false).
  *   - {boolean} isEmergency - True if the message is an emergency alert, for special styling.
  *   - {string} type - Message type: 'text', 'image', or 'mood'.
  *   - {array<string>} reactions - List of reaction emojis for the message.
  *   - {string|Date|object} timestamp - Message timestamp, can be a string, Date object, or Firestore Timestamp.
- *   - {array<string>} quickReplies -  (Currently not rendered in this component, description for documentation purposes).
+ *   - {array<string>} quickReplies - (Currently not rendered in this component, description for documentation purposes).
  *   - {string} mood - User's mood, applicable if the message type is 'mood'.
  */
 
@@ -53,6 +53,16 @@ const Message = ({ msg }) => {
   const { user } = useContext(AuthContext); // Get the authenticated user from context
   const isBot = msg.isBot;
   const isEmergency = msg.isEmergency;
+
+  // Helper function: extract string if msg.text is an object.
+  const getMessageText = (text) => {
+    if (text && typeof text === 'object' && text.text) {
+      return text.text;
+    }
+    return text;
+  };
+
+  const messageContent = getMessageText(msg.text);
 
   // Memoize DiceBear avatar URL generation for bot avatars ONLY
   const botAvatarDiceBearUrl = useMemo(() => {
@@ -169,14 +179,14 @@ const Message = ({ msg }) => {
           {/* Message content based on type */}
           {msg.type === 'image' ? (
             <img
-              src={msg.text}
+              src={messageContent}
               alt="User upload"
               style={{ maxWidth: '100%', borderRadius: '8px' }}
             />
           ) : msg.type === 'mood' ? (
             <Typography variant="body1">I am feeling {msg.mood}.</Typography>
           ) : (
-            // For text messages, render with React Markdown if it's an AI message.
+            // For text messages, render with React Markdown if it's a bot message.
             isBot ? (
               <ReactMarkdown
                 components={{
@@ -194,10 +204,9 @@ const Message = ({ msg }) => {
                       {...props}
                     />
                   ),
-                  // You can add additional custom renderers here if needed
                 }}
               >
-                {msg.text}
+                {messageContent}
               </ReactMarkdown>
             ) : (
               <Typography
@@ -210,7 +219,7 @@ const Message = ({ msg }) => {
                   fontSize: '0.9rem',
                 }}
               >
-                {msg.text}
+                {messageContent}
               </Typography>
             )
           )}

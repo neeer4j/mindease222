@@ -46,6 +46,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // Import ReactMarkdown to render markdown formatting
 import ReactMarkdown from 'react-markdown';
 
+// Add this import at the top with other imports
+import MoodTrackerSplash from '../components/MoodTrackerSplash';
+import SplashScreenToggle from '../components/SplashScreenToggle';
+
 Chart.register(...registerables);
 
 // Create a single instance of the Gemini model using your API key from env
@@ -110,6 +114,12 @@ const MoodTracker = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { moodEntries, addMood, editMood, deleteMood, loading, error } = useContext(MoodContext);
+
+  // Add splash screen state
+  const [showSplash, setShowSplash] = useState(() => {
+    const hasSeenTutorial = localStorage.getItem('moodTrackerTutorialSeen');
+    return !hasSeenTutorial;
+  });
 
   // Local state for mood, journal text, and AI-related data
   const [selectedMood, setSelectedMood] = useState(null);
@@ -457,8 +467,20 @@ const MoodTracker = () => {
     setSuccess("Enhancement applied!");
   };
 
+  // Add tutorial completion handler
+  const handleTutorialComplete = () => {
+    localStorage.setItem('moodTrackerTutorialSeen', 'true');
+    setShowSplash(false);
+  };
+
+  // Update the splash screen state to be toggleable
+  const handleShowSplash = () => {
+    setShowSplash(true);
+  };
+
   return (
     <PageLayout>
+      {showSplash && <MoodTrackerSplash onComplete={handleTutorialComplete} />}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -832,6 +854,7 @@ const MoodTracker = () => {
           </Box>
         </Container>
       </motion.div>
+      <SplashScreenToggle onShowSplash={handleShowSplash} />
     </PageLayout>
   );
 };

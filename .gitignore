@@ -24,3 +24,6 @@ yarn-error.log*
 
 # Environment variables
 .env
+
+# Google Cloud Service Account Credentials
+serviceAccountKey.json

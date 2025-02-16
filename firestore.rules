@@ -1,0 +1,90 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAdmin() {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // User personal data collections - strict privacy
+    match /users/{userId}/moods/{moodId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/activities/{activityId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/sleepLogs/{sleepLogId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/messages/{messageId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Chat abuse monitoring
+    match /chatAbuse/{abuseId} {
+      allow read, write: if isAdmin();
+      allow create: if request.auth != null;
+    }
+
+    // Chat messages for abuse detection
+    match /messages/{messageId} {
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && (
+        // Allow users to update their own messages
+        resource.data.userId == request.auth.uid ||
+        // Allow admins to update for moderation
+        isAdmin() ||
+        // Allow system updates for abuse detection
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isAnalyzed', 'isFlagged', 'flagType', 'moderationStatus'])
+      );
+    }
+
+    // Support tickets collection
+    match /supportTickets/{ticketId} {
+      allow create: if request.auth != null && 
+        request.resource.data.keys().hasOnly(['subject', 'category', 'description', 'priority', 'userId', 'userEmail', 'status', 'createdAt', 'updates', 'hasUnreadUpdates']) &&
+        request.resource.data.userId == request.auth.uid;
+      
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
+      
+      allow update: if request.auth != null && (
+        // Users can update satisfaction on their own tickets
+        (resource.data.userId == request.auth.uid && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['satisfaction', 'userResponse'])) ||
+        // Admins can update all ticket fields
+        isAdmin()
+      );
+    }
+
+    // Admin-only collections
+    match /reports/{reportId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /adminAuditLog/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /userMonitoring/{userId} {
+      allow read, write: if isAdmin();
+    }
+
+    // User profile - allow user access plus admin read for necessary functions
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow update: if isAdmin() && 
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['isBanned', 'bannedAt', 'banReason', 'updatedBy', 'updatedAt']);
+    }
+  }
+}

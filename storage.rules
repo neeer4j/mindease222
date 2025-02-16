@@ -1,0 +1,80 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return request.auth != null && 
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    function isValidContentType(contentType, validTypes) {
+      return contentType.matches(validTypes);
+    }
+
+    // Avatar rules
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isOwner(userId) && 
+        isValidContentType(request.resource.contentType, 'image/.*') &&
+        request.resource.size <= 1 * 1024 * 1024; // 1MB max
+    }
+
+    // Videos rules
+    match /videos/{fileName} {
+      allow read: if true; // Public read access
+      allow write: if isAuthenticated() && 
+        isValidContentType(request.resource.contentType, 'video/.*') &&
+        request.resource.size <= 50 * 1024 * 1024; // 50MB max
+    }
+
+    // Audio meditations rules
+    match /meditations/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() &&
+        isValidContentType(request.resource.contentType, 'audio/.*') &&
+        request.resource.size <= 20 * 1024 * 1024; // 20MB max
+    }
+
+    // Activity attachments rules
+    match /activities/{userId}/{activityId}/{fileName} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && isOwner(userId) &&
+        request.resource.size <= 5 * 1024 * 1024; // 5MB max
+    }
+
+    // Support ticket attachments
+    match /support-tickets/{ticketId}/{fileName} {
+      allow read: if isAuthenticated() && (
+        isOwner(firestore.get(/databases/(default)/documents/supportTickets/$(ticketId)).data.userId) || 
+        isAdmin()
+      );
+      allow write: if isAuthenticated() &&
+        (isOwner(firestore.get(/databases/(default)/documents/supportTickets/$(ticketId)).data.userId) || isAdmin()) &&
+        request.resource.size <= 10 * 1024 * 1024; // 10MB max
+    }
+
+    // Chat media rules
+    match /chat-media/{messageId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() &&
+        !firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isBanned &&
+        request.resource.size <= 5 * 1024 * 1024; // 5MB max
+    }
+
+    // User documents and reports
+    match /documents/{userId}/{fileName} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow write: if isAuthenticated() && isOwner(userId) &&
+        request.resource.size <= 15 * 1024 * 1024; // 15MB max
+    }
+  }
+}

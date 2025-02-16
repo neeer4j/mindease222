@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
 import { auth, db, storage } from "../firebase"; // Ensure correct path
 import {
   signInWithEmailAndPassword,
@@ -14,7 +14,7 @@ import {
   // Optionally, import reauthenticateWithCredential and EmailAuthProvider if implementing reauthentication
 } from "firebase/auth";
 
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
 
@@ -23,13 +23,42 @@ import ErrorAlert from "../components/ErrorAlert"; // Your ErrorAlert component
 
 export const AuthContext = createContext();
 
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
   const [loading, setLoading] = useState(true); // Indicates if auth state is being determined
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showSplash, setShowSplash] = useState(false); // Initialize to false
+  const [isInAdminMode, setIsInAdminMode] = useState(true);
 
   const googleProvider = new GoogleAuthProvider();
+
+  // Cleanup function to detach all listeners
+  const cleanup = (unsubscribe) => {
+    if (unsubscribe && typeof unsubscribe === 'function') {
+      try {
+        unsubscribe();
+      } catch (err) {
+        console.error('Error during cleanup:', err);
+      }
+    }
+    setUser(null);
+    setIsAdmin(false);
+    setIsBanned(false);
+    setError(null);
+    setSuccess(null);
+    setShowSplash(false);
+  };
 
   // Fetch user profile from Firestore
   const fetchUserProfile = async (uid) => {
@@ -83,75 +112,153 @@ export const AuthProvider = ({ children }) => {
   const clearError = () => setError(null);
   const clearSuccess = () => setSuccess(null);
 
+  // Check user role
+  const checkUserRole = async (user) => {
+    if (!user) return false;
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      return userData.role === "admin";
+    }
+    return false;
+  };
+
+  // Check user ban status
+  const checkUserBanStatus = async (user) => {
+    if (!user) return false;
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      return userData.isBanned || false;
+    }
+    return false;
+  };
+
   // Listen for auth state changes and process any redirect result (if present)
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("[onAuthStateChanged] firebaseUser:", firebaseUser);
-      if (firebaseUser) {
-        try {
-          const userProfile = await fetchUserProfile(firebaseUser.uid);
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            ...userProfile,
-          });
-          console.log("[onAuthStateChanged] User profile loaded and state updated.");
-        } catch (err) {
-          console.error("Error fetching user profile in onAuthStateChanged:", err);
-          setError("Failed to load user profile.");
-          setUser(null);
-        } finally {
-          setLoading(false);
-          console.log("[onAuthStateChanged] Loading set to false.");
-        }
-      } else {
-        console.log("[onAuthStateChanged] No user detected. Checking for redirect result...");
-        getRedirectResult(auth)
-          .then(async (result) => {
-            console.log("[getRedirectResult] Result:", result);
-            if (result && result.user) {
-              const firebaseUserFromRedirect = result.user;
-              try {
-                const userProfile = await fetchUserProfile(firebaseUserFromRedirect.uid);
-                setUser({
-                  uid: firebaseUserFromRedirect.uid,
-                  email: firebaseUserFromRedirect.email,
-                  displayName: firebaseUserFromRedirect.displayName,
-                  ...userProfile,
-                });
-                setSuccess("Signed in with Google successfully.");
-                console.log("[getRedirectResult] Redirect user profile loaded.");
-              } catch (profileErr) {
-                console.error("Error fetching user profile after redirect:", profileErr);
-                setError("Failed to load user profile after Google Sign-in.");
-                setUser(null);
-              } finally {
-                setLoading(false);
-                console.log("[getRedirectResult] Loading set to false after redirect.");
-              }
-            } else {
-              console.log("[getRedirectResult] No redirect result found.");
-              setLoading(false);
-              console.log("[getRedirectResult] Loading set to false - no redirect result.");
-            }
-          })
-          .catch((redirectError) => {
-            console.error("[getRedirectResult] Error:", redirectError);
-            handleFirebaseError(redirectError);
-            setUser(null);
-            setLoading(false);
-            console.log("[getRedirectResult] Loading set to false after redirect error.");
-          });
-      }
-    }, (error) => {
-      console.error("onAuthStateChanged error:", error);
-      setLoading(false);
-      setError("Error during authentication state check.");
-    });
+    let unsubscribeAuth;
+    let unsubscribeUser;
 
-    return () => unsubscribe();
+    const setupAuthListener = () => {
+      // Store cleanup functions in an array
+      const cleanupFns = [];
+
+      unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+        console.log("[onAuthStateChanged] firebaseUser:", firebaseUser);
+        if (firebaseUser) {
+          try {
+            const isUserAdmin = await checkUserRole(firebaseUser);
+            const userBanned = await checkUserBanStatus(firebaseUser);
+            
+            if (userBanned) {
+              setIsBanned(true);
+              setUser(firebaseUser); // Keep user info to display in banned screen
+              setIsAdmin(false);
+            } else {
+              setIsBanned(false);
+              const userProfile = await fetchUserProfile(firebaseUser.uid);
+              setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                ...userProfile,
+              });
+              setIsAdmin(isUserAdmin);
+              console.log("[onAuthStateChanged] User profile loaded and state updated.");
+            }
+          } catch (err) {
+            console.error("Error fetching user profile in onAuthStateChanged:", err);
+            setError("Failed to load user profile.");
+            setUser(null);
+          } finally {
+            setLoading(false);
+            console.log("[onAuthStateChanged] Loading set to false.");
+          }
+        } else {
+          console.log("[onAuthStateChanged] No user detected. Checking for redirect result...");
+          getRedirectResult(auth)
+            .then(async (result) => {
+              console.log("[getRedirectResult] Result:", result);
+              if (result && result.user) {
+                const firebaseUserFromRedirect = result.user;
+                try {
+                  const isUserAdmin = await checkUserRole(firebaseUserFromRedirect);
+                  const isBanned = await checkUserBanStatus(firebaseUserFromRedirect);
+
+                  if (isBanned) {
+                    await signOut(auth);
+                    setUser(null);
+                    setIsAdmin(false);
+                  } else {
+                    const userProfile = await fetchUserProfile(firebaseUserFromRedirect.uid);
+                    setUser({
+                      uid: firebaseUserFromRedirect.uid,
+                      email: firebaseUserFromRedirect.email,
+                      displayName: firebaseUserFromRedirect.displayName,
+                      ...userProfile,
+                    });
+                    setIsAdmin(isUserAdmin);
+                    setSuccess("Signed in with Google successfully.");
+                    console.log("[getRedirectResult] Redirect user profile loaded.");
+                  }
+                } catch (profileErr) {
+                  console.error("Error fetching user profile after redirect:", profileErr);
+                  setError("Failed to load user profile after Google Sign-in.");
+                  setUser(null);
+                } finally {
+                  setLoading(false);
+                  console.log("[getRedirectResult] Loading set to false after redirect.");
+                }
+              } else {
+                console.log("[getRedirectResult] No redirect result found.");
+                setLoading(false);
+                console.log("[getRedirectResult] Loading set to false - no redirect result.");
+              }
+            })
+            .catch((redirectError) => {
+              console.error("[getRedirectResult] Error:", redirectError);
+              handleFirebaseError(redirectError);
+              setUser(null);
+              setLoading(false);
+              console.log("[getRedirectResult] Loading set to false after redirect error.");
+            });
+        }
+      });
+
+      cleanupFns.push(unsubscribeAuth);
+      return () => cleanupFns.forEach(fn => fn && fn());
+    };
+
+    const cleanup = unsubscribe => {
+      if (unsubscribe && typeof unsubscribe === 'function') {
+        try {
+          unsubscribe();
+        } catch (err) {
+          console.error('Error during cleanup:', err);
+        }
+      }
+      setUser(null);
+      setIsAdmin(false);
+      setIsBanned(false);
+      setError(null);
+      setSuccess(null);
+      setShowSplash(false);
+    };
+
+    const unsubscribe = setupAuthListener();
+    return () => cleanup(unsubscribe);
   }, []);
+
+  // Reset splash screen when user logs out
+  useEffect(() => {
+    if (!user) {
+      setShowSplash(false);
+    }
+  }, [user]);
 
   // Login function
   const login = async (email, password) => {
@@ -162,6 +269,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       console.log("Login successful for:", email);
+      setShowSplash(true);
     } catch (err) {
       console.error("Login error:", err);
       handleFirebaseError(err);
@@ -197,6 +305,7 @@ export const AuthProvider = ({ children }) => {
         createdAt: new Date().toISOString(),
       });
       setSuccess("Signup successful! Welcome.");
+      setShowSplash(true);
     } catch (err) {
       console.error("Signup error:", err);
       handleFirebaseError(err);
@@ -376,10 +485,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Function to ban user
+  const banUser = async (userId) => {
+    if (!isAdmin) throw new Error("Unauthorized action");
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, {
+      isBanned: true,
+      bannedAt: new Date().toISOString(),
+    });
+  };
+
+  // Function to unban user
+  const unbanUser = async (userId) => {
+    if (!isAdmin) throw new Error("Unauthorized action");
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, {
+      isBanned: false,
+      bannedAt: null,
+    });
+  };
+
   // Helper to capitalize strings
   const capitalize = (s) => {
     if (typeof s !== "string") return "";
     return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+
+  const toggleAdminMode = () => {
+    setIsInAdminMode(prev => !prev);
   };
 
   if (loading) {
@@ -395,6 +528,8 @@ export const AuthProvider = ({ children }) => {
       value={{
         isAuthenticated: !!user,
         user,
+        isAdmin,
+        isBanned,
         login,
         signup,
         logout,
@@ -408,6 +543,12 @@ export const AuthProvider = ({ children }) => {
         clearError, // Expose clearError function
         clearSuccess, // Expose clearSuccess function
         setError, // Expose setError function
+        banUser, // Expose banUser function
+        unbanUser, // Expose unbanUser function
+        showSplash,
+        setShowSplash,
+        isInAdminMode,
+        toggleAdminMode,
       }}
     >
       {children}

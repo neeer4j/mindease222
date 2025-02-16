@@ -1,0 +1,38 @@
+.banScreenEnter {
+  animation: fadeSlideIn 0.5s ease-out;
+}
+
+.banTimer {
+  animation: pulse 2s infinite;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.appealForm {
+  transition: all 0.3s ease;
+}
+
+.appealForm:focus-within {
+  transform: scale(1.02);
+}
