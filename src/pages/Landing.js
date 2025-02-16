@@ -34,6 +34,7 @@ import {
 import { styled, alpha } from '@mui/material/styles';
 import { AuthContext } from '../contexts/AuthContext';
 import PageLayout from '../components/PageLayout';
+import VideoPopup from '../components/VideoPopup';
 
 // Styled Gradient Button using MUI's styled API
 const GradientButton = styled(Button)(({ theme }) => ({
@@ -258,6 +259,7 @@ const Landing = () => {
 
   return (
     <PageLayout>
+      <VideoPopup />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
