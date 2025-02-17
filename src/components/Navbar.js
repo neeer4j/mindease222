@@ -129,34 +129,34 @@ const Navbar = ({ toggleTheme }) => {
           title: 'Mood Tracker',
           path: '/mood-tracker',
           icon: <MoodIcon />,
-          photoUrl: 'images/navbar/aa.jpg',
+          photoUrl: '/images/navbar/aa.jpg',
           onClick: () => handleFeatureClick('/mood-tracker'),
         },
         {
           title: 'Activity Logging',
           path: '/activity-logging',
           icon: <ActivityIcon />,
-          photoUrl: 'images/navbar/ac.jpg',
+          photoUrl: '/images/navbar/ac.jpg',
           onClick: () => handleFeatureClick('/activity-logging'),
         },
         {
           title: 'Sleep Tracker',
           path: '/sleep-tracker',
           icon: <HotelIcon />,
-          photoUrl: 'images/navbar/sleep.jpg',
+          photoUrl: '/images/navbar/sleep.jpg',
           onClick: () => handleFeatureClick('/sleep-tracker'),
         },
         {
           title: 'Reels',
           path: '/reels',
           icon: <OndemandVideoIcon />,
-          photoUrl: 'images/navbar/reel.jpg',
+          photoUrl: '/images/navbar/reel.jpg',
         },
         {
           title: 'Meditation',
           path: '/meditations',
           icon: <MeditationIcon />,
-          photoUrl: 'images/navbar/images.jpg',
+          photoUrl: '/images/navbar/images.jpg',
           onClick: () => handleFeatureClick('/meditations'),
         },
       ],
@@ -167,20 +167,23 @@ const Navbar = ({ toggleTheme }) => {
     // Removed the "Contact Support" link from here.
   ];
 
-  // Preload images for features
+  // Preload images and set initial active photo
   useEffect(() => {
     const featuresLink = navLinks.find((link) => link.title === 'Features');
     if (featuresLink && featuresLink.children) {
+      // Preload all feature images
       featuresLink.children.forEach((child) => {
-        const img = new Image();
-        img.src = child.photoUrl;
+        if (child.photoUrl) {
+          const img = new Image();
+          img.src = child.photoUrl;
+        }
       });
+      // Set initial active photo
+      if (featuresLink.children[0]?.photoUrl) {
+        setActivePhoto(featuresLink.children[0].photoUrl);
+      }
     }
-    // Set an initial active photo if available
-    if (featuresLink && featuresLink.children && featuresLink.children.length > 0) {
-      setActivePhoto(featuresLink.children[0].photoUrl);
-    }
-  }, [navLinks]);
+  }, []);
 
   // Hide Navbar on mobile when on '/chat'
   if (isMobile && location.pathname === '/chat') {
@@ -275,22 +278,20 @@ const Navbar = ({ toggleTheme }) => {
             position: 'absolute',
             top: '100%',
             left: 0,
-            width: '350px',
-            height: '200px',
+            width: '500px',
             backgroundColor: theme.palette.background.paper,
-            boxShadow: theme.shadows[5],
             borderRadius: '8px',
-            overflow: 'hidden',
-            zIndex: 10,
+            boxShadow: theme.shadows[4],
+            zIndex: 1000,
+            padding: 0,
             display: 'flex',
-            flexDirection: 'row',
+            overflow: 'hidden'
           }}
         >
           <Box
             sx={{
-              width: '70%',
-              p: 1,
-              overflowY: 'auto',
+              width: '60%',
+              p: 2,
               '&::-webkit-scrollbar': { width: '8px' },
               '&::-webkit-scrollbar-track': { background: theme.palette.background.paper },
               '&::-webkit-scrollbar-thumb': { backgroundColor: theme.palette.primary.main, borderRadius: '4px' },
@@ -307,14 +308,24 @@ const Navbar = ({ toggleTheme }) => {
                       to={child.path.startsWith('http') ? undefined : child.path}
                       href={child.path.startsWith('http') ? child.path : undefined}
                       target={child.path.startsWith('http') ? '_blank' : '_self'}
-                      onMouseEnter={() => setActivePhoto(child.photoUrl)}
+                      onMouseEnter={() => {
+                        if (child.photoUrl) {
+                          setActivePhoto(child.photoUrl);
+                        }
+                      }}
                       onClick={() => {
                         setSubmenuOpen(null);
                         if (child.onClick) {
                           child.onClick();
                         }
                       }}
-                      sx={{ pl: 2, borderRadius: '8px' }}
+                      sx={{ 
+                        pl: 2, 
+                        borderRadius: '8px',
+                        '&:hover': {
+                          backgroundColor: theme.palette.action.hover
+                        }
+                      }}
                     >
                       <ListItemIcon>{child.icon}</ListItemIcon>
                       <ListItemText primary={child.title} />
@@ -324,20 +335,28 @@ const Navbar = ({ toggleTheme }) => {
               ))}
             </List>
           </Box>
-          <Box sx={{ width: '30%', height: '100%' }}>
-            <AnimatePresence exitBeforeEnter>
+          <Box sx={{ 
+            width: '40%', 
+            position: 'relative',
+            bgcolor: 'background.default'
+          }}>
+            <AnimatePresence mode="wait">
               <motion.div
                 key={activePhoto}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.2 }}
                 style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
                   width: '100%',
                   height: '100%',
                   backgroundImage: `url(${activePhoto})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
+                  borderRadius: '0 8px 8px 0'
                 }}
               />
             </AnimatePresence>
