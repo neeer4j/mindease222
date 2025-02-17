@@ -27,3 +27,5 @@ yarn-error.log*
 
 # Google Cloud Service Account Credentials
 serviceAccountKey.json
+
+.vercel
