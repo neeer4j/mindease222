@@ -5,12 +5,20 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <!-- Progressive Web App (PWA) Meta Tags -->
-    <meta name="theme-color" content="#6200ea" />
+    <!-- Dynamic Theme Color for Android -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1b2226" />
+    
+    <!-- iOS Status Bar Style -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MindEase">
+
+    <!-- PWA Meta Tags -->
     <meta name="description" content="MindEase AI - Your AI-based therapist" />
     <link rel="manifest" href="/manifest.json" />
 
@@ -19,18 +27,27 @@
       rel="icon"
       type="image/png"
       sizes="512x512"
-      href="/images/mindwase111.png"
+      href="/images/android-chrome-512x512.png"
     />
     <link 
       rel="apple-touch-icon" 
       sizes="512x512"
       href="/images/mindwase111.png" 
     />
+    
     <style>
       /* Override default favicon size in browsers */
       link[rel="icon"] {
         width: 512px !important;
         height: 512px !important;
+      }
+
+      /* Add PWA safe area insets */
+      @supports (padding-top: env(safe-area-inset-top)) {
+        body {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
       }
     </style>
 
@@ -42,14 +59,7 @@
       rel="stylesheet"
     />
 
-    <!-- Title -->
     <title>MindEase AI</title>
-
-    <!-- 
-      Removed Google Maps API Script:
-      The Google Maps API will now be lazy-loaded from within your React code.
-      This avoids duplicate loads and centralizes the API key usage.
-    -->
   </head>
   <body>
     <div id="root"></div>
@@ -58,6 +68,15 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
+          // Update theme-color based on system theme
+          const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+          const updateThemeColor = (e) => {
+            const themeColor = e.matches ? '#1b2226' : '#ffffff';
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', themeColor);
+          };
+          darkModeMediaQuery.addListener(updateThemeColor);
+          updateThemeColor(darkModeMediaQuery);
+
           navigator.serviceWorker
             .register('/service-worker.js')
             .then((registration) => {
