@@ -180,9 +180,14 @@ const Chat = ({ toggleTheme }) => {
 
   // Send greeting message if none has been sent.
   useEffect(() => {
-    if (chatLoading) return;
-    const hasGreeting = messages.some((msg) => msg.isBot && msg.isWelcome);
-    if (user && !hasGreeting) {
+    if (chatLoading || !user) return;
+    // Check more strictly for welcome message
+    const hasGreeting = messages.some(msg => 
+      msg.isBot && 
+      msg.isWelcome && 
+      msg.text.includes(`Hello ${userName}`)
+    );
+    if (!hasGreeting) {
       const greetingMessage = `Hello ${userName}! I'm MindEase, your AI therapist. How can I assist you today?`;
       addMessage(greetingMessage, true, {
         isWelcome: true,
@@ -916,6 +921,8 @@ Quick Replies:
                     fill="currentColor"
                     width={20}
                     height={20}
+                    aria-hidden="true"
+                    focusable="false"
                   >
                     <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
                   </svg>
@@ -1257,6 +1264,7 @@ Quick Replies:
                   viewBox="0 0 20 20"
                   fill="currentColor"
                   aria-hidden="true"
+                  focusable="false"
                   width={24}
                   height={24}
                 >

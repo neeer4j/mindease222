@@ -4,8 +4,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Helper functions
     function isAdmin() {
-      return request.auth != null && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return request.auth != null && userData.isAdmin == true && userData.role == 'admin';
     }
 
     // User personal data collections - strict privacy
@@ -84,7 +84,19 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.uid == userId;
       allow update: if isAdmin() && 
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['isBanned', 'bannedAt', 'banReason', 'updatedBy', 'updatedAt']);
+          .hasOnly([
+            'isBanned', 
+            'bannedAt', 
+            'banReason', 
+            'updatedBy', 
+            'updatedAt',
+            'chatRestricted',
+            'requiresModeration',
+            'restrictionReason',
+            'isMonitored',
+            'monitoredSince',
+            'monitoredBy'
+          ]);
     }
   }
 }

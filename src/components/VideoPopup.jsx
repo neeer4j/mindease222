@@ -79,6 +79,7 @@ const VideoPopup = () => {
                       fontSize: '1rem',
                     },
                   }}
+                  aria-label="Close video"
                 >
                   <CloseIcon />
                 </IconButton>
@@ -142,6 +143,7 @@ const VideoPopup = () => {
                       fontSize: '1rem',
                     },
                   }}
+                  aria-label="Close video"
                 >
                   <CloseIcon />
                 </IconButton>

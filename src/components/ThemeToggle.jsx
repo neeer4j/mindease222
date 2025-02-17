@@ -10,7 +10,7 @@ const ThemeToggle = ({ toggleTheme, currentTheme }) => {
     <IconButton
       onClick={toggleTheme}
       color="inherit"
-      aria-label="Toggle light and dark mode"
+      aria-label={`Switch to ${currentTheme === 'dark' ? 'light' : 'dark'} mode`}
       component={motion.div}
       whileHover={{ scale: 1.2 }}
       whileTap={{ scale: 0.9 }}
@@ -34,7 +34,7 @@ const ThemeToggle = ({ toggleTheme, currentTheme }) => {
             transition={{ duration: 0.3 }}
             style={{ position: 'absolute' }}
           >
-            <Brightness7 fontSize="large" />
+            <Brightness7 fontSize="large" aria-hidden="true" focusable="false" />
           </motion.div>
         ) : (
           <motion.div
@@ -45,7 +45,7 @@ const ThemeToggle = ({ toggleTheme, currentTheme }) => {
             transition={{ duration: 0.3 }}
             style={{ position: 'absolute' }}
           >
-            <Brightness4 fontSize="large" />
+            <Brightness4 fontSize="large" aria-hidden="true" focusable="false" />
           </motion.div>
         )}
       </AnimatePresence>

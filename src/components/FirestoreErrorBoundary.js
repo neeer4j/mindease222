@@ -6,15 +6,19 @@ import { db } from '../firebase';
 class FirestoreErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { 
+      hasError: false, 
+      error: null,
+      isRetrying: false 
+    };
   }
 
   static getDerivedStateFromError(error) {
-    // Check if it's a Firestore internal assertion error
     const isFirestoreError = error.message?.includes('INTERNAL ASSERTION FAILED');
     return { 
       hasError: isFirestoreError,
-      error: isFirestoreError ? error : null
+      error: isFirestoreError ? error : null,
+      isRetrying: false
     };
   }
 
@@ -26,20 +30,35 @@ class FirestoreErrorBoundary extends React.Component {
   }
 
   handleRetry = async () => {
+    if (this.state.isRetrying) return;
+
+    this.setState({ isRetrying: true });
+    
     try {
-      // Reset the connection
+      // Add a small delay before network operations
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Disable network first
       await disableNetwork(db);
+      
+      // Add a small delay between operations
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Enable network
       await enableNetwork(db);
       
-      // Clear error state
-      this.setState({ hasError: false, error: null });
-      
-      // Force a reload only if needed
-      if (this.state.error?.message?.includes('INTERNAL ASSERTION FAILED')) {
-        window.location.reload();
-      }
+      // Reset state
+      this.setState({ 
+        hasError: false, 
+        error: null,
+        isRetrying: false 
+      });
     } catch (err) {
       console.error('Error during retry:', err);
+      this.setState({ 
+        isRetrying: false,
+        error: err
+      });
     }
   };
 
@@ -65,9 +84,10 @@ class FirestoreErrorBoundary extends React.Component {
             variant="contained"
             color="primary"
             onClick={this.handleRetry}
+            disabled={this.state.isRetrying}
             sx={{ mt: 2 }}
           >
-            Retry Connection
+            {this.state.isRetrying ? 'Retrying...' : 'Retry Connection'}
           </Button>
         </Box>
       );
