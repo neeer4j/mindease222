@@ -7,6 +7,7 @@ import {
   Menu,
   MenuItem,
   useMediaQuery,
+  Box,
 } from '@mui/material';
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -101,6 +102,57 @@ const BottomNav = () => {
   });
 
   const [anchorEl, setAnchorEl] = useState(null);
+
+  // Add state for active photo
+  const [activePhoto, setActivePhoto] = useState('/images/navbar/aa.jpg');
+
+  // Define features data with images
+  const features = [
+    {
+      path: '/reels',
+      icon: <OndemandVideoIcon />,
+      title: 'Reels',
+      photoUrl: '/images/navbar/reel.jpg'
+    },
+    {
+      path: '/mood-tracker',
+      icon: <MoodIcon />,
+      title: 'Mood Tracker',
+      photoUrl: '/images/navbar/aa.jpg'
+    },
+    {
+      path: '/activity-logging',
+      icon: <LocalActivityIcon />,
+      title: 'Activity Logging',
+      photoUrl: '/images/navbar/ac.jpg'
+    },
+    {
+      path: '/sleep-tracker',
+      icon: <HotelIcon />,
+      title: 'Sleep Tracker',
+      photoUrl: '/images/navbar/sleep.jpg'
+    },
+    {
+      path: '/meditations',
+      icon: <SelfImprovementIcon />,
+      title: 'Meditation',
+      photoUrl: '/images/navbar/images.jpg'
+    },
+    {
+      path: '/therapist-recommendations',
+      icon: <PsychologyIcon />,
+      title: 'Therapist Recommendations',
+      photoUrl: '/images/navbar/tt.jpg'
+    }
+  ];
+
+  // Preload images
+  useEffect(() => {
+    features.forEach(feature => {
+      const img = new Image();
+      img.src = feature.photoUrl;
+    });
+  }, []);
 
   useEffect(() => {
     const path = location.pathname;
@@ -297,27 +349,65 @@ const BottomNav = () => {
           vertical: 'bottom',
           horizontal: 'center',
         }}
-        sx={menuSx}
-        PaperProps={menuPaperProps}
+        sx={{
+          '& .MuiPaper-root': {
+            backgroundColor: menuBg,
+            borderRadius: '12px',
+            boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.15)',
+            backdropFilter: 'blur(10px)',
+            border: currentMode === 'light'
+              ? '1px solid rgba(0, 0, 0, 0.1)'
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            maxHeight: 'none',
+            display: 'flex',
+            width: '500px',
+            height: '400px',
+            overflow: 'hidden'
+          }
+        }}
       >
-        <MenuItem onClick={() => handleCloseFeatures('/reels')}>
-          <OndemandVideoIcon sx={{ mr: 1, fontSize: { xs: 18, sm: 20 } }} /> Reels
-        </MenuItem>
-        <MenuItem onClick={() => handleCloseFeatures('/mood-tracker')}>
-          <MoodIcon sx={{ mr: 1, fontSize: { xs: 18, sm: 20 } }} /> Mood Tracker
-        </MenuItem>
-        <MenuItem onClick={() => handleCloseFeatures('/activity-logging')}>
-          <LocalActivityIcon sx={{ mr: 1, fontSize: { xs: 18, sm: 20 } }} /> Activity Logging
-        </MenuItem>
-        <MenuItem onClick={() => handleCloseFeatures('/sleep-tracker')}>
-          <HotelIcon sx={{ mr: 1, fontSize: { xs: 18, sm: 20 } }} /> Sleep Tracker
-        </MenuItem>
-        <MenuItem onClick={() => handleCloseFeatures('/meditations')}>
-          <SelfImprovementIcon sx={{ mr: 1, fontSize: { xs: 18, sm: 20 } }} /> Meditation
-        </MenuItem>
-        <MenuItem onClick={() => handleCloseFeatures('/therapist-recommendations')}>
-          <PsychologyIcon sx={{ mr: 1, fontSize: { xs: 18, sm: 20 } }} /> Therapist Recommendations
-        </MenuItem>
+        <Box sx={{ width: '60%', p: 2 }}>
+          {features.map((feature) => (
+            <MenuItem 
+              key={feature.path}
+              onClick={() => handleCloseFeatures(feature.path)}
+              onMouseEnter={() => setActivePhoto(feature.photoUrl)}
+              sx={{
+                borderRadius: '8px',
+                mb: 1,
+                py: 1.5,
+                '&:last-child': { mb: 0 },
+                '&:hover': {
+                  backgroundColor: 'action.hover'
+                }
+              }}
+            >
+              {React.cloneElement(feature.icon, { sx: { mr: 2, fontSize: { xs: 20, sm: 24 } } })}
+              {feature.title}
+            </MenuItem>
+          ))}
+        </Box>
+        <Box 
+          sx={{ 
+            width: '40%',
+            position: 'relative',
+            bgcolor: 'background.default'
+          }}
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundImage: `url(${activePhoto})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              transition: 'all 0.3s ease'
+            }}
+          />
+        </Box>
       </Menu>
     </ThemeProvider>
   );

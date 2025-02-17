@@ -121,34 +121,6 @@ const Landing = () => {
     },
   ];
 
-  const whyChooseUsPoints = [
-    {
-      icon: <VerifiedUserIcon color="primary" fontSize="large" />,
-      title: 'Personalized Experience',
-      description:
-        'Tailored tools and insights to meet your unique mental wellness needs.',
-      imageUrl: 'images/fe.jpg',
-      alt: 'Personalized experience illustration',
-    },
-    {
-      icon: <SecurityIcon color="primary" fontSize="large" />,
-      title: 'Privacy and Security',
-      description:
-        'Your data is encrypted and kept confidential, ensuring your peace of mind.',
-      imageUrl: 'images/tt.jpg',
-      alt: 'Secure data encryption illustration',
-    },
-    {
-      icon: <SupportAgentIcon color="primary" fontSize="large" />,
-      title: '24/7 Support',
-      description:
-        'Access our resources and AI support anytime, anywhere you need assistance.',
-      imageUrl: 'images/tf.jpg',
-      alt: 'Support agent providing assistance',
-    },
-  ];
-
-  // --- Testimonials Array with 6 Objects ---
   const testimonials = [
     {
       quote:
@@ -197,29 +169,6 @@ const Landing = () => {
       avatarUrl: 'images/p6.jpg',
       imageUrl: 'images/p6.jpg',
       alt: 'Person with thoughtful expression',
-    },
-  ];
-
-  const developers = [
-    {
-      name: 'Muhammed Nayif',
-      role: 'Lead Developer & Project Head',
-      avatarSrc: '/images/developers/nayif.jpeg',
-    },
-    {
-      name: 'Neeraj Venu',
-      role: ' UI/UX Designer',
-      avatarSrc: 'images/developers/neeraj.jpg',
-    },
-    {
-      name: 'Alan Dibu',
-      role: 'Backend Architect & Data Scientist',
-      avatarSrc: 'images/developers/alan.jpeg',
-    },
-    {
-      name: 'Gautham Suresh',
-      role: 'Frontend Developer & Accessibility Specialist',
-      avatarSrc: '/images/developers/gautham.jpg',
     },
   ];
 
@@ -839,117 +788,6 @@ const Landing = () => {
           </Box>
         </motion.section>
 
-        {/* Developers Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 0.8, delay: 0.1, staggerChildren: 0.3 }}
-        >
-          <Box mt={14} mb={isMobile ? 10 : 14}>
-            <Typography
-              variant={isMobile ? 'h4' : 'h3'}
-              align="center"
-              gutterBottom
-              sx={{
-                fontWeight: 800,
-                color: theme.palette.text.primary,
-                paddingX: isMobile ? theme.spacing(2) : 0,
-                textShadow: `1px 1px 1px ${theme.palette.grey[300]}`,
-                lineHeight: 1.3,
-              }}
-            >
-              MEET OUR DEVELOPERS
-            </Typography>
-            <Typography
-              variant="h6"
-              align="center"
-              color="textSecondary"
-              gutterBottom
-              sx={{
-                paddingX: isMobile ? theme.spacing(3) : 0,
-                maxWidth: 750,
-                margin: '0 auto',
-                fontSize: '1.05rem',
-                fontWeight: 400,
-              }}
-            >
-              THE TEAM BEHIND MINDEASE, PASSIONATE ABOUT MENTAL WELLNESS AND
-              TECHNOLOGY.
-            </Typography>
-            <Grid container spacing={isMobile ? 4 : 6} mt={6} justifyContent="center">
-              {developers.map((developer, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 60 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, amount: 0.7 }}
-                    transition={{
-                      duration: 0.6,
-                      delay: 0.4 + index * 0.25,
-                    }}
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <Card
-                      sx={{
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
-                          theme.palette.background.paper,
-                          0.9
-                        )} 100%)`,
-                        // Removed heavy backdropFilter for a smoother feel
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        borderRadius: '24px',
-                        boxShadow: theme.shadows[3],
-                        padding: theme.spacing(4),
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: theme.shadows[8],
-                          transform: 'translateY(-6px)',
-                        },
-                        position: 'relative',
-                        zIndex: 2,
-                      }}
-                    >
-                      <Avatar
-                        alt={developer.name}
-                        src={developer.avatarSrc}
-                        sx={{
-                          width: 100,
-                          height: 100,
-                          mb: 2,
-                          boxShadow: theme.shadows[2],
-                        }}
-                        loading="lazy"
-                      />
-                      <CardContent sx={{ textAlign: 'center' }}>
-                        <Typography
-                          variant="h6"
-                          component="div"
-                          sx={{
-                            fontWeight: 600,
-                            color: theme.palette.text.primary,
-                            mb: 1,
-                          }}
-                        >
-                          {developer.name}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.9rem' }}>
-                          {developer.role}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        </motion.section>
-
         {/* Call to Action Section */}
         <motion.section
           initial={{ opacity: 0 }}
@@ -962,7 +800,8 @@ const Landing = () => {
             textAlign="center"
             paddingY={8}
             sx={{
-              background: theme.palette.background.gradient,
+              background: `url('/images/banner.png') no-repeat center center`,
+              backgroundSize: 'cover',
               boxShadow: 'none',
               borderRadius: '25px',
               border: `1px solid ${theme.palette.grey[400]}`,
@@ -977,12 +816,7 @@ const Landing = () => {
                 left: 0,
                 width: '100%',
                 height: '100%',
-                backgroundImage:
-                  'url(https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                opacity: isDarkMode ? 0.1 : 0.05,
-                filter: 'blur(8px)',
+                background: 'rgba(0, 0, 0, 0.4)',
                 zIndex: 1,
               }}
             ></Box>
