@@ -269,8 +269,16 @@ const MeditationSplash = ({ onComplete }) => {
               </Tooltip>
             )}
             <Tooltip title={activeStep === tutorialSteps.length - 1 ? 'Finish' : 'Next'}>
-              <IconButton onClick={handleNext} sx={{ color: theme.palette.common.white }}>
-                {activeStep === tutorialSteps.length - 1 ? <CheckCircleIcon /> : <NavigateNextIcon />}
+              <IconButton 
+                onClick={handleNext} 
+                sx={{ color: theme.palette.common.white }}
+                aria-label={activeStep === tutorialSteps.length - 1 ? 'Finish tutorial' : 'Next step'}
+              >
+                {activeStep === tutorialSteps.length - 1 ? (
+                  <CheckCircleIcon />
+                ) : (
+                  <NavigateNextIcon />
+                )}
               </IconButton>
             </Tooltip>
           </Box>

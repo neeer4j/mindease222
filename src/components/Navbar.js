@@ -358,6 +358,7 @@ const Navbar = ({ toggleTheme }) => {
                   backgroundPosition: 'center',
                   borderRadius: '0 8px 8px 0'
                 }}
+                tabIndex={-1} // Prevent focusing on container when menu is active
               />
             </AnimatePresence>
           </Box>

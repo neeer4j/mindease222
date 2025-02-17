@@ -98,13 +98,13 @@ const ChatAbuseAnalysis = () => {
 
       snapshot.docs.forEach(docSnap => {
         const data = docSnap.data();
-        // Group by userId
         if (!userMap.has(data.userId)) {
           userMap.set(data.userId, {
             userId: data.userId,
             flaggedMessages: [],
             spamCount: 0,
             abuseCount: 0,
+            distressCount: 0,
             lastViolation: data.createdAt || data.timestamp
           });
         }
@@ -113,21 +113,30 @@ const ChatAbuseAnalysis = () => {
           messageId: data.messageId || docSnap.id,
           content: data.text,
           timestamp: data.timestamp,
-          type: 'abuse'
+          categories: data.categories || []
         });
-        userData.abuseCount++;
+
+        // Count each type separately based on categories
+        if (data.categories) {
+          if (data.categories.includes('spam')) userData.spamCount++;
+          if (data.categories.includes('abuse')) userData.abuseCount++;
+          if (data.categories.includes('distress')) userData.distressCount++;
+        }
       });
 
       const aggregated = Array.from(userMap.values());
-      // Fetch user's name from the users collection
+      // Fetch user's name and ban status from the users collection
       const updatedUsers = await Promise.all(
         aggregated.map(async (user) => {
           const userDocRef = doc(db, 'users', user.userId);
           const userDoc = await getDoc(userDocRef);
-          const name = userDoc.exists()
-            ? userDoc.data().displayName || userDoc.data().name || ''
-            : '';
-          return { ...user, name };
+          const userData = userDoc.exists() ? userDoc.data() : {};
+          return { 
+            ...user, 
+            name: userData.displayName || userData.name || '',
+            isAdmin: userData.isAdmin || false,
+            isBanned: userData.isBanned || false 
+          };
         })
       );
 
@@ -158,16 +167,19 @@ const ChatAbuseAnalysis = () => {
           snapshot.docs.map(async (docSnap) => {
             const data = docSnap.data();
             let userName = '';
+            let isBanned = false;
             try {
               const userDocRef = doc(db, 'users', data.userId);
               const userDoc = await getDoc(userDocRef);
               if (userDoc.exists()) {
-                userName = userDoc.data().displayName || userDoc.data().name || '';
+                const userData = userDoc.data();
+                userName = userData.displayName || userData.name || '';
+                isBanned = userData.isBanned || false;
               }
             } catch (error) {
               console.error('Error fetching user name for distress alert:', error);
             }
-            return { id: docSnap.id, ...data, userName };
+            return { id: docSnap.id, ...data, userName, isBanned };
           })
         );
         setDistressAlerts(alerts);
@@ -200,6 +212,16 @@ const ChatAbuseAnalysis = () => {
     if (!selectedUser) return;
     try {
       const userRef = doc(db, 'users', selectedUser.userId);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.data();
+
+      // Check if user is an admin
+      if (userData.isAdmin) {
+        showNotification('Cannot ban an admin user', 'error');
+        setBanDialog(false);
+        return;
+      }
+
       if (selectedUser.isBanned) {
         // Unban logic
         await updateDoc(userRef, {
@@ -210,7 +232,7 @@ const ChatAbuseAnalysis = () => {
         });
         showNotification('User unbanned successfully', 'success');
       } else {
-        // For banning, require a reason.
+        // For banning, require a reason
         if (!banReason) {
           showNotification('Please provide a ban reason', 'error');
           return;
@@ -223,14 +245,14 @@ const ChatAbuseAnalysis = () => {
         });
         showNotification('User banned successfully', 'success');
       }
-      // Optionally update the local state for selectedUser so UI reflects changes
+      
+      // Update the local state for selectedUser
       const updatedUserDoc = await getDoc(userRef);
       if (updatedUserDoc.exists()) {
         setSelectedUser({ userId: selectedUser.userId, ...updatedUserDoc.data() });
       }
       setBanDialog(false);
       setBanReason('');
-      // Refresh aggregated data after ban status change
       fetchAbusiveUsers();
     } catch (error) {
       console.error('Error updating user ban status:', error);
@@ -334,24 +356,113 @@ const ChatAbuseAnalysis = () => {
             <Typography variant="h6" gutterBottom>
               Abuse Incidents Timeline
             </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: 400, p: 2 }}>
               <ResponsiveContainer>
                 <LineChart
                   data={abusiveUsers.map(user => ({
                     userId: user.userId,
-                    incidents: user.spamCount + user.abuseCount,
+                    name: user.name || 'Anonymous',
+                    spam: user.spamCount,
+                    abuse: user.abuseCount,
+                    distress: user.distressCount,
                     date: user.lastViolation
                       ? new Date(user.lastViolation.seconds * 1000).toLocaleString()
                       : 'N/A'
                   }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 10 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <RechartsTooltip />
-                  <Line type="monotone" dataKey="incidents" stroke={theme.palette.primary.main} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke={theme.palette.text.secondary}
+                    fontSize={12}
+                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                  />
+                  <YAxis 
+                    stroke={theme.palette.text.secondary}
+                    fontSize={12}
+                  />
+                  <RechartsTooltip
+                    contentStyle={{
+                      backgroundColor: theme.palette.background.paper,
+                      border: `1px solid ${theme.palette.divider}`,
+                      borderRadius: '8px',
+                      padding: '8px'
+                    }}
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <Box sx={{ p: 1 }}>
+                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                              {payload[0]?.payload?.name}
+                            </Typography>
+                            {payload.map((entry, index) => (
+                              <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                <Box
+                                  sx={{
+                                    width: 12,
+                                    height: 12,
+                                    backgroundColor: entry.color,
+                                    borderRadius: '50%'
+                                  }}
+                                />
+                                <Typography variant="body2">
+                                  {entry.name}: {entry.value}
+                                </Typography>
+                              </Box>
+                            ))}
+                            <Typography variant="caption" color="text.secondary">
+                              {new Date(label).toLocaleString()}
+                            </Typography>
+                          </Box>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="spam" 
+                    name="Spam" 
+                    stroke={theme.palette.warning.main}
+                    strokeWidth={2}
+                    dot={{ r: 4, strokeWidth: 2 }}
+                    activeDot={{ r: 6, strokeWidth: 2 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="abuse" 
+                    name="Abuse" 
+                    stroke={theme.palette.error.main}
+                    strokeWidth={2}
+                    dot={{ r: 4, strokeWidth: 2 }}
+                    activeDot={{ r: 6, strokeWidth: 2 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="distress" 
+                    name="Distress" 
+                    stroke={theme.palette.info.main}
+                    strokeWidth={2}
+                    dot={{ r: 4, strokeWidth: 2 }}
+                    activeDot={{ r: 6, strokeWidth: 2 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 12, height: 12, backgroundColor: theme.palette.warning.main, borderRadius: '50%' }} />
+                <Typography variant="body2">Spam</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 12, height: 12, backgroundColor: theme.palette.error.main, borderRadius: '50%' }} />
+                <Typography variant="body2">Abuse</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 12, height: 12, backgroundColor: theme.palette.info.main, borderRadius: '50%' }} />
+                <Typography variant="body2">Distress</Typography>
+              </Box>
             </Box>
           </Paper>
         </Grid>
@@ -401,14 +512,26 @@ const ChatAbuseAnalysis = () => {
                           <VisibilityIcon />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Ban/Unban User">
-                        <IconButton
-                          color={user.isBanned ? "success" : "error"}
-                          onClick={() => handleBanUserDialog(user.userId)}
-                        >
-                          {user.isBanned ? <CheckIcon /> : <BlockIcon />}
-                        </IconButton>
-                      </Tooltip>
+                      {user.isAdmin ? (
+                        <Tooltip title="Cannot ban admin users">
+                          <span>
+                            <IconButton disabled>
+                              <BlockIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip title={user.isBanned ? "Unban User" : "Ban User"}>
+                          <IconButton
+                            color={user.isBanned ? "success" : "error"}
+                            onClick={() => handleBanUserDialog(user.userId)}
+                          >
+                            <Box component="div" sx={{ display: 'flex', alignItems: 'center' }}>
+                              {user.isBanned ? <CheckIcon /> : <BlockIcon />}
+                            </Box>
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -463,12 +586,14 @@ const ChatAbuseAnalysis = () => {
                         <VisibilityIcon />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Ban/Unban User">
+                    <Tooltip title={alert.isBanned ? "Unban User" : "Ban User"}>
                       <IconButton
-                        color="error"
+                        color={alert.isBanned ? "success" : "error"}
                         onClick={() => handleBanUserDialog(alert.userId)}
                       >
-                        <BlockIcon />
+                        <Box component="div" sx={{ display: 'flex', alignItems: 'center' }}>
+                          {alert.isBanned ? <CheckIcon /> : <BlockIcon />}
+                        </Box>
                       </IconButton>
                     </Tooltip>
                   </TableCell>
@@ -564,17 +689,31 @@ const ChatAbuseAnalysis = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setUserDetailsDialog(false)}>Close</Button>
-              <Button
-                variant="contained"
-                color={selectedUser.isBanned ? "success" : "error"}
-                onClick={() => {
-                  setUserDetailsDialog(false);
-                  setBanDialog(true);
-                }}
-                startIcon={selectedUser.isBanned ? <CheckIcon /> : <BlockIcon />}
-              >
-                {selectedUser.isBanned ? "Unban User" : "Ban User"}
-              </Button>
+              {selectedUser?.isBanned ? (
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => {
+                    setUserDetailsDialog(false);
+                    setBanDialog(true);
+                  }}
+                  startIcon={<CheckIcon />}
+                >
+                  Unban User
+                </Button>
+              ) : !selectedUser?.isAdmin && (
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => {
+                    setUserDetailsDialog(false);
+                    setBanDialog(true);
+                  }}
+                  startIcon={<BlockIcon />}
+                >
+                  Ban User
+                </Button>
+              )}
             </DialogActions>
           </>
         )}
@@ -582,9 +721,20 @@ const ChatAbuseAnalysis = () => {
 
       {/* Ban/Unban Dialog */}
       <Dialog open={banDialog} onClose={() => setBanDialog(false)}>
-        <DialogTitle>{selectedUser?.isBanned ? "Unban User" : "Ban User for Chat Abuse"}</DialogTitle>
+        <DialogTitle>
+          {selectedUser?.isBanned 
+            ? "Unban User" 
+            : selectedUser?.isAdmin 
+              ? "Cannot Ban Admin" 
+              : "Ban User for Chat Abuse"
+          }
+        </DialogTitle>
         <DialogContent>
-          {selectedUser?.isBanned ? (
+          {selectedUser?.isAdmin ? (
+            <Typography variant="body1" color="error" paragraph>
+              Admin users cannot be banned from the chat system.
+            </Typography>
+          ) : selectedUser?.isBanned ? (
             <Typography variant="body1" paragraph>
               Are you sure you want to unban this user? This will allow them to access the chat feature again.
             </Typography>
@@ -606,15 +756,19 @@ const ChatAbuseAnalysis = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setBanDialog(false)}>Cancel</Button>
-          <Button
-            color={selectedUser?.isBanned ? "success" : "error"}
-            variant="contained"
-            onClick={handleBanUser}
-            disabled={!selectedUser?.isBanned && !banReason}
-          >
-            {selectedUser?.isBanned ? "Unban User" : "Ban User"}
+          <Button onClick={() => setBanDialog(false)}>
+            {selectedUser?.isAdmin ? 'Close' : 'Cancel'}
           </Button>
+          {!selectedUser?.isAdmin && (
+            <Button
+              color={selectedUser?.isBanned ? "success" : "error"}
+              variant="contained"
+              onClick={handleBanUser}
+              disabled={!selectedUser?.isBanned && !banReason}
+            >
+              {selectedUser?.isBanned ? "Unban User" : "Ban User"}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
