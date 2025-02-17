@@ -177,7 +177,7 @@ const Landing = () => {
     {
       quote:
         'Since I started using MindEase, I feel more in control of my emotions. The insights are eye-opening.',
-      author: 'Carlos M Reyes',
+      author: 'Arathi Das',
       avatarUrl: 'images/p4.jpg',
       imageUrl: 'images/p4.jpg',
       alt: 'Smiling person looking inspired',
@@ -185,7 +185,7 @@ const Landing = () => {
     {
       quote:
         'The guided meditations have truly transformed my approach to stress. I feel more relaxed every day.',
-      author: 'Sophia L Martinez',
+      author: 'Aliya Fathima',
       avatarUrl: 'images/p5.jpg',
       imageUrl: 'images/p5.jpg',
       alt: 'Person meditating peacefully',
@@ -193,7 +193,7 @@ const Landing = () => {
     {
       quote:
         'MindEase not only helps me track my mood but also gives actionable insights. Highly recommended!',
-      author: 'Daniel K Lee',
+      author: 'B. Joniyal',
       avatarUrl: 'images/p6.jpg',
       imageUrl: 'images/p6.jpg',
       alt: 'Person with thoughtful expression',

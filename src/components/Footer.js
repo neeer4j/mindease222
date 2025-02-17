@@ -42,29 +42,47 @@ const Footer = () => {
       <Container maxWidth="lg">
         <Grid container spacing={4} justifyContent="space-between">
           {/* Branding & About */}
-          <Grid item xs={12} md={4} lg={3}> {/* Adjusted Grid sizes for better layout */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 3 }}>
-              <Typography
-                variant="h6"
-                component={Link}
-                to="/"
-                sx={{
+          <Grid item xs={12} md={4} lg={3}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', mb: 1 }}>
+              <Link 
+                to="/" 
+                style={{ 
                   textDecoration: 'none',
-                  color: theme.palette.primary.main, // Changed brand color to primary for emphasis
-                  fontWeight: 700,
-                  fontFamily: `'Montserrat', sans-serif`, // Updated font family for a modern feel
-                  mb: 1,
+                  display: 'flex',
+                  height: '100px', // Reduced from 140px
+                  overflow: 'visible',
+                  alignItems: 'flex-start',
+                  position: 'relative',
+                  marginLeft: '-20px' // Adjusted from 0px
                 }}
               >
-                MindEase AI
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Your mental wellness companion, leveraging AI to support your journey to a balanced and happier life.
+                <img
+                  src="/navbar/title/mindwasess.png"
+                  alt="MindEase AI"
+                  style={{
+                    height: '400px', // Reduced from 500px
+                    width: 'auto',
+                    filter: theme.palette.mode === 'dark' ? 'brightness(1.5)' : 'none',
+                    transition: 'all 0.3s ease',
+                    marginLeft: '-35px', // Adjusted from -25px
+                    marginTop: '-150px', // Adjusted from -180px
+                    marginBottom: '-150px', // Adjusted from -180px
+                    objectFit: 'contain',
+                    transform: 'translateX(-25px) scale(1.1)' // Adjusted translateX from -15px
+                  }}
+                />
+              </Link>
+              <Box sx={{ ml: 3, mt: 1 }}>
+                <Typography variant="body2" color="textSecondary">
+                  Your mental wellness companion, leveraging AI to support your journey to a balanced and happier life.
+                </Typography>
+              </Box>
+            </Box>
+            <Box sx={{ ml: 3 }}>
+              <Typography variant="caption" color="textSecondary">
+                © {new Date().getFullYear()} MindEase AI. All rights reserved.
               </Typography>
             </Box>
-            <Typography variant="caption" color="textSecondary">
-              © {new Date().getFullYear()} MindEase AI. All rights reserved.
-            </Typography>
           </Grid>
 
           {/* Quick Links */}
