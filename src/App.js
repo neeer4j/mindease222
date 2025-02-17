@@ -54,6 +54,7 @@ import ContactUs from './pages/ContactUs';
 import ChatAbuseAnalysis from './pages/ChatAbuseAnalysis';
 import WelcomeSplash from './components/WelcomeSplash';
 import FirestoreErrorBoundary from './components/FirestoreErrorBoundary';
+import HealthData from './components/HealthData';
 
 // Debugging log
 console.log("Rendering App...");
@@ -195,6 +196,14 @@ function AppRoutes({ toggleTheme }) {
               <ChatAbuseAnalysis />
             </ProtectedRoute>
           } 
+        />
+        <Route
+          path="/health-data"
+          element={
+            <ProtectedRoute>
+              <HealthData />
+            </ProtectedRoute>
+          }
         />
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
