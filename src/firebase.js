@@ -14,46 +14,41 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || "G-9PHFB6W537",
 };
 
+// Initialize Firebase only once
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const analytics = getAnalytics(app);
 
-// Enable offline persistence for auth
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error("Auth persistence error:", error);
-});
-
-// Function to handle persistence enablement
-const enablePersistence = async () => {
+// Initialize persistence only once and handle errors properly
+const initializeFirebase = async () => {
   try {
-    await enableIndexedDbPersistence(db);
-  } catch (err) {
-    if (err.code === 'failed-precondition') {
-      // Multiple tabs open, persistence can only be enabled in one tab at a time.
-      console.warn('Multiple tabs open, persistence disabled');
-    } else if (err.code === 'unimplemented') {
-      // The current browser doesn't support persistence
-      console.warn('Persistence not supported in this browser');
-    }
+    // Enable auth persistence
+    await setPersistence(auth, browserLocalPersistence);
+    
+    // Enable Firestore offline persistence
+    await enableIndexedDbPersistence(db, {
+      synchronizeTabs: true
+    }).catch((err) => {
+      if (err.code === 'failed-precondition') {
+        // Multiple tabs open, persistence can only be enabled in one tab at a time.
+        console.warn('Multiple tabs open, persistence can only be enabled in one tab');
+      } else if (err.code === 'unimplemented') {
+        console.warn('Browser doesn\'t support persistence');
+      }
+    });
+
+  } catch (error) {
+    console.error("Firebase initialization error:", error);
   }
 };
 
-// Function to handle connection state
-const handleConnectionState = async () => {
-  if (!navigator.onLine) {
-    await disableNetwork(db);
-  } else {
-    await enableNetwork(db);
-  }
-};
+// Initialize Firebase features
+initializeFirebase();
 
-// Initialize persistence
-enablePersistence();
-
-// Add network listeners
-window.addEventListener('online', handleConnectionState);
-window.addEventListener('offline', handleConnectionState);
+// Handle online/offline state
+window.addEventListener('online', () => enableNetwork(db));
+window.addEventListener('offline', () => disableNetwork(db));
 
 export { auth, db, storage, analytics, getRedirectResult };

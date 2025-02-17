@@ -49,36 +49,36 @@ const Footer = () => {
                 style={{ 
                   textDecoration: 'none',
                   display: 'flex',
-                  height: '100px', // Reduced from 140px
+                  height: '100px',
                   overflow: 'visible',
                   alignItems: 'flex-start',
                   position: 'relative',
-                  marginLeft: '-20px' // Adjusted from 0px
+                  marginLeft: '-25px' // Adjusted from -10px to move left
                 }}
               >
                 <img
                   src="/navbar/title/mindwasess.png"
                   alt="MindEase AI"
                   style={{
-                    height: '400px', // Reduced from 500px
+                    height: '400px',
                     width: 'auto',
                     filter: theme.palette.mode === 'dark' ? 'brightness(1.5)' : 'none',
                     transition: 'all 0.3s ease',
                     marginLeft: '-35px', // Adjusted from -25px
-                    marginTop: '-150px', // Adjusted from -180px
-                    marginBottom: '-150px', // Adjusted from -180px
+                    marginTop: '-150px',
+                    marginBottom: '-150px',
                     objectFit: 'contain',
-                    transform: 'translateX(-25px) scale(1.1)' // Adjusted translateX from -15px
+                    transform: 'translateX(-20px) scale(1.1)' // Adjusted translateX from -15px
                   }}
                 />
               </Link>
-              <Box sx={{ ml: 3, mt: 1 }}>
+              <Box sx={{ ml: 2, mt: 1 }}>
                 <Typography variant="body2" color="textSecondary">
                   Your mental wellness companion, leveraging AI to support your journey to a balanced and happier life.
                 </Typography>
               </Box>
             </Box>
-            <Box sx={{ ml: 3 }}>
+            <Box sx={{ ml: 2 }}>
               <Typography variant="caption" color="textSecondary">
                 © {new Date().getFullYear()} MindEase AI. All rights reserved.
               </Typography>

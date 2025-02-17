@@ -116,7 +116,7 @@ const Landing = () => {
       title: 'Reels',
       description: 'Explore quick, engaging reels for mental wellness tips and guidance.',
       action: () => navigate('/reels'),
-      imageUrl: 'images/reels.png',
+      imageUrl: 'images/reels.jpg',
       alt: 'Video reel widget',
     },
   ];
