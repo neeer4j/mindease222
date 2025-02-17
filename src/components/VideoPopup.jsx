@@ -92,7 +92,7 @@ const VideoPopup = () => {
                   }}
                   controls
                   src="/videos/welcome.mp4"
-                  poster="/images/p2.jpg"
+                  poster="/images/mindwase.png"
                 />
               </Paper>
             </Box>
@@ -155,7 +155,7 @@ const VideoPopup = () => {
                   }}
                   controls
                   src="/videos/welcome.mp4"
-                  poster="/images/p2.jpg"
+                  poster="/images/mindwase.png"
                 />
               </Paper>
             </Draggable>

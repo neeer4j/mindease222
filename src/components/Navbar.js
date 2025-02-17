@@ -361,15 +361,16 @@ const Navbar = ({ toggleTheme }) => {
             background: mobileNavbarBg,
             borderBottomLeftRadius: '24px',
             borderBottomRightRadius: '24px',
-            overflow: 'hidden',
+            overflow: 'visible',
             px: 2,
-            py: 1,
+            py: 0,
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start', // Changed to align from top
             justifyContent: 'space-between',
+            height: '100px', // Increased height
           }}
         >
-          <Button component={Link} to="/" sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}>
+          {(isAdmin && isInAdminMode) ? (
             <Typography
               variant="h6"
               sx={{
@@ -379,9 +380,36 @@ const Navbar = ({ toggleTheme }) => {
                 textShadow: mobileTextShadow,
               }}
             >
-              {(isAdmin && isInAdminMode) ? 'Admin Dashboard' : 'MindEase AI™'}
+              Admin Dashboard
             </Typography>
-          </Button>
+          ) : (
+            <Link 
+              to="/" 
+              style={{ 
+                display: 'flex', 
+                textDecoration: 'none',
+                position: 'relative',
+                height: '100%',
+                alignItems: 'flex-start' // Align from top
+              }}
+            >
+              <img
+                src="/navbar/title/mindwasess.png"
+                alt="MindEase AI"
+                style={{
+                  height: '300px', // Increased size
+                  width: 'auto',
+                  filter: theme.palette.mode === 'dark' ? 'brightness(1.5)' : 'none',
+                  transition: 'all 0.3s ease',
+                  marginLeft: '-40px', // Increased negative margin to move left
+                  marginTop: '-100px', // Adjusted to show more of the top portion
+                  marginBottom: '-100px',
+                  objectFit: 'contain',
+                  transform: 'translateX(-25px)' // Added translation to move left
+                }}
+              />
+            </Link>
+          )}
           {!hideToggle && (
             <motion.div
               whileTap={{ scale: 0.9 }}
@@ -408,14 +436,17 @@ const Navbar = ({ toggleTheme }) => {
         <Box
           sx={{
             position: 'fixed',
-            top: theme.spacing(2),
-            left: theme.spacing(3),
+            top: 0,
+            left: 0, // Changed from theme.spacing(1) to 0
             zIndex: theme.zIndex.drawer + 2,
             opacity: showTitle ? 1 : 0,
             transition: 'opacity 0.3s ease-in-out',
+            height: '100px',
+            display: 'flex',
+            alignItems: 'flex-start' // Align from top
           }}
         >
-          <Button component={Link} to="/" sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}>
+          {(isAdmin && isInAdminMode) ? (
             <Typography
               variant="h5"
               sx={{
@@ -426,9 +457,36 @@ const Navbar = ({ toggleTheme }) => {
                 transition: 'color 0s ease-in-out',
               }}
             >
-              {(isAdmin && isInAdminMode) ? 'Admin Dashboard' : 'MindEase AI™'}
+              Admin Dashboard
             </Typography>
-          </Button>
+          ) : (
+            <Link 
+              to="/" 
+              style={{ 
+                display: 'flex', 
+                textDecoration: 'none',
+                position: 'relative',
+                height: '100%',
+                alignItems: 'flex-start' // Align from top
+              }}
+            >
+              <img
+                src="/navbar/title/mindwasess.png"
+                alt="MindEase AI"
+                style={{
+                  height: '280px', // Further increased size
+                  width: 'auto',
+                  filter: theme.palette.mode === 'dark' ? 'brightness(1.5)' : 'none',
+                  transition: 'all 0.3s ease',
+                  marginLeft: '-25px', // Increased negative margin to move left
+                  marginTop: '-90px', // Adjusted to show more of the top portion
+                  marginBottom: '-90px',
+                  objectFit: 'contain',
+                  transform: 'translateX(-20px)' // Added translation to move left
+                }}
+              />
+            </Link>
+          )}
         </Box>
       )}
 
