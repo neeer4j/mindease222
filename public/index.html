@@ -18,10 +18,21 @@
     <link
       rel="icon"
       type="image/png"
-      sizes="32x32"
-      href="/icons/icon-32x32.png"
+      sizes="512x512"
+      href="/images/android-chrome-512x512.png"
     />
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <link 
+      rel="apple-touch-icon" 
+      sizes="512x512"
+      href="/images/android-chrome-512x512.png" 
+    />
+    <style>
+      /* Override default favicon size in browsers */
+      link[rel="icon"] {
+        width: 512px !important;
+        height: 512px !important;
+      }
+    </style>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
