@@ -91,7 +91,7 @@ const VideoPopup = () => {
                     background: '#000',
                   }}
                   controls
-                  src="/videos/welcome.mp4"
+                  src="https://firebasestorage.googleapis.com/v0/b/mindease-dbed7.firebasestorage.app/o/titlevideo%2Fmindeasepromo.mp4?alt=media&token=e87befb7-ae15-4b9e-9f19-59ed3389b85f"
                   poster="/images/mindwase.png"
                 />
               </Paper>
@@ -154,7 +154,7 @@ const VideoPopup = () => {
                     background: '#000',
                   }}
                   controls
-                  src="/videos/welcome.mp4"
+                  src="https://firebasestorage.googleapis.com/v0/b/mindease-dbed7.firebasestorage.app/o/titlevideo%2Fmindeasepromo.mp4?alt=media&token=e87befb7-ae15-4b9e-9f19-59ed3389b85f"
                   poster="/images/mindwase.png"
                 />
               </Paper>
