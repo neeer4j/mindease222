@@ -27,7 +27,7 @@ import {
   Visibility as VisibilityIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { styled } from '@mui/system';
+import { styled, alpha } from '@mui/system';
 import { motion } from 'framer-motion';
 import PageLayout from '../components/PageLayout';
 import { TherapistFindContext } from '../contexts/TherapistFindContext';
@@ -36,23 +36,50 @@ import { TherapistFindContext } from '../contexts/TherapistFindContext';
 // Styled Components
 // -----------------------
 
+// Dashboard container with smooth scrolling styles
 const DashboardContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   minHeight: '100vh',
+  '& > *': {
+    overflowY: 'auto',
+    scrollBehavior: 'smooth',
+    '&::-webkit-scrollbar': {
+      width: '8px',
+    },
+    '&::-webkit-scrollbar-track': {
+      background: alpha(theme.palette.background.paper, 0.1),
+      borderRadius: '8px',
+    },
+    '&::-webkit-scrollbar-thumb': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.2),
+      borderRadius: '8px',
+      '&:hover': {
+        backgroundColor: alpha(theme.palette.primary.main, 0.3),
+      },
+    },
+  },
 }));
 
+// Updated WidgetCard: Retains the old gradient & border but removes backdropFilter
 const WidgetCard = styled(Card)(({ theme }) => ({
-  borderRadius: '16px',
+  borderRadius: '24px',
+  // Use theme-based shadow instead of a custom heavy box-shadow
   boxShadow: theme.shadows[3],
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
   height: 240,
-  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
+    theme.palette.background.paper,
+    0.9
+  )} 100%)`,
+  // Removed backdropFilter for smoother performance
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  transition: 'all 0.3s ease-in-out',
   '&:hover': {
-    transform: 'scale(1.02)',
-    boxShadow: theme.shadows[5],
+    boxShadow: theme.shadows[8],
+    transform: 'translateY(-6px)',
   },
 }));
 
@@ -60,9 +87,21 @@ const WidgetContent = styled(CardContent)(({ theme }) => ({
   padding: theme.spacing(2),
   flexGrow: 1,
   overflowY: 'auto',
-  '&::-webkit-scrollbar': { display: 'none' },
-  '-ms-overflow-style': 'none',
-  'scrollbar-width': 'none',
+  scrollBehavior: 'smooth',
+  '&::-webkit-scrollbar': {
+    width: '6px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: alpha(theme.palette.background.paper, 0.1),
+    borderRadius: '6px',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.2),
+    borderRadius: '6px',
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.3),
+    },
+  },
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'flex-start',
@@ -83,25 +122,35 @@ const WidgetHeader = styled(Box)(({ theme }) => ({
   },
 }));
 
+// HeroSection for the header area (unchanged if desired)
 const HeroSection = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(3),
   padding: theme.spacing(4),
   borderRadius: '24px',
-  background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-  color: theme.palette.common.white,
-  boxShadow: theme.shadows[4],
-  backdropFilter: 'blur(8px)',
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
+    theme.palette.background.paper,
+    0.9
+  )} 100%)`,
+  // You can remove or reduce the backdrop filter here as well if needed
+  // For smoother performance, consider removing it:
+  // backdropFilter: 'blur(10px)',
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  boxShadow: theme.shadows[3],
+  color: theme.palette.text.primary,
   display: 'flex',
   alignItems: 'center',
   position: 'relative',
+  transition: 'all 0.3s ease-in-out',
+  '&:hover': {
+    boxShadow: theme.shadows[8],
+    transform: 'translateY(-6px)',
+  },
   [theme.breakpoints.down('sm')]: {
     flexDirection: 'column',
     textAlign: 'center',
     padding: theme.spacing(3),
   },
 }));
-
-// (Removed HeroAvatar as it was used for the header image)
 
 const HeroTextContainer = styled(Box)(({ theme }) => ({
   flexGrow: 1,
@@ -140,11 +189,7 @@ const mainContentVariants = {
 
 const widgetVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, delayChildren: 0.1, staggerChildren: 0.05 },
-  },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, delayChildren: 0.1, staggerChildren: 0.05 } },
 };
 
 const widgetItemVariants = {
@@ -153,7 +198,7 @@ const widgetItemVariants = {
 };
 
 // -----------------------
-// TherapistWidget Component (Modified)
+// TherapistWidget Component
 // -----------------------
 
 const TherapistWidget = ({ therapist, handleDetailsClick }) => {
@@ -165,7 +210,7 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
     }
   }, []);
 
-  // Direct Google Maps URL (unchanged)
+  // Direct Google Maps URL using therapist.id
   const googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${therapist.id}`;
 
   return (
@@ -173,7 +218,6 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
       <WidgetCard>
         <WidgetHeader>
           <Typography variant="subtitle2">{therapist.name}</Typography>
-          {/* Instead of loading an image, show a default PersonIcon */}
           <PersonIcon fontSize="small" />
         </WidgetHeader>
         <WidgetContent ref={contentRef}>
@@ -233,7 +277,7 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
 };
 
 // -----------------------
-// TherapistDetailsContent Component (Modified)
+// TherapistDetailsContent Component
 // -----------------------
 
 const TherapistDetailsContent = ({ therapist, onClose }) => {
@@ -261,7 +305,6 @@ const TherapistDetailsContent = ({ therapist, onClose }) => {
             </Typography>
           </Box>
         </Box>
-        {/* Removed image display; if desired, a default icon can be shown here as well */}
       </DialogContent>
       <DialogActions>
         <Button
@@ -304,10 +347,8 @@ const TherapistRecommendations = () => {
   /**
    * fetchData: Gets user's current location and uses the context's fetchTherapists
    * method to fetch therapist recommendations.
-   * The force parameter bypasses caching.
    */
   const fetchData = (force = false) => {
-    if (!force && therapists.length > 0) return;
     setLocationError(null);
     setIsRefreshing(true);
     if (navigator.geolocation) {
@@ -328,7 +369,8 @@ const TherapistRecommendations = () => {
           setSnackbarSeverity("warning");
           setSnackbarOpen(true);
           setIsRefreshing(false);
-        }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
       setLocationError("Geolocation is not supported by this browser.");
@@ -357,13 +399,11 @@ const TherapistRecommendations = () => {
 
   // Handle manual refresh: clear cached data and force a new fetch.
   const handleRefresh = () => {
-    clearTherapists(); // Clear cached data.
-    fetchData(true); // Force a new API call.
+    clearTherapists();
+    fetchData(true);
     setSnackbarMessage("Therapist recommendations refreshed.");
     setSnackbarSeverity("info");
     setSnackbarOpen(true);
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
   };
 
   const handleSnackbarClose = (event, reason) => {
@@ -387,14 +427,9 @@ const TherapistRecommendations = () => {
     <GlobalStyles>
       <DashboardContainer>
         <PageLayout>
-          <motion.main
-            variants={mainContentVariants}
-            initial="hidden"
-            animate="visible"
-          >
+          <motion.main variants={mainContentVariants} initial="hidden" animate="visible">
             <Container maxWidth="lg" sx={{ pt: 4, pb: 4 }}>
               <HeroSection>
-                {/* Hero header image removed to focus on therapist widgets */}
                 <HeroTextContainer>
                   <HeroTextH4 variant="h4">
                     Your Path to Well-being Starts Here
@@ -405,7 +440,7 @@ const TherapistRecommendations = () => {
                       : "Discover compassionate therapists ready to support you."}
                   </Typography>
                 </HeroTextContainer>
-                {/* Refresh button in the top-right corner */}
+                {/* Refresh Button */}
                 <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10 }}>
                   <IconButton
                     onClick={handleRefresh}

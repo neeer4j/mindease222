@@ -6,10 +6,12 @@ import { auth, db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { AuthContext } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
+import { useAuth } from '../contexts/AuthContext';
 
 const RedirectHandler = () => {
   const navigate = useNavigate();
   const { setUserInternal, setSuccess, setError } = useContext(AuthContext);
+  const { isAuthenticated, isAdmin, isInAdminMode } = useAuth();
 
   // A helper to fetch the user profile from Firestore.
   const fetchUserProfile = async (uid) => {
@@ -55,12 +57,29 @@ const RedirectHandler = () => {
         setError(err.message || "Failed to process redirect.");
       } finally {
         // Whether successful or not, navigate away from the redirect page.
-        navigate('/dashboard');
+        if (isAuthenticated) {
+          if (isAdmin && isInAdminMode) {
+            navigate('/admin');
+          } else {
+            navigate('/dashboard');
+          }
+        }
       }
     };
 
     processRedirect();
-  }, [navigate, setError, setSuccess, setUserInternal]);
+  }, [navigate, setError, setSuccess, setUserInternal, isAuthenticated, isAdmin, isInAdminMode]);
+
+  // Redirect to appropriate page when admin mode is toggled
+  useEffect(() => {
+    if (isAuthenticated && isAdmin) {
+      if (isInAdminMode) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [isInAdminMode, isAdmin, isAuthenticated, navigate]);
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>

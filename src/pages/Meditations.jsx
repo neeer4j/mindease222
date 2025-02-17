@@ -36,6 +36,8 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/system';
 import PageLayout from '../components/PageLayout';
+import MeditationSplash from '../components/MeditationSplash';
+import SplashScreenToggle from '../components/SplashScreenToggle';
 
 // ----------------------
 // Styled Components
@@ -187,6 +189,10 @@ const Meditations = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [actualDurations, setActualDurations] = useState({});
+  const [showSplash, setShowSplash] = useState(() => {
+    const hasSeenTutorial = localStorage.getItem('meditationsTutorialSeen');
+    return !hasSeenTutorial;
+  });
 
   const audioRef = useRef(null);
   const playerRef = useRef(null);
@@ -384,8 +390,18 @@ const Meditations = () => {
     },
   };
 
+  const handleTutorialComplete = () => {
+    localStorage.setItem('meditationsTutorialSeen', 'true');
+    setShowSplash(false);
+  };
+
+  const handleShowSplash = () => {
+    setShowSplash(true);
+  };
+
   return (
     <PageLayout>
+      {showSplash && <MeditationSplash onComplete={handleTutorialComplete} />}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -788,6 +804,7 @@ const Meditations = () => {
           />
         </Container>
       </motion.div>
+      <SplashScreenToggle onShowSplash={handleShowSplash} />
     </PageLayout>
   );
 };

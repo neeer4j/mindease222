@@ -17,7 +17,7 @@ import {
   useMediaQuery,
   Card,
   CardContent,
-  CardActions,
+  CardActions as MuiCardActions,
   Avatar,
   IconButton,
   Snackbar,
@@ -41,7 +41,7 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { styled } from '@mui/system';
+import { styled, alpha } from '@mui/system';
 import {
   AreaChart,
   Area,
@@ -107,6 +107,8 @@ const formatDateToRelativeTime = (date) => {
 // =======================
 // Styled Components
 // =======================
+
+// Use a smoother GradientButton (from your old code's smooth feel)
 const GradientButton = styled(Button)(({ theme }) => ({
   background: `linear-gradient(45deg, ${theme.palette.primary.light} 30%, ${theme.palette.primary.main} 90%)`,
   color: theme.palette.primary.contrastText,
@@ -114,6 +116,8 @@ const GradientButton = styled(Button)(({ theme }) => ({
   padding: '10px 22px',
   boxShadow: theme.shadows[4],
   transition: 'background 0.4s ease-out, box-shadow 0.3s ease-out, transform 0.3s ease-out',
+  textTransform: 'none',
+  fontWeight: 500,
   '&:hover': {
     background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
     boxShadow: theme.shadows[7],
@@ -125,7 +129,10 @@ const SubtleButton = styled(Button)(({ theme }) => ({
   color: theme.palette.text.secondary,
   borderRadius: '12px',
   padding: '8px 16px',
+  backgroundColor: 'transparent',
   transition: 'background-color 0.3s ease-out, color 0.3s ease-out, transform 0.2s ease-out',
+  textTransform: 'none',
+  fontWeight: 500,
   '&:hover': {
     backgroundColor: theme.palette.action.hover,
     color: theme.palette.text.primary,
@@ -148,6 +155,7 @@ const MainContent = styled(motion.main)(({ theme }) => ({
   flex: 1,
 }));
 
+// HeroSectionCard – retaining the color palette but removing backdropFilter for performance
 const HeroSectionCard = styled(Card)(({ theme, variant = 'default' }) => {
   let backgroundColor = theme.palette.background.paper;
   let textColor = theme.palette.text.primary;
@@ -168,7 +176,7 @@ const HeroSectionCard = styled(Card)(({ theme, variant = 'default' }) => {
     background: backgroundColor,
     color: textColor,
     boxShadow: theme.shadows[3],
-    backdropFilter: 'blur(8px)',
+    // Removed expensive backdropFilter
     textAlign: 'left',
     display: 'flex',
     alignItems: 'center',
@@ -232,12 +240,20 @@ const HeroSubtitle = styled(Typography)(({ theme, variant = 'default' }) => ({
   ...(variant !== 'default' && { color: theme.palette.getContrastText(theme.palette[variant].light) }),
 }));
 
+/* 
+  UPDATED WidgetCard:
+  - Retains the old color palette (linear gradient background and border)
+  - Removes the backdropFilter and heavy custom box-shadow for smoother rendering
+  - Uses theme.shadows for hover effects
+*/
 const WidgetCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(2),
   borderRadius: '24px',
   boxShadow: theme.shadows[3],
   overflow: 'hidden',
   transition: 'box-shadow 0.3s ease-out, transform 0.3s ease-out',
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
   '&:hover': {
     boxShadow: theme.shadows[8],
     transform: 'translateY(-6px)',
@@ -247,12 +263,18 @@ const WidgetCard = styled(Card)(({ theme }) => ({
 const WidgetTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 700,
   color: theme.palette.text.primary,
-  padding: theme.spacing(1, 2),
-  borderBottom: `1px solid ${theme.palette.divider}`,
-  fontSize: '1rem',
+  padding: theme.spacing(2, 2.5),
+  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  fontSize: '1.1rem',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
+  letterSpacing: '0.5px',
+}));
+
+const CardActions = styled(MuiCardActions)(({ theme }) => ({
+  borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  padding: theme.spacing(1.5, 2),
 }));
 
 const MoodHeader = styled(Box)(({ theme }) => ({
@@ -267,6 +289,7 @@ const ChartContainer = styled(Box)(({ theme }) => ({
   height: 160,
 }));
 
+// Use the smoother ChatListScrollableBox from the old code
 const ChatListScrollableBox = styled(Box)(({ theme }) => ({
   maxHeight: '120px',
   overflowY: 'auto',

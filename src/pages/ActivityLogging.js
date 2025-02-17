@@ -57,6 +57,8 @@ import { saveAs } from 'file-saver';
 import Autocomplete from '@mui/material/Autocomplete';
 import { format } from 'date-fns'; // Date formatting library
 import PageLayout from '../components/PageLayout'; // Import PageLayout
+import ActivityLoggingSplash from '../components/ActivityLoggingSplash';
+import SplashScreenToggle from '../components/SplashScreenToggle';
 
 // **1. GradientButton - Styled Component (unchanged)**
 const GradientButton = styled(Button)(({ theme }) => ({
@@ -175,6 +177,20 @@ const ActivityLogging = () => {
     title: '',
     content: '',
   });
+
+  const [showSplash, setShowSplash] = useState(() => {
+    const hasSeenTutorial = localStorage.getItem('activityLoggingTutorialSeen');
+    return !hasSeenTutorial;
+  });
+
+  const handleTutorialComplete = () => {
+    localStorage.setItem('activityLoggingTutorialSeen', 'true');
+    setShowSplash(false);
+  };
+
+  const handleShowSplash = () => {
+    setShowSplash(true);
+  };
 
   // **9. Effect to Handle Error and Success Messages (unchanged)**
   useEffect(() => {
@@ -305,6 +321,7 @@ const ActivityLogging = () => {
 
   return (
     <PageLayout>
+      {showSplash && <ActivityLoggingSplash onComplete={handleTutorialComplete} />}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -676,6 +693,7 @@ const ActivityLogging = () => {
           </Snackbar>
         </Container>
       </motion.div>
+      <SplashScreenToggle onShowSplash={handleShowSplash} />
     </PageLayout>
   );
 };

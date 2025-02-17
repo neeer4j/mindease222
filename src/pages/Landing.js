@@ -31,9 +31,10 @@ import {
   Insights as InsightsIcon,
   OndemandVideo as OndemandVideoIcon,
 } from '@mui/icons-material';
-import { styled } from '@mui/system';
+import { styled, alpha } from '@mui/material/styles';
 import { AuthContext } from '../contexts/AuthContext';
 import PageLayout from '../components/PageLayout';
+import VideoPopup from '../components/VideoPopup';
 
 // Styled Gradient Button using MUI's styled API
 const GradientButton = styled(Button)(({ theme }) => ({
@@ -105,8 +106,12 @@ const Landing = () => {
     {
       icon: <InsightsIcon fontSize="large" color="inherit" />,
       title: 'Insights',
+<<<<<<< HEAD
       description:
         'Gain deeper understanding of your mood patterns with personalized insights.',
+=======
+      description: 'Gain deeper understanding of your mood patterns with personalized insights.',
+>>>>>>> 258ff709b094dc8730d73cf021786a1673b9a8bd
       action: () => navigate('/insights'),
       imageUrl: 'images/insights.jpg',
       alt: 'Visual representation of user insights',
@@ -114,10 +119,16 @@ const Landing = () => {
     {
       icon: <OndemandVideoIcon fontSize="large" color="inherit" />,
       title: 'Reels',
+<<<<<<< HEAD
       description:
         'Explore quick, engaging reels for mental wellness tips and guidance.',
       action: () => navigate('/reels'),
       imageUrl: 'images/reels.jpg',
+=======
+      description: 'Explore quick, engaging reels for mental wellness tips and guidance.',
+      action: () => navigate('/reels'),
+      imageUrl: 'images/reels.png',
+>>>>>>> 258ff709b094dc8730d73cf021786a1673b9a8bd
       alt: 'Video reel widget',
     },
   ];
@@ -227,7 +238,6 @@ const Landing = () => {
   const heroImageUrl = 'images/ab.jpg';
 
   // --- Testimonial Slider Logic ---
-  // Determine the number of testimonials per slide:
   const testimonialsPerSlide = isMobile ? 1 : 3;
   const slideCount = Math.ceil(testimonials.length / testimonialsPerSlide);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -249,11 +259,10 @@ const Landing = () => {
     setCurrentSlide((prev) => (prev - 1 + slideCount) % slideCount);
   };
 
-  // Determine which testimonials to show on the current slide
   const startIndex = currentSlide * testimonialsPerSlide;
   const currentTestimonials = testimonials.slice(startIndex, startIndex + testimonialsPerSlide);
 
-  // Slide animation variants (adjust as desired)
+  // Slide animation variants
   const slideVariants = {
     initial: { x: 300, opacity: 0 },
     animate: { x: 0, opacity: 1 },
@@ -262,6 +271,7 @@ const Landing = () => {
 
   return (
     <PageLayout>
+      <VideoPopup />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -498,24 +508,24 @@ const Landing = () => {
                   >
                     <Card
                       sx={{
-                        background: theme.palette.background.paper,
-                        backdropFilter: 'blur(8px)',
-                        borderRadius: '28px',
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
+                          theme.palette.background.paper,
+                          0.9
+                        )} 100%)`,
+                        // Removed heavy backdropFilter for performance
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        borderRadius: '24px',
                         boxShadow: theme.shadows[3],
                         overflow: 'hidden',
-                        transition:
-                          'transform 0.3s ease, boxShadow 0.3s ease, backdropFilter 0.3s ease',
+                        transition: 'all 0.3s ease-in-out',
                         height: '100%',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
                         padding: theme.spacing(3),
-                        border: `1px solid ${theme.palette.divider}`,
                         '&:hover': {
-                          transform: 'translateY(-7px)',
-                          boxShadow: theme.shadows[7],
-                          backdropFilter: 'none',
-                          border: `1px solid ${theme.palette.primary.light}`,
+                          boxShadow: theme.shadows[8],
+                          transform: 'translateY(-6px)',
                         },
                         minHeight: 450,
                       }}
@@ -623,7 +633,7 @@ const Landing = () => {
           </Box>
         </motion.section>
 
-        {/* --- Updated "Hear From Our Community" Section with Responsive Slider --- */}
+        {/* Testimonials Section */}
         <motion.section
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -642,7 +652,7 @@ const Landing = () => {
               overflow: 'hidden',
             }}
           >
-            {/* Background Image with Faded Style */}
+            {/* Faded Background Image */}
             <Box
               sx={{
                 position: 'absolute',
@@ -717,25 +727,29 @@ const Landing = () => {
                       <Grid item xs={12} md={isMobile ? 12 : 4} key={index}>
                         <Card
                           sx={{
-                            background: theme.palette.background.paper,
-                            borderRadius: '28px',
+                            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
+                              theme.palette.background.paper,
+                              0.9
+                            )} 100%)`,
+                            // Removed heavy backdropFilter for smoother performance
+                            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                            borderRadius: '24px',
                             boxShadow: theme.shadows[3],
                             padding: theme.spacing(4),
                             height: '100%',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
-                            transition:
-                              'box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease',
+                            transition: 'all 0.3s ease-in-out',
                             '&:hover': {
-                              boxShadow: theme.shadows[5],
-                              transform: 'scale(1.03)',
+                              boxShadow: theme.shadows[8],
+                              transform: 'translateY(-6px)',
                             },
                             position: 'relative',
                             zIndex: 2,
                           }}
                         >
-                          {/* Testimonial Background Image with Faded Style */}
+                          {/* Faded Testimonial Background Image */}
                           <Box
                             sx={{
                               position: 'absolute',
@@ -890,8 +904,13 @@ const Landing = () => {
                   >
                     <Card
                       sx={{
-                        background: theme.palette.background.paper,
-                        borderRadius: '28px',
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
+                          theme.palette.background.paper,
+                          0.9
+                        )} 100%)`,
+                        // Removed heavy backdropFilter for a smoother feel
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        borderRadius: '24px',
                         boxShadow: theme.shadows[3],
                         padding: theme.spacing(4),
                         height: '100%',
@@ -899,11 +918,10 @@ const Landing = () => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        transition:
-                          'box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease',
+                        transition: 'all 0.3s ease-in-out',
                         '&:hover': {
-                          boxShadow: theme.shadows[5],
-                          transform: 'scale(1.03)',
+                          boxShadow: theme.shadows[8],
+                          transform: 'translateY(-6px)',
                         },
                         position: 'relative',
                         zIndex: 2,
@@ -932,11 +950,7 @@ const Landing = () => {
                         >
                           {developer.name}
                         </Typography>
-                        <Typography
-                          variant="body2"
-                          color="textSecondary"
-                          sx={{ fontSize: '0.9rem' }}
-                        >
+                        <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.9rem' }}>
                           {developer.role}
                         </Typography>
                       </CardContent>

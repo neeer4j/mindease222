@@ -143,7 +143,15 @@ const GoogleButton = styled(Button)(({ theme }) => ({
 export default function EnhancedLogin(props) {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { isAuthenticated, login, signInWithGoogle, loading: authLoading, error: authError } = useContext(AuthContext);
+  const { 
+    isAuthenticated, 
+    login, 
+    signInWithGoogle, 
+    loading: authLoading, 
+    error: authError, 
+    showSplash,
+    setShowSplash
+  } = useContext(AuthContext);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -156,9 +164,11 @@ export default function EnhancedLogin(props) {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      if (!showSplash) {
+        navigate('/dashboard');
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, showSplash]);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -183,18 +193,14 @@ export default function EnhancedLogin(props) {
       return;
     }
 
-    setValidationError(''); // Clear previous validation errors
-    console.log("Submitting login form with:", { email, password }); // For debugging
+    setValidationError('');
     try {
       await login(email, password);
-      console.log("Login successful, navigating to dashboard."); // For debugging
-      // Navigation is handled by useEffect
-      // Optionally, clear form fields
+      setSuccess('Login successful!');
       setEmail('');
       setPassword('');
     } catch (err) {
-      console.error("Error during login:", err); // Detailed logging
-      // Do not set local error state here; rely on authError from AuthContext
+      console.error("Error during login:", err);
       setSuccess('');
     }
   };
@@ -205,9 +211,9 @@ export default function EnhancedLogin(props) {
     setSuccess('');
     try {
       await signInWithGoogle();
-      setSuccess('Login with Google successful! Redirecting to dashboard...');
+      setShowSplash(true); // Explicitly set splash screen for Google sign-in
+      setSuccess('Login with Google successful!');
     } catch (err) {
-      // Do not set local error state here; rely on authError from AuthContext
       setSuccess('');
     }
   };
@@ -267,82 +273,90 @@ export default function EnhancedLogin(props) {
                   gap: '0.5rem',
                 }}
               >
-                {/* Fixed-Height Container for Alerts */}
-                <Box sx={{ minHeight: '60px', mb: 2 }}>
-                  <AnimatePresence>
-                    {validationError && (
-                      <motion.div
-                        key="validationError"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <Alert
-                          severity="error"
-                          sx={{
-                            borderRadius: '8px',
-                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                            height: '50px', // Fixed height for consistency
-                            display: 'flex',
-                            alignItems: 'center', // Vertically center the text
-                          }}
+                {/* Conditionally Render Alerts Container */}
+                {(validationError || authError || success) && (
+                  <Box sx={{ minHeight: '60px', mb: 2 }}>
+                    <AnimatePresence>
+                      {validationError && (
+                        <motion.div
+                          key="validationError"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
                         >
-                          {validationError}
-                        </Alert>
-                      </motion.div>
-                    )}
-                    {authError && (
-                      <motion.div
-                        key="authError"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <Alert
-                          severity="error"
-                          sx={{
-                            borderRadius: '8px',
-                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                            height: '50px', // Fixed height for consistency
-                            display: 'flex',
-                            alignItems: 'center',
-                          }}
+                          <Alert
+                            severity="error"
+                            sx={{
+                              borderRadius: '8px',
+                              fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                              height: '50px',
+                              display: 'flex',
+                              alignItems: 'center',
+                            }}
+                          >
+                            {validationError}
+                          </Alert>
+                        </motion.div>
+                      )}
+                      {authError && (
+                        <motion.div
+                          key="authError"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
                         >
-                          {authError}
-                        </Alert>
-                      </motion.div>
-                    )}
-                    {success && (
-                      <motion.div
-                        key="success"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <Alert
-                          severity="success"
-                          sx={{
-                            borderRadius: '8px',
-                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                            height: '50px', // Fixed height for consistency
-                            display: 'flex',
-                            alignItems: 'center',
-                          }}
+                          <Alert
+                            severity="error"
+                            sx={{
+                              borderRadius: '8px',
+                              fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                              height: '50px',
+                              display: 'flex',
+                              alignItems: 'center',
+                            }}
+                          >
+                            {authError}
+                          </Alert>
+                        </motion.div>
+                      )}
+                      {success && (
+                        <motion.div
+                          key="success"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
                         >
-                          {success}
-                        </Alert>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </Box>
+                          <Alert
+                            severity="success"
+                            sx={{
+                              borderRadius: '8px',
+                              fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                              height: '50px',
+                              display: 'flex',
+                              alignItems: 'center',
+                            }}
+                          >
+                            {success}
+                          </Alert>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Box>
+                )}
 
                 {/* Email Field */}
                 <motion.div variants={fieldVariants}>
                   <FormControl fullWidth>
-                    <FormLabel htmlFor="email" sx={{ fontFamily: 'Roboto, sans-serif', fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
+                    <FormLabel
+                      htmlFor="email"
+                      sx={{
+                        fontFamily: 'Roboto, sans-serif',
+                        fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                      }}
+                    >
                       Email
                     </FormLabel>
                     <TextField
@@ -381,8 +395,20 @@ export default function EnhancedLogin(props) {
                 <motion.div variants={fieldVariants}>
                   <FormControl fullWidth>
                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <FormLabel htmlFor="password" sx={{ fontFamily: 'Roboto, sans-serif', fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <FormLabel
+                          htmlFor="password"
+                          sx={{
+                            fontFamily: 'Roboto, sans-serif',
+                            fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                          }}
+                        >
                           Password
                         </FormLabel>
                         <MuiLink
@@ -447,7 +473,16 @@ export default function EnhancedLogin(props) {
                 <motion.div variants={fieldVariants}>
                   <FormControlLabel
                     control={<Checkbox value="remember" color="primary" />}
-                    label={<Typography sx={{ fontFamily: 'Roboto, sans-serif', fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>Remember me</Typography>}
+                    label={
+                      <Typography
+                        sx={{
+                          fontFamily: 'Roboto, sans-serif',
+                          fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                        }}
+                      >
+                        Remember me
+                      </Typography>
+                    }
                     sx={{
                       mb: 2,
                       fontFamily: 'Roboto, sans-serif',
@@ -509,7 +544,7 @@ export default function EnhancedLogin(props) {
                   <Typography
                     sx={{
                       textAlign: 'center',
-                      mt: 2,
+                      mt: 0, // Removed extra margin between fields and Sign Up text
                       fontFamily: 'Roboto, sans-serif',
                       fontSize: { xs: '0.75rem', sm: '0.9rem' },
                     }}

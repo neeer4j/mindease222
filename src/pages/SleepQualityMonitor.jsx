@@ -36,6 +36,7 @@ import {
   HelpOutline as HelpOutlineIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
+import { alpha } from '@mui/material/styles';
 import Chart from 'react-apexcharts';
 import { SleepContext } from '../contexts/SleepContext';
 import PageLayout from '../components/PageLayout';
@@ -44,6 +45,10 @@ import PageLayout from '../components/PageLayout';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 // Import ReactMarkdown for rendering markdown content
 import ReactMarkdown from 'react-markdown';
+
+// Add this import at the top with other imports
+import SleepQualityMonitorSplash from '../components/SleepQualityMonitorSplash';
+import SplashScreenToggle from '../components/SplashScreenToggle';
 
 // Initialize Gemini API using your API key from .env
 const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
@@ -549,6 +554,22 @@ const SleepQualityMonitor = () => {
   const [sleepAnalysis, setSleepAnalysis] = useState('');
   const [analyzingSleep, setAnalyzingSleep] = useState(false);
 
+  // Add splash screen state
+  const [showSplash, setShowSplash] = useState(() => {
+    const hasSeenTutorial = localStorage.getItem('sleepMonitorTutorialSeen');
+    return !hasSeenTutorial;
+  });
+
+  // Add tutorial completion handler
+  const handleTutorialComplete = () => {
+    localStorage.setItem('sleepMonitorTutorialSeen', 'true');
+    setShowSplash(false);
+  };
+
+  const handleShowSplash = () => {
+    setShowSplash(true);
+  };
+
   const factorOptions = [
     'Caffeine', 'Alcohol', 'Stress', 'Exercise (Late)', 'Late Meal', 'Screen Time (Before Bed)', 'Travel', 'Unusual Bedtime'
   ];
@@ -684,6 +705,7 @@ const SleepQualityMonitor = () => {
 
   return (
     <PageLayout>
+      {showSplash && <SleepQualityMonitorSplash onComplete={handleTutorialComplete} />}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -700,8 +722,16 @@ const SleepQualityMonitor = () => {
         <Container maxWidth="md">
           <Paper elevation={3} sx={{
             padding: theme.spacing(4),
-            borderRadius: '20px',
-            backgroundColor: theme.palette.background.paper,
+            borderRadius: '24px',
+            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
+            transition: 'all 0.3s ease-in-out',
+            '&:hover': {
+              boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
+              transform: 'translateY(-6px)',
+            },
             color: theme.palette.text.primary
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
@@ -753,17 +783,8 @@ const SleepQualityMonitor = () => {
             )}
           </Paper>
         </Container>
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={4000}
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} elevation={6} variant="filled">
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
       </motion.div>
+      <SplashScreenToggle onShowSplash={handleShowSplash} />
     </PageLayout>
   );
 };
