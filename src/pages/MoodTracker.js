@@ -29,7 +29,9 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Mic as MicIcon,
-  MicOff as MicOffIcon
+  MicOff as MicOffIcon,
+  Close as CloseIcon,
+  Insights as InsightsIcon
 } from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
 import { Chart, registerables } from 'chart.js';
@@ -134,6 +136,7 @@ const MoodTracker = () => {
   const [completionSuggestion, setCompletionSuggestion] = useState(''); // Auto-complete prompt suggestion
   const [enhancing, setEnhancing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
 
   // Enhancement preview states
   const [enhancementPreview, setEnhancementPreview] = useState('');
@@ -216,13 +219,71 @@ const MoodTracker = () => {
 
   // Function to fetch sentiment analysis with markdown formatting
   const fetchMoodAnalysis = async (mood, text) => {
+    setShowInsights(true); // Show insights when analysis is fetched
     try {
-      const prompt = `Analyze the following journal entry with mood level ${mood}:\n\n"${text}"\n\nProvide a brief sentiment analysis with self-care recommendations. Use markdown formatting (e.g., **bold** for emphasis and *italic* for nuances).`;
-      const result = await model.generateContent(prompt);
-      return result.response.text() || "";
+      // Get recent mood history for trend analysis
+      const recentMoods = moodEntries
+        .slice(-5)
+        .map(entry => entry.mood)
+        .filter(m => m !== undefined);
+      
+      const avgMood = recentMoods.length > 0 
+        ? recentMoods.reduce((a, b) => a + b, 0) / recentMoods.length 
+        : mood;
+      
+      const trendDirection = mood > avgMood ? "improving" : mood < avgMood ? "declining" : "stable";
+
+      const moodContext = `
+Scale Context (1 is lowest, 5 is highest):
+1 = Very Low (😢) - Feeling deeply down or distressed
+2 = Low (😞) - Feeling down or upset
+3 = Neutral (😐) - Neither particularly positive nor negative
+4 = Good (🙂) - Feeling positive and upbeat
+5 = Excellent (😁) - Feeling fantastic and energized
+
+Current Mood Level: ${mood}
+Recent Mood Trend: ${trendDirection}
+Average Recent Mood: ${avgMood.toFixed(1)}
+Journal Entry: "${text}"
+
+Based on this context, please provide a comprehensive analysis including:
+1. Current emotional state assessment
+2. Mood trend analysis comparing current mood to recent average
+3. Pattern recognition and potential mood triggers from the journal content
+4. Tailored self-care recommendations based on current mood level
+5. Specific coping strategies or mood maintenance tips
+6. A personalized affirmation or encouragement message
+
+Format the response in markdown with clear sections using ## headers.
+Keep the analysis concise but meaningful.
+If mood is low (1-2), focus on support and gentle encouragement.
+If mood is neutral (3), focus on mindfulness and growth.
+If mood is high (4-5), focus on maintaining positivity and gratitude.`;
+
+      const result = await model.generateContent(moodContext);
+      const analysis = result.response.text() || "";
+
+      // Enhanced mood trend indicator with emoji and color context
+      const getTrendEmoji = (trend) => {
+        switch(trend) {
+          case "improving": return "↗️";
+          case "declining": return "↘️";
+          default: return "➡️";
+        }
+      };
+
+      const trendIndicator = `${getTrendEmoji(trendDirection)} **Mood Trend:** Your current mood (${mood}/5) is ${trendDirection} compared to your recent average (${avgMood.toFixed(1)}/5).\n\n`;
+
+      const moodSummary = mood <= 2 ? 
+        "⚠️ **Current State:** Your mood is on the lower end today. Remember that challenging emotions are temporary, and support is available when you need it." :
+        mood >= 4 ?
+        "🌟 **Current State:** You're experiencing positive emotions today! Let's explore ways to maintain this uplifted state." :
+        "💭 **Current State:** You're in a balanced state today. This is an ideal time for reflection and personal growth.";
+
+      return `${moodSummary}\n\n${trendIndicator}${analysis}`;
     } catch (err) {
       console.error("Error in mood analysis:", err);
-      return "";
+      return "Unable to analyze mood at this moment. Remember that your feelings are valid, and it's okay to seek support when needed.";
     }
   };
 
@@ -348,7 +409,7 @@ const MoodTracker = () => {
     }
   };
 
-  // Prepare chart data from mood entries
+  // Chart data from mood entries
   const chartData = useMemo(() => {
     const validEntries = moodEntries.filter(
       (entry) => entry.timestamp && !isNaN(new Date(entry.timestamp).getTime())
@@ -356,6 +417,13 @@ const MoodTracker = () => {
     const sortedEntries = [...validEntries].sort(
       (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
     );
+
+    // Create gradient
+    const ctx = document.createElement('canvas').getContext('2d');
+    const gradient = ctx?.createLinearGradient(0, 0, 0, 400);
+    gradient?.addColorStop(0, `${theme.palette.primary.main}40`);
+    gradient?.addColorStop(1, `${theme.palette.background.default}00`);
+
     return {
       labels: sortedEntries.map((entry) => entry.timestamp),
       datasets: [
@@ -363,84 +431,147 @@ const MoodTracker = () => {
           label: "Mood Level",
           data: sortedEntries.map((entry) => entry.mood),
           borderColor: theme.palette.primary.main,
-          backgroundColor: sortedEntries.map(
-            (entry) => `${moodOptions.find((o) => o.value === entry.mood)?.color}40`
-          ),
+          borderWidth: 3,
+          backgroundColor: gradient || 'rgba(0,0,0,0.1)',
           tension: 0.4,
-          pointRadius: isMobile ? 3 : 6,
-          pointHoverRadius: isMobile ? 4 : 8,
+          pointRadius: isMobile ? 4 : 8,
+          pointHoverRadius: isMobile ? 6 : 12,
           pointBackgroundColor: sortedEntries.map(
             (entry) => moodOptions.find((o) => o.value === entry.mood)?.color
           ),
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverBorderWidth: 3,
+          pointHoverBackgroundColor: theme.palette.primary.main,
+          pointHoverBorderColor: '#fff',
           fill: true,
+          cubicInterpolationMode: 'monotone',
         },
       ],
     };
-  }, [moodEntries, theme.palette.primary.main, isMobile]);
+  }, [moodEntries, theme.palette.primary.main, theme.palette.background.default, isMobile]);
 
-  // Chart options
+  // Enhanced chart options
   const chartOptions = useMemo(
     () => ({
       responsive: true,
+      maintainAspectRatio: false,
+      animations: {
+        radius: {
+          duration: 400,
+          easing: 'linear',
+        },
+        tension: {
+          duration: 1000,
+          easing: 'linear',
+        },
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false,
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
+          enabled: true,
+          backgroundColor: theme.palette.background.paper,
+          titleColor: theme.palette.text.primary,
+          bodyColor: theme.palette.text.secondary,
+          borderColor: theme.palette.divider,
+          borderWidth: 1,
+          padding: 12,
+          cornerRadius: 8,
+          titleFont: {
+            size: 14,
+            weight: 'bold',
+          },
+          bodyFont: {
+            size: 13,
+          },
           callbacks: {
             title: (context) => {
               const rawTimestamp = context[0].label;
               if (!rawTimestamp) return "";
               const parsedDate = parseISO(rawTimestamp);
               return !isNaN(parsedDate.getTime())
-                ? format(parsedDate, "MMM d, yyyy, h:mm a")
+                ? format(parsedDate, "EEEE, MMM d, yyyy")
                 : rawTimestamp;
             },
             label: (context) => {
-              const rawTimestamp = context.label;
-              const entry = moodEntries.find((e) => e.timestamp === rawTimestamp);
-              if (!entry) return "";
+              const rawTimestamp = context.raw;
+              const entry = moodEntries.find((e) => e.mood === rawTimestamp);
+              const moodLabel = moodOptions.find((o) => o.value === rawTimestamp)?.label;
               return [
-                `Mood: ${moodOptions.find((o) => o.value === entry.mood)?.label}`,
-                `Notes: ${entry.notes || "No notes"}`,
-              ];
+                `Mood: ${moodLabel}`,
+                entry?.notes ? `Notes: ${entry.notes}` : null
+              ].filter(Boolean);
             },
           },
-        },
-        zoom: {
-          pan: { enabled: true, mode: "x" },
-          zoom: { enabled: true, mode: "x" },
+          displayColors: false,
         },
       },
       scales: {
         y: {
-          min: 1,
-          max: 5,
+          min: 0.5,
+          max: 5.5,
+          grid: {
+            display: true,
+            color: `${theme.palette.divider}40`,
+            drawBorder: false,
+          },
           ticks: {
             stepSize: 1,
+            padding: 10,
             color: theme.palette.text.secondary,
-            callback: (value) => moodOptions.find((o) => o.value === value)?.label,
-            font: { size: isMobile ? 10 : 12 },
+            font: {
+              size: isMobile ? 11 : 13,
+              family: 'Roboto',
+            },
+            callback: (value) => {
+              const mood = moodOptions.find((o) => o.value === value);
+              return mood ? mood.label.split(' ')[0] : '';
+            },
           },
-          grid: { color: theme.palette.divider },
+          border: {
+            display: false,
+          },
         },
         x: {
-          type: "time",
+          type: 'time',
           time: {
-            unit: "day",
-            tooltipFormat: "MMM d, yyyy, h:mm a",
-            displayFormats: { day: "MMM d", hour: "h a" },
+            unit: 'day',
+            tooltipFormat: 'PPP',
+            displayFormats: {
+              day: isMobile ? 'MMM d' : 'MMM d, yyyy',
+            },
+          },
+          grid: {
+            display: true,
+            color: `${theme.palette.divider}40`,
+            drawBorder: false,
           },
           ticks: {
             color: theme.palette.text.secondary,
-            autoSkip: true,
-            maxTicksLimit: isMobile ? 5 : 10,
-            font: { size: isMobile ? 10 : 12 },
+            maxTicksLimit: isMobile ? 5 : 8,
+            padding: 10,
+            font: {
+              size: isMobile ? 11 : 13,
+              family: 'Roboto',
+            },
           },
-          grid: { color: theme.palette.divider },
+          border: {
+            display: false,
+          },
         },
       },
-      interaction: { mode: "nearest", intersect: false },
+      elements: {
+        line: {
+          borderJoinStyle: 'round',
+        },
+      },
     }),
-    [moodEntries, theme.palette.text.secondary, theme.palette.divider, isMobile]
+    [moodEntries, theme, isMobile]
   );
 
   // Handlers for the Enhance Entry menu
@@ -637,19 +768,216 @@ const MoodTracker = () => {
             </motion.div>
           </Box>
 
-          {/* Display sentiment analysis with markdown formatting */}
-          {analyzing && (
-            <Box mb={2} textAlign="center">
-              <CircularProgress size={24} color="primary" />
-              <Typography variant="caption" sx={{ ml: 1 }}>Analyzing your entry...</Typography>
+          {/* Add Insights Toggle Button */}
+          {aiAnalysis && !showInsights && (
+            <Box mb={3} textAlign="center">
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => setShowInsights(true)}
+                startIcon={<motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 2, repeat: Infinity }}><InsightsIcon /></motion.div>}
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  boxShadow: theme.shadows[2],
+                  '&:hover': {
+                    boxShadow: theme.shadows[4],
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+              >
+                Show AI Insights
+              </Button>
             </Box>
           )}
-          {aiAnalysis && (
-            <Box mb={2}>
-              <Alert severity="info">
-                <ReactMarkdown>{aiAnalysis}</ReactMarkdown>
-              </Alert>
+
+          {/* Display sentiment analysis with markdown formatting */}
+          {analyzing && (
+            <Box mb={2} sx={{ 
+              textAlign: "center",
+              background: `linear-gradient(135deg, ${theme.palette.primary.main}15, ${theme.palette.secondary.main}15)`,
+              borderRadius: 3,
+              p: 3,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2
+            }}>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <CircularProgress size={28} color="primary" />
+              </motion.div>
+              <Typography variant="body2" sx={{ 
+                color: theme.palette.text.secondary,
+                fontWeight: 500
+              }}>
+                Analyzing your emotional patterns...
+              </Typography>
             </Box>
+          )}
+          {aiAnalysis && showInsights && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Box mb={4} sx={{
+                position: 'relative',
+                background: `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
+                borderRadius: 4,
+                p: 0,
+                boxShadow: `0 10px 40px -10px ${theme.palette.primary.main}20`,
+                border: `1px solid ${theme.palette.divider}`,
+                overflow: 'hidden',
+              }}>
+                {/* Close Button */}
+                <Box sx={{ 
+                  position: 'absolute', 
+                  top: 8, 
+                  right: 8, 
+                  zIndex: 2 
+                }}>
+                  <IconButton
+                    onClick={() => setShowInsights(false)}
+                    size="small"
+                    sx={{
+                      bgcolor: 'background.paper',
+                      boxShadow: theme.shadows[2],
+                      '&:hover': {
+                        bgcolor: 'background.paper',
+                        transform: 'scale(1.1)'
+                      }
+                    }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+
+                {/* Gradient Bar */}
+                <Box sx={{
+                  height: '4px',
+                  background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`
+                }} />
+
+                {/* Content */}
+                <Box sx={{
+                  position: 'relative',
+                  p: 3,
+                  '& h1, & h2': {
+                    color: theme.palette.primary.main,
+                    mb: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    '&::before': {
+                      content: '""',
+                      width: '4px',
+                      height: '1em',
+                      background: `linear-gradient(to bottom, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                      borderRadius: '4px',
+                      marginRight: '8px'
+                    }
+                  },
+                  '& p': {
+                    mb: 2,
+                    lineHeight: 1.7,
+                    color: theme.palette.text.primary,
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateX(8px)',
+                      color: theme.palette.primary.main
+                    }
+                  },
+                  '& strong': {
+                    color: theme.palette.secondary.main,
+                    background: `linear-gradient(120deg, ${theme.palette.secondary.main}20, ${theme.palette.secondary.main}00)`,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      background: `linear-gradient(120deg, ${theme.palette.secondary.main}40, ${theme.palette.secondary.main}10)`,
+                    }
+                  },
+                  '& ul, & ol': {
+                    pl: 3,
+                    mb: 2,
+                    '& li': {
+                      mb: 1,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateX(8px)',
+                      }
+                    }
+                  }
+                }}>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => (
+                          <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.5 }}
+                          >
+                            <Typography variant="body1" paragraph>
+                              {children}
+                            </Typography>
+                          </motion.div>
+                        ),
+                        h1: ({ children }) => (
+                          <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                          >
+                            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+                              {children}
+                            </Typography>
+                          </motion.div>
+                        ),
+                        h2: ({ children }) => (
+                          <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                          >
+                            <Typography variant="h6" gutterBottom sx={{ 
+                              fontWeight: 600,
+                              color: theme.palette.secondary.main 
+                            }}>
+                              {children}
+                            </Typography>
+                          </motion.div>
+                        ),
+                        li: ({ children }) => (
+                          <motion.li
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.5 }}
+                            style={{
+                              marginBottom: '8px',
+                              color: theme.palette.text.primary
+                            }}
+                          >
+                            {children}
+                          </motion.li>
+                        ),
+                      }}
+                    >
+                      {aiAnalysis}
+                    </ReactMarkdown>
+                  </motion.div>
+                </Box>
+              </Box>
+            </motion.div>
           )}
 
           {/* Mood Timeline Chart */}

@@ -34,6 +34,7 @@ import {
   Card,
   CardContent,
   Divider,
+  alpha, // Added alpha utility
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -49,6 +50,9 @@ import {
   CalendarMonth as CalendarMonthIcon, // Icons for Date filters
   AccessTime as AccessTimeIcon, // Icon for time in list item
   TextFields as TextFieldsIcon, // Icon for search input
+  DateRange as DateRangeIcon,
+  KeyboardReturn as KeyboardReturnIcon,
+  TipsAndUpdates as TipsAndUpdatesIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { styled } from '@mui/system';
@@ -59,6 +63,15 @@ import { format } from 'date-fns'; // Date formatting library
 import PageLayout from '../components/PageLayout'; // Import PageLayout
 import ActivityLoggingSplash from '../components/ActivityLoggingSplash';
 import SplashScreenToggle from '../components/SplashScreenToggle';
+
+// Quick Action FAB with speed dial
+import SpeedDial from '@mui/material/SpeedDial';
+import SpeedDialIcon from '@mui/material/SpeedDialIcon';
+import SpeedDialAction from '@mui/material/SpeedDialAction';
+import PostAddIcon from '@mui/icons-material/PostAdd';
+import TimerIcon from '@mui/icons-material/Timer';
+import Skeleton from '@mui/material/Skeleton';
+import LinearProgress from '@mui/material/LinearProgress';
 
 // **1. GradientButton - Styled Component (unchanged)**
 const GradientButton = styled(Button)(({ theme }) => ({
@@ -117,6 +130,20 @@ const formVariants = {
   },
 };
 
+// Enhanced animations for better visual feedback
+const cardAnimation = {
+  initial: { scale: 0.95, opacity: 0 },
+  animate: { scale: 1, opacity: 1 },
+  exit: { scale: 0.95, opacity: 0 },
+  transition: { type: "spring", stiffness: 300, damping: 25 }
+};
+
+const fadeInUp = {
+  initial: { y: 20, opacity: 0 },
+  animate: { y: 0, opacity: 1 },
+  transition: { duration: 0.4 }
+};
+
 // **3. ConfirmationDialog (unchanged)**
 const ConfirmationDialog = ({ open, title, content, onConfirm, onCancel }) => (
   <Dialog
@@ -139,6 +166,90 @@ const ConfirmationDialog = ({ open, title, content, onConfirm, onCancel }) => (
     </DialogActions>
   </Dialog>
 );
+
+// Quick category selection component
+const QuickCategorySelect = ({ onSelect, selectedCategory }) => {
+  const commonCategories = ['Work', 'Health', 'Leisure', 'Education', 'Personal'];
+  
+  return (
+    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+      {commonCategories.map((cat) => (
+        <Chip
+          key={cat}
+          label={cat}
+          clickable
+          color={selectedCategory === cat ? "primary" : "default"}
+          onClick={() => onSelect(cat)}
+          sx={{
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              transform: 'translateY(-2px)',
+              boxShadow: 2
+            }
+          }}
+        />
+      ))}
+    </Box>
+  );
+};
+
+// Loading skeleton for activities
+const ActivitySkeleton = () => (
+  <Box sx={{ mb: 2 }}>
+    <Skeleton variant="rectangular" height={100} sx={{ borderRadius: 2 }} />
+    <Box sx={{ pt: 1 }}>
+      <Skeleton width="60%" />
+      <Skeleton width="40%" />
+    </Box>
+  </Box>
+);
+
+const DialogHeader = styled(DialogTitle)(({ theme }) => ({
+  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+  color: theme.palette.primary.contrastText,
+  padding: theme.spacing(3),
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(2),
+  '& .MuiSvgIcon-root': {
+    fontSize: '2rem'
+  }
+}));
+
+const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
+  padding: theme.spacing(4),
+  background: theme.palette.mode === 'dark' 
+    ? `linear-gradient(to bottom, ${alpha(theme.palette.background.paper, 0.8)}, ${theme.palette.background.paper})`
+    : `linear-gradient(to bottom, ${alpha(theme.palette.primary.light, 0.05)}, ${alpha(theme.palette.background.paper, 0.8)})`,
+  position: 'relative',
+  overflow: 'visible',
+  '&:before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
+    background: `radial-gradient(circle at top right, ${alpha(theme.palette.primary.main, 0.08)}, transparent 70%)`,
+    pointerEvents: 'none'
+  }
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    transition: 'all 0.3s ease',
+    background: alpha(theme.palette.background.paper, 0.6),
+    backdropFilter: 'blur(8px)',
+    '&:hover': {
+      background: alpha(theme.palette.background.paper, 0.8),
+    },
+    '&.Mui-focused': {
+      background: alpha(theme.palette.background.paper, 0.9),
+      transform: 'translateY(-2px)',
+      boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.15)}`,
+    }
+  }
+}));
 
 const ActivityLogging = () => {
   const theme = useTheme();
@@ -319,6 +430,21 @@ const ActivityLogging = () => {
   // **17. Extract Unique Categories (unchanged)**
   const uniqueCategories = [...new Set(activities.map(activity => activity.category).filter(Boolean))];
 
+  // Quick action state
+  const [quickActionOpen, setQuickActionOpen] = useState(false);
+
+  // Quick activity logging
+  const handleQuickLog = (type) => {
+    const now = new Date().toISOString();
+    handleOpen({
+      title: '',
+      description: '',
+      date: now,
+      category: type
+    });
+    setQuickActionOpen(false);
+  };
+
   return (
     <PageLayout>
       {showSplash && <ActivityLoggingSplash onComplete={handleTutorialComplete} />}
@@ -332,6 +458,7 @@ const ActivityLogging = () => {
           background: theme.palette.background.gradient,
           paddingTop: theme.spacing(8),
           paddingBottom: theme.spacing(8),
+          position: 'relative'
         }}
       >
         <Container maxWidth="md">
@@ -491,6 +618,14 @@ const ActivityLogging = () => {
             </Grid>
           </Box>
 
+          {/* Quick Category Filter */}
+          <motion.div {...fadeInUp}>
+            <QuickCategorySelect
+              onSelect={(category) => setFilterCategory(category)}
+              selectedCategory={filterCategory}
+            />
+          </motion.div>
+
           {/* **Add Activity Button - Centered on Mobile** */}
           <Box display="flex" justifyContent={isMobile ? 'center' : 'space-between'} mb={4}>
             <Tooltip title="Add New Activity">
@@ -520,17 +655,21 @@ const ActivityLogging = () => {
             initial="hidden"
             animate="visible"
           >
-            {loading && activities.length === 0 ? (
-              <Box display="flex" justifyContent="center" mt={4}>
-                <CircularProgress />
-              </Box>
+            {loading ? (
+              // Show loading skeletons
+              [...Array(3)].map((_, index) => (
+                <motion.div key={index} {...cardAnimation}>
+                  <ActivitySkeleton />
+                </motion.div>
+              ))
             ) : currentActivities.length > 0 ? (
               <List>
                 {currentActivities.map(activity => (
                   <motion.div
                     key={activity.id}
-                    variants={listItemVariants}
-                    whileHover="hover"
+                    {...cardAnimation}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <Card
                       elevation={3} // Added elevation for card effect
@@ -642,16 +781,33 @@ const ActivityLogging = () => {
             fullWidth
             maxWidth="sm"
             aria-labelledby="activity-dialog-title"
+            PaperProps={{
+              elevation: 24,
+              sx: {
+                borderRadius: 2,
+                overflow: 'hidden',
+                background: 'transparent'
+              }
+            }}
           >
             <motion.div
               variants={formVariants}
               initial="hidden"
               animate="visible"
             >
-              <DialogTitle id="activity-dialog-title">
-                {currentActivity ? 'Edit Activity' : 'Add New Activity'}
-              </DialogTitle>
-              <DialogContent dividers>
+              <DialogHeader id="activity-dialog-title">
+                <motion.div
+                  initial={{ rotate: -180, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {currentActivity ? <EditIcon /> : <AddIcon />}
+                </motion.div>
+                <Typography variant="h6" component="span">
+                  {currentActivity ? 'Edit Activity' : 'Add New Activity'}
+                </Typography>
+              </DialogHeader>
+              <StyledDialogContent dividers>
                 <ActivityForm
                   activity={currentActivity}
                   onSubmit={currentActivity ? editActivity : addActivity}
@@ -663,7 +819,7 @@ const ActivityLogging = () => {
                     setOpenSnackbar(true);
                   }}
                 />
-              </DialogContent>
+              </StyledDialogContent>
             </motion.div>
           </Dialog>
 
@@ -691,6 +847,30 @@ const ActivityLogging = () => {
               {snackbarMessage}
             </Alert>
           </Snackbar>
+
+          {/* Quick Action Speed Dial - Modified for consistent behavior */}
+          <SpeedDial
+            ariaLabel="Quick Activity Actions"
+            sx={{ 
+              position: 'fixed', 
+              bottom: 16, 
+              left: 16,
+              display: { xs: 'none', md: 'flex' } // Hide on mobile/tablet (xs,sm), show on md and up
+            }}
+            icon={<SpeedDialIcon />}
+            open={quickActionOpen}
+            onOpen={() => setQuickActionOpen(true)}
+            onClose={() => setQuickActionOpen(false)}
+          >
+            <SpeedDialAction
+              icon={<PostAddIcon />}
+              tooltipTitle="New Activity"
+              onClick={() => {
+                handleOpen();
+                setQuickActionOpen(false);
+              }}
+            />
+          </SpeedDial>
         </Container>
       </motion.div>
       <SplashScreenToggle onShowSplash={handleShowSplash} />
@@ -703,21 +883,67 @@ const ActivityForm = ({ activity, onSubmit, onCancel, loading, setSnackbar }) =>
   const theme = useTheme();
   const [title, setTitle] = useState(activity ? activity.title : '');
   const [description, setDescription] = useState(activity ? activity.description : '');
-  const [date, setDate] = useState(activity ? activity.date : '');
+  const [date, setDate] = useState(activity ? activity.date : new Date().toISOString().slice(0, 16));
   const [category, setCategory] = useState(activity ? activity.category : '');
   const [errors, setErrors] = useState({});
+  const [showTips, setShowTips] = useState(false);
 
-  const predefinedCategories = ['Work', 'Health', 'Leisure', 'Education', 'Personal'];
+  const MAX_TITLE_LENGTH = 100;
+  const MAX_DESCRIPTION_LENGTH = 500;
+  const MIN_DESCRIPTION_LENGTH = 10;
 
-  const validate = useCallback(() => { // Use useCallback for validate
+  const predefinedCategories = [
+    'Work', 'Health', 'Leisure', 'Education', 'Personal',
+    'Exercise', 'Meditation', 'Study', 'Reading', 'Family Time',
+    'Hobbies', 'Self-Care', 'Social', 'Entertainment', 'Productivity'
+  ];
+
+  const activityTips = [
+    "Be specific with your activity title",
+    "Add details in description to help you remember later",
+    "Categorizing helps in better activity analysis",
+    "Regular logging helps build better habits",
+    "You can use categories to track different areas of your life"
+  ];
+
+  const validate = useCallback(() => {
     let tempErrors = {};
-    if (!title.trim()) tempErrors.title = 'Title is required.';
-    if (!date) tempErrors.date = 'Date & Time is required.';
+    // Title validation
+    if (!title.trim()) {
+      tempErrors.title = 'Title is required.';
+    } else if (title.length > MAX_TITLE_LENGTH) {
+      tempErrors.title = `Title must be less than ${MAX_TITLE_LENGTH} characters.`;
+    }
+
+    // Description validation
+    if (description && description.length < MIN_DESCRIPTION_LENGTH) {
+      tempErrors.description = `Description should be at least ${MIN_DESCRIPTION_LENGTH} characters.`;
+    } else if (description.length > MAX_DESCRIPTION_LENGTH) {
+      tempErrors.description = `Description must be less than ${MAX_DESCRIPTION_LENGTH} characters.`;
+    }
+
+    // Date validation
+    if (!date) {
+      tempErrors.date = 'Date & Time is required.';
+    } else {
+      const selectedDate = new Date(date);
+      const now = new Date();
+      if (selectedDate > now) {
+        tempErrors.date = 'Cannot log activities in the future.';
+      }
+    }
+
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
-  }, [title, date]); // Dependencies for useCallback
+  }, [title, description, date]);
 
-  const handleSubmit = useCallback(() => { // Use useCallback for handleSubmit
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      handleSubmit();
+    }
+  };
+
+  const handleSubmit = useCallback(() => {
     if (!validate()) {
       setSnackbar('error', 'Please fix the errors in the form.');
       return;
@@ -725,134 +951,301 @@ const ActivityForm = ({ activity, onSubmit, onCancel, loading, setSnackbar }) =>
 
     const newActivity = {
       id: activity ? activity.id : undefined,
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       date: new Date(date).toISOString(),
       category: category || 'Uncategorized',
     };
 
     onSubmit(newActivity);
-    onCancel(); // Close dialog on submit
-  }, [activity, title, description, date, category, onSubmit, onCancel, validate, setSnackbar]); // Dependencies for useCallback
+    onCancel();
+  }, [activity, title, description, date, category, onSubmit, onCancel, validate, setSnackbar]);
 
   return (
-    <Box component="form" noValidate autoComplete="off">
-      <Grid container spacing={3}>
-        {/* **Title Field (unchanged)** */}
-        <Grid item xs={12}>
-          <TextField
-            required
-            label="Activity Title"
-            variant="outlined"
-            fullWidth
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={loading}
-            error={!!errors.title}
-            helperText={errors.title}
-            aria-required="true"
-            aria-label="Activity Title"
-            size="small" // Consistent size
-          />
-        </Grid>
-
-        {/* **Description Field (unchanged)** */}
-        <Grid item xs={12}>
-          <TextField
-            label="Description"
-            variant="outlined"
-            fullWidth
-            multiline
-            minRows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            disabled={loading}
-            aria-label="Activity Description"
-            size="small"
-          />
-        </Grid>
-
-        {/* **Date/Time Field (unchanged)** */}
-        <Grid item xs={12}>
-          <TextField
-            required
-            label="Date & Time"
-            type="datetime-local"
-            variant="outlined"
-            fullWidth
-            InputLabelProps={{
-              shrink: true,
-            }}
-            value={date ? new Date(date).toISOString().slice(0, 16) : ''}
-            onChange={(e) => setDate(e.target.value)}
-            disabled={loading}
-            error={!!errors.date}
-            helperText={errors.date}
-            aria-required="true"
-            aria-label="Activity Date and Time"
-            size="small"
-          />
-        </Grid>
-
-        {/* **Category Selection Field with Autocomplete and Icon** */}
-        <Grid item xs={12}>
-          <Autocomplete
-            freeSolo
-            options={predefinedCategories}
-            value={category}
-            onChange={(event, newValue) => {
-              setCategory(newValue);
-            }}
-            onInputChange={(event, newInputValue) => {
-              setCategory(newInputValue);
-            }}
-            disabled={loading}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Category"
-                variant="outlined"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <CategoryIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                aria-label="Activity Category"
-                size="small"
-              />
+    <Box 
+      component="form" 
+      noValidate 
+      autoComplete="off" 
+      onKeyDown={handleKeyPress}
+      sx={{ position: 'relative' }}
+    >
+      <motion.div {...fadeInUp}>
+        <Grid container spacing={3}>
+          {/* Tips Section */}
+          <Grid item xs={12}>
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                mb: 1 
+              }}
+            >
+              <Tooltip title={showTips ? "Hide Tips" : "Show Tips"}>
+                <IconButton 
+                  size="small" 
+                  onClick={() => setShowTips(!showTips)}
+                  color={showTips ? "primary" : "default"}
+                >
+                  <TipsAndUpdatesIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            {showTips && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                <Card sx={{ mb: 2, bgcolor: 'primary.light', color: 'primary.contrastText' }}>
+                  <CardContent>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Quick Tips:
+                    </Typography>
+                    <List dense>
+                      {activityTips.map((tip, index) => (
+                        <ListItem key={index}>
+                          <ListItemText 
+                            primary={tip}
+                            primaryTypographyProps={{ variant: 'caption' }}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                    <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+                      Pro tip: Press Ctrl + Enter to submit quickly!
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </motion.div>
             )}
-          />
-        </Grid>
-      </Grid>
+          </Grid>
 
-      {/* **Form Actions (unchanged)** */}
-      <Box mt={4} display="flex" justifyContent="flex-end">
-        <Button
-          onClick={onCancel}
-          color="secondary"
-          sx={{ marginRight: theme.spacing(2) }}
-          disabled={loading}
-          variant="outlined"
-          size="small"
-        >
-          Cancel
-        </Button>
-        <GradientButton variant="contained" onClick={handleSubmit} disabled={loading} size="small">
-          {loading ? (
-            <>
-              {activity ? 'Saving...' : 'Adding...'}
-              <CircularProgress size={20} color="inherit" sx={{ marginLeft: 2 }} />
-            </>
-          ) : (
-            <>
-              {activity ? 'Save Changes' : 'Add Activity'}
-            </>
-          )}
-        </GradientButton>
-      </Box>
+          {/* Quick Category Selection */}
+          <Grid item xs={12}>
+            <QuickCategorySelect
+              onSelect={setCategory}
+              selectedCategory={category}
+            />
+          </Grid>
+
+          {/* Enhanced Title Field */}
+          <Grid item xs={12}>
+            <StyledTextField
+              required
+              label="Activity Title"
+              variant="outlined"
+              fullWidth
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (errors.title) {
+                  setErrors({ ...errors, title: '' });
+                }
+              }}
+              disabled={loading}
+              error={!!errors.title}
+              helperText={
+                errors.title || 
+                `${title.length}/${MAX_TITLE_LENGTH} characters`
+              }
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EventIcon color={errors.title ? "error" : "primary"} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  transition: 'all 0.2s ease',
+                  '&.Mui-focused': {
+                    transform: 'scale(1.02)',
+                  }
+                }
+              }}
+            />
+            <LinearProgress 
+              variant="determinate" 
+              value={(title.length / MAX_TITLE_LENGTH) * 100}
+              sx={{ 
+                height: 2, 
+                mt: 0.5,
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: title.length > MAX_TITLE_LENGTH ? 'error.main' : 'primary.main'
+                }
+              }}
+            />
+          </Grid>
+
+          {/* Enhanced Description Field */}
+          <Grid item xs={12}>
+            <StyledTextField
+              label="Description"
+              variant="outlined"
+              fullWidth
+              multiline
+              minRows={3}
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                if (errors.description) {
+                  setErrors({ ...errors, description: '' });
+                }
+              }}
+              disabled={loading}
+              error={!!errors.description}
+              helperText={
+                errors.description || 
+                `${description.length}/${MAX_DESCRIPTION_LENGTH} characters (min: ${MIN_DESCRIPTION_LENGTH})`
+              }
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  transition: 'all 0.2s ease',
+                }
+              }}
+            />
+            <LinearProgress 
+              variant="determinate" 
+              value={(description.length / MAX_DESCRIPTION_LENGTH) * 100}
+              sx={{ 
+                height: 2, 
+                mt: 0.5,
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                '& .MuiLinearProgress-bar': {
+                  bgcolor: description.length > MAX_DESCRIPTION_LENGTH ? 'error.main' : 'primary.main'
+                }
+              }}
+            />
+          </Grid>
+
+          {/* Enhanced Date/Time Field */}
+          <Grid item xs={12}>
+            <StyledTextField
+              required
+              label="Date & Time"
+              type="datetime-local"
+              variant="outlined"
+              fullWidth
+              InputLabelProps={{
+                shrink: true,
+              }}
+              value={date}
+              onChange={(e) => {
+                setDate(e.target.value);
+                if (errors.date) {
+                  setErrors({ ...errors, date: '' });
+                }
+              }}
+              disabled={loading}
+              error={!!errors.date}
+              helperText={errors.date}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <DateRangeIcon color={errors.date ? "error" : "primary"} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          {/* Enhanced Category Selection */}
+          <Grid item xs={12}>
+            <Autocomplete
+              freeSolo
+              options={predefinedCategories}
+              value={category}
+              onChange={(event, newValue) => {
+                setCategory(newValue);
+              }}
+              onInputChange={(event, newInputValue) => {
+                setCategory(newInputValue);
+              }}
+              disabled={loading}
+              renderInput={(params) => (
+                <StyledTextField
+                  {...params}
+                  label="Category"
+                  variant="outlined"
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <CategoryIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+              renderOption={(props, option) => (
+                <motion.div
+                  whileHover={{ scale: 1.02, x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Box component="li" {...props} sx={{
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      background: (theme) => alpha(theme.palette.primary.main, 0.08),
+                    }
+                  }}>
+                    <CategoryIcon sx={{ mr: 1, color: 'primary.main' }} />
+                    {option}
+                  </Box>
+                </motion.div>
+              )}
+            />
+          </Grid>
+
+          {/* Enhanced Action Buttons */}
+          <Grid item xs={12}>
+            <Box 
+              display="flex" 
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mt: 2 }}
+            >
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Button
+                  onClick={onCancel}
+                  color="secondary"
+                  variant="outlined"
+                  disabled={loading}
+                  startIcon={<DeleteIcon />}
+                  sx={{
+                    borderWidth: 2,
+                    '&:hover': {
+                      borderWidth: 2,
+                    }
+                  }}
+                >
+                  Cancel
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Tooltip title="Press Ctrl + Enter">
+                  <span>
+                    <GradientButton
+                      variant="contained"
+                      onClick={handleSubmit}
+                      disabled={loading}
+                      endIcon={loading ? 
+                        <CircularProgress size={20} /> : 
+                        <KeyboardReturnIcon />
+                      }
+                    >
+                      {loading ? 'Saving...' : activity ? 'Save Changes' : 'Add Activity'}
+                    </GradientButton>
+                  </span>
+                </Tooltip>
+              </motion.div>
+            </Box>
+          </Grid>
+        </Grid>
+      </motion.div>
     </Box>
   );
 };
