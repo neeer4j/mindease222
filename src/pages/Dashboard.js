@@ -156,54 +156,65 @@ const MainContent = styled(motion.main)(({ theme }) => ({
   flex: 1,
 }));
 
-// HeroSectionCard – similar to your existing code
-const HeroSectionCard = styled(Card)(({ theme, variant = 'default' }) => {
-  let backgroundColor = theme.palette.background.paper;
-  let textColor = theme.palette.text.primary;
-  if (variant === 'primary') {
-    backgroundColor = theme.palette.primary.light;
-    textColor = theme.palette.primary.contrastText;
-  } else if (variant === 'secondary') {
-    backgroundColor = theme.palette.secondary.light;
-    textColor = theme.palette.secondary.contrastText;
-  } else if (variant === 'tertiary') {
-    backgroundColor = theme.palette.info.light;
-    textColor = theme.palette.info.contrastText;
+// HeroSectionCard with better light mode contrast
+const HeroSectionCard = styled(Card)(({ theme }) => ({
+  padding: theme.spacing(3),
+  background: theme.palette.mode === 'light' 
+    ? `linear-gradient(135deg, 
+        ${alpha(theme.palette.primary.main, 0.08)} 0%, 
+        ${alpha(theme.palette.primary.light, 0.12)} 50%,
+        ${alpha(theme.palette.primary.main, 0.05)} 100%)`
+    : `linear-gradient(135deg, 
+        ${alpha(theme.palette.primary.main, 0.15)} 0%, 
+        ${alpha(theme.palette.secondary.main, 0.1)} 50%,
+        ${alpha(theme.palette.primary.light, 0.05)} 100%)`,
+  borderRadius: '24px',
+  position: 'relative',
+  overflow: 'hidden',
+  border: `1px solid ${theme.palette.mode === 'light' 
+    ? alpha(theme.palette.primary.main, 0.15)
+    : alpha(theme.palette.primary.main, 0.1)}`,
+  boxShadow: theme.palette.mode === 'light'
+    ? `0 8px 32px -8px ${alpha(theme.palette.primary.main, 0.25)}`
+    : `0 8px 32px -8px ${alpha(theme.palette.primary.main, 0.15)}`,
+  '&:before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: theme.palette.mode === 'light'
+      ? `radial-gradient(circle at top right, 
+          ${alpha(theme.palette.primary.main, 0.08)} 0%, 
+          transparent 70%)`
+      : `radial-gradient(circle at top right, 
+          ${alpha(theme.palette.primary.light, 0.1)} 0%, 
+          transparent 70%)`,
+    pointerEvents: 'none'
   }
-  return {
-    marginBottom: theme.spacing(3),
-    padding: theme.spacing(3),
-    borderRadius: '24px',
-    background: backgroundColor,
-    color: textColor,
-    boxShadow: theme.shadows[3],
-    textAlign: 'left',
-    display: 'flex',
-    alignItems: 'center',
-    transition: 'background-color 0.3s ease-out, color 0.3s ease-out',
-    position: 'relative',
-    [theme.breakpoints.down('sm')]: {
-      flexDirection: 'column',
-      textAlign: 'center',
-      alignItems: 'center',
-    },
-  };
-});
+}));
 
 const HeroAvatar = styled(Avatar)(({ theme, variant = 'default' }) => {
-  let borderColor = theme.palette.divider;
+  let borderColor = alpha(theme.palette.primary.main, 0.2);
   if (variant === 'primary') {
-    borderColor = theme.palette.primary.dark;
+    borderColor = alpha(theme.palette.primary.main, 0.3);
   } else if (variant === 'secondary') {
-    borderColor = theme.palette.secondary.dark;
+    borderColor = alpha(theme.palette.secondary.main, 0.3);
   } else if (variant === 'tertiary') {
-    borderColor = theme.palette.info.dark;
+    borderColor = alpha(theme.palette.info.main, 0.3);
   }
   return {
     width: theme.spacing(9),
     height: theme.spacing(9),
     marginRight: theme.spacing(3),
-    border: `2px solid ${borderColor}`,
+    border: `3px solid ${borderColor}`,
+    boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+    '&:hover': {
+      transform: 'scale(1.05)',
+      boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.25)}`,
+    },
     [theme.breakpoints.down('sm')]: {
       marginBottom: theme.spacing(2),
       marginRight: 0,
@@ -218,26 +229,64 @@ const HeroTextContainer = styled(Box)({
 
 const HeroGreeting = styled(Typography)(({ theme, variant = 'default' }) => ({
   fontWeight: 800,
-  color: theme.palette.text.primary,
+  color: theme.palette.mode === 'light' 
+    ? theme.palette.primary.dark
+    : theme.palette.common.white,
   marginBottom: theme.spacing(1),
   fontSize: 'clamp(1.75rem, 5vw, 2.5rem)',
   lineHeight: 1.2,
-  ...(variant !== 'default' && { color: theme.palette.getContrastText(theme.palette[variant].light) }),
+  textShadow: theme.palette.mode === 'light' 
+    ? 'none'
+    : `0 2px 4px ${alpha(theme.palette.common.black, 0.2)}`,
+  ...(variant !== 'default' && { 
+    color: theme.palette.mode === 'light'
+      ? theme.palette.primary.dark
+      : theme.palette.getContrastText(theme.palette[variant].light) 
+  }),
 }));
 
 const HeroQuote = styled(Typography)(({ theme, variant = 'default' }) => ({
   fontStyle: 'italic',
-  color: theme.palette.text.secondary,
+  color: theme.palette.mode === 'light' 
+    ? theme.palette.text.primary
+    : theme.palette.common.white,
   marginBottom: theme.spacing(2),
   fontSize: 'clamp(1rem, 2.5vw, 1.25rem)',
   lineHeight: 1.4,
-  ...(variant !== 'default' && { color: theme.palette.getContrastText(theme.palette[variant].light) }),
+  opacity: theme.palette.mode === 'light' ? 1 : 0.9,
+  ...(variant !== 'default' && { 
+    color: theme.palette.mode === 'light'
+      ? theme.palette.text.primary
+      : alpha(theme.palette.getContrastText(theme.palette[variant].light), 0.9)
+  }),
 }));
 
 const HeroSubtitle = styled(Typography)(({ theme, variant = 'default' }) => ({
-  color: theme.palette.text.secondary,
-  fontSize: '1rem',
-  ...(variant !== 'default' && { color: theme.palette.getContrastText(theme.palette[variant].light) }),
+  color: theme.palette.mode === 'light' 
+    ? theme.palette.text.secondary
+    : theme.palette.common.white,
+  fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+  lineHeight: 1.6,
+  display: 'flex',
+  alignItems: 'center',
+  '& .MuiIconButton-root': {
+    color: theme.palette.mode === 'light' 
+      ? theme.palette.primary.main
+      : theme.palette.common.white,
+    '&:hover': {
+      color: theme.palette.mode === 'light'
+        ? theme.palette.primary.dark
+        : theme.palette.common.white,
+      backgroundColor: theme.palette.mode === 'light'
+        ? alpha(theme.palette.primary.main, 0.1)
+        : alpha(theme.palette.common.white, 0.1),
+    }
+  },
+  ...(variant !== 'default' && { 
+    color: theme.palette.mode === 'light'
+      ? theme.palette.text.secondary
+      : alpha(theme.palette.getContrastText(theme.palette[variant].light), 0.7)
+  }),
 }));
 
 // =======================
@@ -248,9 +297,19 @@ const DashboardCard = styled(Card)(({ theme, cardcolor, bggradient }) => ({
   textAlign: 'left',
   borderRadius: 16,
   height: '100%',
-  background: bggradient || `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.primary.main, 0.15)} 100%)`,
-  border: `1px solid ${alpha(cardcolor || theme.palette.primary.main, 0.15)}`,
-  boxShadow: `0 8px 32px ${alpha(cardcolor || theme.palette.primary.main, 0.15)}`,
+  background: theme.palette.mode === 'light'
+    ? bggradient || `linear-gradient(135deg, 
+        ${alpha(cardcolor || theme.palette.primary.main, 0.04)} 0%, 
+        ${alpha(cardcolor || theme.palette.primary.main, 0.08)} 100%)`
+    : bggradient || `linear-gradient(135deg, 
+        ${alpha(theme.palette.primary.main, 0.08)} 0%, 
+        ${alpha(theme.palette.primary.main, 0.15)} 100%)`,
+  border: `1px solid ${theme.palette.mode === 'light'
+    ? alpha(cardcolor || theme.palette.primary.main, 0.2)
+    : alpha(cardcolor || theme.palette.primary.main, 0.15)}`,
+  boxShadow: theme.palette.mode === 'light'
+    ? `0 8px 32px ${alpha(cardcolor || theme.palette.primary.main, 0.25)}`
+    : `0 8px 32px ${alpha(cardcolor || theme.palette.primary.main, 0.15)}`,
   position: 'relative',
   overflow: 'hidden',
   display: 'flex',
@@ -263,7 +322,9 @@ const DashboardCard = styled(Card)(({ theme, cardcolor, bggradient }) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    background: `linear-gradient(135deg, ${alpha(cardcolor || theme.palette.primary.main, 0.15)} 0%, transparent 100%)`,
+    background: `linear-gradient(135deg, 
+      ${alpha(cardcolor || theme.palette.primary.main, theme.palette.mode === 'light' ? 0.1 : 0.15)} 0%, 
+      transparent 100%)`,
     opacity: 0,
     transition: 'opacity 0.3s ease-in-out',
   },
@@ -275,15 +336,19 @@ const DashboardCard = styled(Card)(({ theme, cardcolor, bggradient }) => ({
 const WidgetTitle = styled(Typography)(({ theme }) => ({
   fontSize: '1.1rem',
   fontWeight: 600,
-  color: theme.palette.text.primary,
+  color: theme.palette.mode === 'light' ? theme.palette.primary.dark : theme.palette.text.primary,
   marginBottom: theme.spacing(3),
   paddingBottom: theme.spacing(1.5),
-  borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+  borderBottom: `2px solid ${theme.palette.mode === 'light' 
+    ? alpha(theme.palette.primary.main, 0.3)
+    : alpha(theme.palette.primary.main, 0.2)}`,
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(1),
   '& .MuiSvgIcon-root': {
-    color: alpha(theme.palette.primary.main, 0.8),
+    color: theme.palette.mode === 'light'
+      ? alpha(theme.palette.primary.dark, 0.9)
+      : alpha(theme.palette.primary.main, 0.8),
   }
 }));
 
@@ -292,16 +357,39 @@ const CardActions = styled(MuiCardActions)(({ theme }) => ({
   padding: theme.spacing(1.5, 2),
 }));
 
+// MoodHeader with better light mode contrast
 const MoodHeader = styled(Box)(({ theme }) => ({
   padding: theme.spacing(1, 2),
   textAlign: 'center',
-  backgroundColor: theme.palette.background.paper,
+  backgroundColor: theme.palette.mode === 'light' 
+    ? alpha(theme.palette.background.paper, 0.7)
+    : theme.palette.background.paper,
+  '& .MuiTypography-root': {
+    color: theme.palette.mode === 'light' 
+      ? theme.palette.primary.dark
+      : theme.palette.text.secondary,
+  }
 }));
 
 const ChartContainer = styled(Box)(({ theme }) => ({
   flexGrow: 1,
   padding: theme.spacing(1),
   height: 160,
+  '& .recharts-cartesian-grid-horizontal line, & .recharts-cartesian-grid-vertical line': {
+    stroke: theme.palette.mode === 'light' 
+      ? alpha(theme.palette.divider, 0.3)
+      : alpha(theme.palette.divider, 0.2),
+  },
+  '& .recharts-text': {
+    fill: theme.palette.mode === 'light'
+      ? theme.palette.primary.dark
+      : theme.palette.text.secondary,
+  },
+  '& .recharts-brush-slide': {
+    fill: theme.palette.mode === 'light'
+      ? alpha(theme.palette.primary.main, 0.1)
+      : alpha(theme.palette.primary.main, 0.2),
+  }
 }));
 
 const ChatListScrollableBox = styled(Box)(({ theme }) => ({
@@ -313,23 +401,31 @@ const ChatListScrollableBox = styled(Box)(({ theme }) => ({
     width: '6px',
   },
   '&::-webkit-scrollbar-track': {
-    background: theme.palette.background.paper,
+    background: theme.palette.mode === 'light'
+      ? alpha(theme.palette.background.paper, 0.8)
+      : theme.palette.background.paper,
     borderRadius: '12px',
   },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: theme.palette.primary.main,
+    backgroundColor: theme.palette.mode === 'light'
+      ? alpha(theme.palette.primary.main, 0.6)
+      : theme.palette.primary.main,
     borderRadius: '12px',
     border: `1px solid ${theme.palette.background.paper}`,
   },
   '&::-webkit-scrollbar-thumb:hover': {
-    backgroundColor: theme.palette.primary.dark,
+    backgroundColor: theme.palette.mode === 'light'
+      ? theme.palette.primary.main
+      : theme.palette.primary.dark,
   },
 }));
 
 const ActivityListItem = styled(ListItem)(({ theme }) => ({
   padding: theme.spacing(1, 0),
   '&:hover': {
-    backgroundColor: theme.palette.action.hover,
+    backgroundColor: theme.palette.mode === 'light'
+      ? alpha(theme.palette.primary.main, 0.05)
+      : theme.palette.action.hover,
     borderRadius: '8px',
   },
 }));
@@ -737,36 +833,13 @@ const DashboardPage = () => {
           setLocationErrorState(
             "Unable to access your location. Please ensure location services are enabled for your browser and this site."
           );
-          showSnackbar("Location access denied.", "warning");
           setIsRefreshing(false);
         }
       );
     } else {
-      setLocationErrorState("Geolocation is not supported by this browser.");
-      showSnackbar("Geolocation not supported.", "error");
+      setLocationErrorState("Geolocation is not supported by your browser.");
       setIsRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    if (therapistError) {
-      showSnackbar(therapistError, "error");
-    }
-  }, [therapistError, showSnackbar]);
-
-  // Handle manual refresh for therapists
-  const handleRefresh = () => {
-    clearTherapists();
-    fetchData(true);
-    showSnackbar("Therapist recommendations refreshed.", "info");
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
-
-  // Open details dialog for the selected therapist.
-  const handleDetailsClick = (therapist) => {
-    setSelectedTherapist(therapist);
-    setDialogOpen(true);
   };
 
   // Close the details dialog.
@@ -781,7 +854,7 @@ const DashboardPage = () => {
         <MainContent variants={mainContentVariants} initial="hidden" animate="visible">
           <Container maxWidth="lg" sx={{ paddingBottom: theme.spacing(3) }}>
             {/* Hero Section */}
-            <motion.div variants={widgetItemVariants}>
+            <motion.div variants={widgetItemVariants} style={{ marginBottom: theme.spacing(4) }}>
               <HeroSectionCard variant="primary">
                 <motion.div style={{ display: 'flex', alignItems: 'center' }}>
                   <HeroAvatar alt={userName} src={userAvatarUrl} variant="primary" />
