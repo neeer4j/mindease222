@@ -22,21 +22,19 @@
   },
   "icons": [
     {
-      "src": "/images/mindwase111.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "src": "images/logo1.png",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "/images/mindwase111.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "images/logo1.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ],
   "prefer_related_applications": false,
   "categories": ["health", "lifestyle"],
-  "description": "MindEase AI - Your AI-based therapist",
+  "description": "Your personalized mental wellness companion.",
   "orientation": "portrait",
   "scope": "/",
   "shortcuts": [
