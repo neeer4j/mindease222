@@ -38,6 +38,7 @@ import {
   Favorite as FavoriteIcon,
   Refresh as RefreshIcon,
   PsychologyAlt as PsychologyAltIcon,
+  EmojiEmotions as MoodIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -108,7 +109,7 @@ const formatDateToRelativeTime = (date) => {
 // Styled Components
 // =======================
 
-// Use a smoother GradientButton (from your old code's smooth feel)
+// A smoother GradientButton from your old code
 const GradientButton = styled(Button)(({ theme }) => ({
   background: `linear-gradient(45deg, ${theme.palette.primary.light} 30%, ${theme.palette.primary.main} 90%)`,
   color: theme.palette.primary.contrastText,
@@ -155,7 +156,7 @@ const MainContent = styled(motion.main)(({ theme }) => ({
   flex: 1,
 }));
 
-// HeroSectionCard – retaining the color palette but removing backdropFilter for performance
+// HeroSectionCard – similar to your existing code
 const HeroSectionCard = styled(Card)(({ theme, variant = 'default' }) => {
   let backgroundColor = theme.palette.background.paper;
   let textColor = theme.palette.text.primary;
@@ -176,7 +177,6 @@ const HeroSectionCard = styled(Card)(({ theme, variant = 'default' }) => {
     background: backgroundColor,
     color: textColor,
     boxShadow: theme.shadows[3],
-    // Removed expensive backdropFilter
     textAlign: 'left',
     display: 'flex',
     alignItems: 'center',
@@ -240,36 +240,51 @@ const HeroSubtitle = styled(Typography)(({ theme, variant = 'default' }) => ({
   ...(variant !== 'default' && { color: theme.palette.getContrastText(theme.palette[variant].light) }),
 }));
 
-/* 
-  UPDATED WidgetCard:
-  - Retains the old color palette (linear gradient background and border)
-  - Removes the backdropFilter and heavy custom box-shadow for smoother rendering
-  - Uses theme.shadows for hover effects
-*/
-const WidgetCard = styled(Card)(({ theme }) => ({
-  marginBottom: theme.spacing(2),
-  borderRadius: '24px',
-  boxShadow: theme.shadows[3],
+// =======================
+// NEW: DashboardCard styled component
+// =======================
+const DashboardCard = styled(Card)(({ theme, cardcolor, bggradient }) => ({
+  padding: theme.spacing(3),
+  textAlign: 'left',
+  borderRadius: 16,
+  height: '100%',
+  background: bggradient || `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.primary.main, 0.15)} 100%)`,
+  border: `1px solid ${alpha(cardcolor || theme.palette.primary.main, 0.15)}`,
+  boxShadow: `0 8px 32px ${alpha(cardcolor || theme.palette.primary.main, 0.15)}`,
+  position: 'relative',
   overflow: 'hidden',
-  transition: 'box-shadow 0.3s ease-out, transform 0.3s ease-out',
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-  '&:hover': {
-    boxShadow: theme.shadows[8],
-    transform: 'translateY(-6px)',
+  display: 'flex',
+  flexDirection: 'column',
+  transition: 'all 0.3s ease-in-out',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: `linear-gradient(135deg, ${alpha(cardcolor || theme.palette.primary.main, 0.15)} 0%, transparent 100%)`,
+    opacity: 0,
+    transition: 'opacity 0.3s ease-in-out',
+  },
+  '&:hover::before': {
+    opacity: 1,
   },
 }));
 
 const WidgetTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 700,
-  color: theme.palette.text.primary,
-  padding: theme.spacing(2, 2.5),
-  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
   fontSize: '1.1rem',
+  fontWeight: 600,
+  color: theme.palette.text.primary,
+  marginBottom: theme.spacing(3),
+  paddingBottom: theme.spacing(1.5),
+  borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
   display: 'flex',
-  justifyContent: 'space-between',
   alignItems: 'center',
-  letterSpacing: '0.5px',
+  gap: theme.spacing(1),
+  '& .MuiSvgIcon-root': {
+    color: alpha(theme.palette.primary.main, 0.8),
+  }
 }));
 
 const CardActions = styled(MuiCardActions)(({ theme }) => ({
@@ -289,7 +304,6 @@ const ChartContainer = styled(Box)(({ theme }) => ({
   height: 160,
 }));
 
-// Use the smoother ChatListScrollableBox from the old code
 const ChatListScrollableBox = styled(Box)(({ theme }) => ({
   maxHeight: '120px',
   overflowY: 'auto',
@@ -325,6 +339,44 @@ const DashboardContainer = styled(Box)(({ theme }) => ({
   flexDirection: 'column',
   width: '100%',
   minHeight: '100vh',
+}));
+
+const StyledBox = styled(Box)(({ theme }) => ({
+  backgroundColor: alpha(theme.palette.background.paper, 0.5),
+  padding: theme.spacing(2),
+  borderRadius: theme.spacing(1),
+  marginBottom: theme.spacing(2),
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  transition: 'all 0.3s ease-in-out',
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.background.paper, 0.7),
+    transform: 'translateY(-2px)',
+    boxShadow: theme.shadows[2]
+  }
+}));
+
+const StyledListItem = styled(ListItem)(({ theme }) => ({
+  borderRadius: theme.spacing(1),
+  marginBottom: theme.spacing(0.5),
+  padding: theme.spacing(1, 1.5),
+  transition: 'all 0.2s ease-in-out',
+  border: `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.action.hover, 0.1),
+    transform: 'translateX(4px)',
+    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`
+  }
+}));
+
+const StyledListContainer = styled(Box)(({ theme }) => ({
+  backgroundColor: alpha(theme.palette.background.paper, 0.5),
+  borderRadius: theme.spacing(1),
+  padding: theme.spacing(1),
+  marginBottom: theme.spacing(2),
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  '& .MuiListItem-root:last-child': {
+    marginBottom: 0
+  }
 }));
 
 // =======================
@@ -696,8 +748,6 @@ const DashboardPage = () => {
     }
   };
 
-  // Removed auto-fetch on mount; therapists are fetched manually via refresh
-
   useEffect(() => {
     if (therapistError) {
       showSnackbar(therapistError, "error");
@@ -762,8 +812,17 @@ const DashboardPage = () => {
                 {/* Mood Summary Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
-                    <WidgetCard>
-                      <WidgetTitle variant="h6">Mood Summary</WidgetTitle>
+                    <DashboardCard
+                      cardcolor={theme.palette.primary.main}
+                      bggradient={`linear-gradient(135deg, ${alpha(
+                        theme.palette.primary.main,
+                        0.05
+                      )} 0%, ${alpha(theme.palette.primary.main, 0.1)} 100%)`}
+                    >
+                      <WidgetTitle>
+                        <MoodIcon sx={{ fontSize: '1.2rem', color: theme.palette.primary.light }} />
+                        Mood Summary
+                      </WidgetTitle>
                       <MoodHeader>
                         <Typography variant="body2" color="textSecondary">
                           {moodSummary}
@@ -787,44 +846,17 @@ const DashboardPage = () => {
                         ) : moodChartData && moodChartData.length > 0 ? (
                           <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={moodChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                              <defs>
-                                <linearGradient id="colorMood" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.8} />
-                                  <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" style={{ fontSize: '0.8rem' }} />
-                              <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} style={{ fontSize: '0.8rem' }} />
-                              <ChartTooltip
-                                contentStyle={{ background: theme.palette.background.paper }}
-                                itemStyle={{ color: theme.palette.text.primary }}
-                                labelStyle={{ color: theme.palette.text.secondary }}
-                                formatter={(value) => value}
-                              />
-                              <Area
-                                type="monotone"
-                                dataKey="mood"
-                                stroke={theme.palette.primary.main}
-                                fillOpacity={1}
-                                fill="url(#colorMood)"
-                              />
-                              <Brush
-                                startIndex={chartBrushStartIndex}
-                                onChange={handleBrushChange}
-                                height={20}
-                                stroke={theme.palette.primary.light}
-                                travellerWidth={2}
-                              />
+                              <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.2)} />
+                              <XAxis dataKey="name" stroke={theme.palette.text.secondary} />
+                              <YAxis stroke={theme.palette.text.secondary} domain={[1, 5]} />
+                              <ChartTooltip contentStyle={{ backgroundColor: theme.palette.background.paper }} />
+                              <Area type="monotone" dataKey="mood" stroke={theme.palette.primary.main} fill={alpha(theme.palette.primary.main, 0.2)} />
+                              <Brush dataKey="name" startIndex={chartBrushStartIndex} height={20} stroke={theme.palette.primary.main} onChange={({ startIndex, endIndex }) => handleBrushChange(startIndex, endIndex)} />
                             </AreaChart>
                           </ResponsiveContainer>
-                        ) : (
-                          <Typography variant="body2" color="textSecondary">
-                            No mood data available.
-                          </Typography>
-                        )}
+                        ) : null}
                       </ChartContainer>
-                      <CardActions sx={{ justifyContent: 'flex-end', padding: theme.spacing(1) }}>
+                      <CardActions sx={{ justifyContent: 'space-between', padding: theme.spacing(1) }}>
                         <SubtleButton
                           size="small"
                           onClick={() => navigate('/mood-tracker')}
@@ -834,15 +866,24 @@ const DashboardPage = () => {
                           View Mood History
                         </SubtleButton>
                       </CardActions>
-                    </WidgetCard>
+                    </DashboardCard>
                   </motion.div>
                 </Grid>
 
                 {/* AI Chat Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
-                    <WidgetCard>
-                      <WidgetTitle variant="h6">AI Chat</WidgetTitle>
+                    <DashboardCard
+                      cardcolor={theme.palette.secondary.main}
+                      bggradient={`linear-gradient(135deg, ${alpha(
+                        theme.palette.secondary.main,
+                        0.05
+                      )} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`}
+                    >
+                      <WidgetTitle>
+                        <ChatIcon sx={{ fontSize: '1.2rem', color: theme.palette.secondary.light }} />
+                        AI Chat
+                      </WidgetTitle>
                       <CardContent
                         sx={{
                           height: isMobile ? 'auto' : 240,
@@ -942,15 +983,24 @@ const DashboardPage = () => {
                           </Box>
                         )}
                       </CardContent>
-                    </WidgetCard>
+                    </DashboardCard>
                   </motion.div>
                 </Grid>
 
-                {/* Activity Logging Widget */}
+                {/* Recent Activities Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
-                    <WidgetCard>
-                      <WidgetTitle variant="h6">Recent Activities</WidgetTitle>
+                    <DashboardCard
+                      cardcolor={theme.palette.success.main}
+                      bggradient={`linear-gradient(135deg, ${alpha(
+                        theme.palette.success.main,
+                        0.05
+                      )} 0%, ${alpha(theme.palette.success.main, 0.1)} 100%)`}
+                    >
+                      <WidgetTitle>
+                        <AssignmentIcon sx={{ fontSize: '1.2rem', color: theme.palette.success.light }} />
+                        Recent Activities
+                      </WidgetTitle>
                       <CardContent
                         sx={{
                           height: isMobile ? 'auto' : 240,
@@ -1029,15 +1079,21 @@ const DashboardPage = () => {
                           </Box>
                         )}
                       </CardContent>
-                    </WidgetCard>
+                    </DashboardCard>
                   </motion.div>
                 </Grid>
 
                 {/* Sleep Quality Monitor Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
-                    <WidgetCard>
-                      <WidgetTitle variant="h6">Sleep Quality</WidgetTitle>
+                    <DashboardCard
+                      cardcolor={theme.palette.info.main}
+                      bggradient={`linear-gradient(135deg, ${alpha(
+                        theme.palette.info.main,
+                        0.05
+                      )} 0%, ${alpha(theme.palette.info.main, 0.1)} 100%)`}
+                    >
+                      <WidgetTitle>Sleep Quality</WidgetTitle>
                       <CardContent
                         sx={{
                           height: isMobile ? 'auto' : 240,
@@ -1103,15 +1159,24 @@ const DashboardPage = () => {
                           </Box>
                         )}
                       </CardContent>
-                    </WidgetCard>
+                    </DashboardCard>
                   </motion.div>
                 </Grid>
 
                 {/* Daily Affirmation Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
-                    <WidgetCard>
-                      <WidgetTitle variant="h6">Daily Affirmation</WidgetTitle>
+                    <DashboardCard
+                      cardcolor={theme.palette.warning.main}
+                      bggradient={`linear-gradient(135deg, ${alpha(
+                        theme.palette.warning.main,
+                        0.05
+                      )} 0%, ${alpha(theme.palette.warning.main, 0.1)} 100%)`}
+                    >
+                      <WidgetTitle>
+                        <LightbulbIcon sx={{ fontSize: '1.2rem', color: theme.palette.warning.light }} />
+                        Daily Affirmation
+                      </WidgetTitle>
                       <CardContent
                         sx={{
                           height: isMobile ? 'auto' : 240,
@@ -1135,15 +1200,24 @@ const DashboardPage = () => {
                           </SubtleButton>
                         </CardActions>
                       </CardContent>
-                    </WidgetCard>
+                    </DashboardCard>
                   </motion.div>
                 </Grid>
 
-                {/* Breathing Exercise Widget */}
+                {/* Quick Breathe Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
-                    <WidgetCard>
-                      <WidgetTitle variant="h6">Quick Breathe</WidgetTitle>
+                    <DashboardCard
+                      cardcolor={theme.palette.info.main}
+                      bggradient={`linear-gradient(135deg, ${alpha(
+                        theme.palette.info.main,
+                        0.05
+                      )} 0%, ${alpha(theme.palette.info.main, 0.1)} 100%)`}
+                    >
+                      <WidgetTitle>
+                        <PsychologyAltIcon sx={{ fontSize: '1.2rem', color: theme.palette.info.light }} />
+                        Quick Breathe
+                      </WidgetTitle>
                       <CardContent
                         sx={{
                           height: isMobile ? 'auto' : 240,
@@ -1155,15 +1229,24 @@ const DashboardPage = () => {
                       >
                         <BreathingExerciseWidget />
                       </CardContent>
-                    </WidgetCard>
+                    </DashboardCard>
                   </motion.div>
                 </Grid>
 
                 {/* Inspiration Reels Widget */}
                 <Grid item xs={12}>
                   <motion.div variants={widgetItemVariants}>
-                    <WidgetCard>
-                      <WidgetTitle variant="h6">Inspiration Reels</WidgetTitle>
+                    <DashboardCard
+                      cardcolor={theme.palette.error.main}
+                      bggradient={`linear-gradient(135deg, ${alpha(
+                        theme.palette.error.main,
+                        0.05
+                      )} 0%, ${alpha(theme.palette.error.main, 0.1)} 100%)`}
+                    >
+                      <WidgetTitle>
+                        <FavoriteIcon sx={{ fontSize: '1.2rem', color: theme.palette.error.light }} />
+                        Inspiration Reels
+                      </WidgetTitle>
                       <CardContent
                         sx={{
                           height: isMobile ? 'auto' : 240,
@@ -1188,14 +1271,20 @@ const DashboardPage = () => {
                           Watch Reels
                         </GradientButton>
                       </CardActions>
-                    </WidgetCard>
+                    </DashboardCard>
                   </motion.div>
                 </Grid>
 
                 {/* Feeling Overwhelmed? Widget */}
                 <Grid item xs={12}>
                   <motion.div variants={widgetItemVariants}>
-                    <WidgetCard>
+                    <DashboardCard
+                      cardcolor={theme.palette.error.main}
+                      bggradient={`linear-gradient(135deg, ${alpha(
+                        theme.palette.error.main,
+                        0.05
+                      )} 0%, ${alpha(theme.palette.error.main, 0.1)} 100%)`}
+                    >
                       <WidgetTitle variant="h6">Feeling Overwhelmed?</WidgetTitle>
                       <CardContent
                         sx={{
@@ -1224,14 +1313,20 @@ const DashboardPage = () => {
                           </GradientButton>
                         </CardActions>
                       </CardContent>
-                    </WidgetCard>
+                    </DashboardCard>
                   </motion.div>
                 </Grid>
 
                 {/* Daily Insight Widget */}
                 <Grid item xs={12}>
                   <motion.div variants={widgetItemVariants}>
-                    <WidgetCard>
+                    <DashboardCard
+                      cardcolor={theme.palette.primary.main}
+                      bggradient={`linear-gradient(135deg, ${alpha(
+                        theme.palette.primary.main,
+                        0.05
+                      )} 0%, ${alpha(theme.palette.primary.main, 0.1)} 100%)`}
+                    >
                       <WidgetTitle variant="h6">Daily Insight</WidgetTitle>
                       <CardContent sx={{ height: isMobile ? 'auto' : 240 }}>
                         {insightHighlight ? (
@@ -1283,13 +1378,14 @@ const DashboardPage = () => {
                           </Box>
                         )}
                       </CardContent>
-                    </WidgetCard>
+                    </DashboardCard>
                   </motion.div>
                 </Grid>
               </Grid>
             </motion.div>
           </Container>
         </MainContent>
+        
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={6000}

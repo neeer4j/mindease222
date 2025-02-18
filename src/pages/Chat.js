@@ -38,6 +38,9 @@ import MoodIcon from '@mui/icons-material/Mood';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
+import { motion } from 'framer-motion';
+import { styled, alpha } from '@mui/system';
+
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import ErrorBoundary from '../components/ErrorBoundary';
 import Message from '../components/Message';
@@ -45,14 +48,11 @@ import { AuthContext } from '../contexts/AuthContext';
 import { ChatContext } from '../contexts/ChatContext';
 import { MoodContext } from "../contexts/MoodContext";
 import { SleepContext } from "../contexts/SleepContext";
-import { motion } from 'framer-motion';
 import { db } from '../firebase';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
 // *** Added from old code: run chat moderation in background ***
 import useChatModeration from '../hooks/useChatModeration';
-
-const GradientButton = motion(Button);
 
 // Constants
 const CRISIS_KEYWORDS = ['suicide', 'self-harm', 'kill myself'];
@@ -78,12 +78,11 @@ const MOOD_OPTIONS = [
   { label: '😕 Neutral', value: 'neutral' },
 ];
 
-// You can choose to use the updated dimensions or revert to the old ones.
-// Updated dimensions from the merge:
 const BOTTOM_NAV_HEIGHT = 48;
 const CHAT_INPUT_HEIGHT = 52;
-// (MOOD_PROMPT_INTERVAL is used in the mood prompting logic)
 const MOOD_PROMPT_INTERVAL = 15 * 60 * 1000; // 15 minutes
+
+const GradientButton = motion(Button);
 
 const Chat = ({ toggleTheme }) => {
   // Contexts
@@ -181,11 +180,11 @@ const Chat = ({ toggleTheme }) => {
   // Send greeting message if none has been sent.
   useEffect(() => {
     if (chatLoading || !user) return;
-    // Check more strictly for welcome message
-    const hasGreeting = messages.some(msg => 
-      msg.isBot && 
-      msg.isWelcome && 
-      msg.text.includes(`Hello ${userName}`)
+    const hasGreeting = messages.some(
+      (msg) =>
+        msg.isBot &&
+        msg.isWelcome &&
+        msg.text.includes(`Hello ${userName}`)
     );
     if (!hasGreeting) {
       const greetingMessage = `Hello ${userName}! I'm MindEase, your AI therapist. How can I assist you today?`;
@@ -604,7 +603,8 @@ Quick Replies:
   const formatTime = (ts) => {
     try {
       if (!ts) return '—';
-      const date = ts.toDate ? ts.toDate() : ts instanceof Date ? ts : new Date(ts);
+      const date =
+        ts.toDate ? ts.toDate() : ts instanceof Date ? ts : new Date(ts);
       if (isNaN(date.getTime())) return 'Invalid Date';
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch (error) {
@@ -1060,6 +1060,7 @@ Quick Replies:
       transition={{ duration: 0.6 }}
       style={{
         minHeight: '100vh',
+        // Keep your page background the same (gradient or default):
         background: theme.palette.background.gradient,
         paddingTop: theme.spacing(5.5),
         paddingBottom: theme.spacing(4),
@@ -1075,14 +1076,21 @@ Quick Replies:
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
+          // Keep the same radius, shadows, etc.:
           borderRadius: '24px',
           boxShadow: '0px 10px 30px rgba(0,0,0,0.1)',
-          backgroundColor: theme.palette.background.paper,
           overflow: 'hidden',
           height: '90vh',
           width: '100%',
           maxWidth: '800px',
           marginTop: theme.spacing(4),
+
+          // **Just change the container color** to match Mood Summary:
+          background: `linear-gradient(135deg, ${alpha(
+            theme.palette.primary.main,
+            0.05
+          )} 0%, ${alpha(theme.palette.primary.main, 0.1)} 100%)`,
+          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
         }}
       >
         {/* Desktop Header */}

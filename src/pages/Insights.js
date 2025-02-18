@@ -16,6 +16,7 @@ import {
   Collapse,
   Tooltip,
   Chip,
+  IconButton,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,6 +52,10 @@ import NightsStayIcon from '@mui/icons-material/NightsStay';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import TuneIcon from '@mui/icons-material/Tune';
+import PanToolIcon from '@mui/icons-material/PanTool';
+import SentimentDissatisfiedIcon from '@mui/icons-material/SentimentDissatisfied';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import BedtimeIcon from '@mui/icons-material/Bedtime';
 
 // Register Chart.js components and plugins
 ChartJS.register(
@@ -188,23 +193,112 @@ const Insights = () => {
 
   const moodOverTimeOptions = {
     responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 1500,
+      easing: 'easeInOutQuart'
+    },
     plugins: {
-      legend: { position: isSmallScreen ? 'bottom' : 'top' },
-      title: { display: true, text: 'Mood Over Time' },
-      tooltip: { callbacks: { label: context => `${context.parsed.y} ⭐` } },
-      zoom: {
-        pan: { enabled: true, mode: 'x' },
-        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+      legend: { 
+        position: isSmallScreen ? 'bottom' : 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            size: 12,
+            weight: 500
+          }
+        }
       },
+      title: { 
+        display: true, 
+        text: 'Mood Over Time',
+        font: {
+          size: 16,
+          weight: 600
+        },
+        padding: { bottom: 20 }
+      },
+      tooltip: {
+        backgroundColor: alpha(theme.palette.background.paper, 0.9),
+        titleColor: theme.palette.text.primary,
+        bodyColor: theme.palette.text.secondary,
+        borderColor: theme.palette.primary.main,
+        borderWidth: 1,
+        padding: 12,
+        displayColors: false,
+        callbacks: {
+          title: (context) => `Date: ${context[0].label}`,
+          label: context => `Mood: ${context.parsed.y} ⭐`
+        }
+      },
+      zoom: {
+        pan: { 
+          enabled: true, 
+          mode: 'x',
+          modifierKey: 'ctrl'
+        },
+        zoom: {
+          wheel: { enabled: true },
+          pinch: { enabled: true },
+          mode: 'x',
+          speed: 100,
+          threshold: 2
+        },
+      }
     },
     scales: {
-      y: { min: 1, max: 5, ticks: { stepSize: 1, callback: value => `${value} ⭐` } },
-      x: { type: 'category', ticks: { maxTicksLimit: 10 } },
+      y: {
+        min: 1,
+        max: 5,
+        grid: {
+          drawBorder: false,
+          color: alpha(theme.palette.divider, 0.1)
+        },
+        ticks: {
+          stepSize: 1,
+          padding: 10,
+          font: {
+            size: 12
+          },
+          callback: value => `${value} ⭐`
+        }
+      },
+      x: {
+        type: 'category',
+        grid: {
+          display: false
+        },
+        ticks: {
+          maxTicksLimit: 10,
+          maxRotation: 45,
+          minRotation: 45,
+          padding: 10,
+          font: {
+            size: 11
+          }
+        }
+      }
     },
-    maintainAspectRatio: false,
+    elements: {
+      line: {
+        tension: 0.4,
+        borderWidth: 3
+      },
+      point: {
+        radius: 4,
+        hoverRadius: 6,
+        borderWidth: 2,
+        backgroundColor: theme.palette.background.paper
+      }
+    },
+    interaction: {
+      mode: 'nearest',
+      axis: 'x',
+      intersect: false
+    }
   };
 
-  // Prepare Data for Activity Frequency Chart
   const activityFrequencyData = useMemo(() => {
     const activityCount = {};
     filteredActivities.forEach(activity => {
@@ -228,20 +322,73 @@ const Insights = () => {
 
   const activityFrequencyOptions = {
     responsive: true,
-    plugins: {
-      legend: { position: 'top' },
-      title: { display: true, text: 'Activity Frequency' },
-      tooltip: { callbacks: { label: context => `${context.parsed.y} activities` } },
-      zoom: {
-        pan: { enabled: true, mode: 'x' },
-        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
-      },
-    },
-    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
     maintainAspectRatio: false,
+    animation: {
+      duration: 1500,
+      easing: 'easeInOutQuart'
+    },
+    plugins: {
+      legend: { 
+        display: false
+      },
+      title: { 
+        display: true, 
+        text: 'Activity Frequency',
+        font: {
+          size: 16,
+          weight: 600
+        },
+        padding: { bottom: 20 }
+      },
+      tooltip: {
+        backgroundColor: alpha(theme.palette.background.paper, 0.9),
+        titleColor: theme.palette.text.primary,
+        bodyColor: theme.palette.text.secondary,
+        borderColor: theme.palette.secondary.main,
+        borderWidth: 1,
+        padding: 12,
+        displayColors: false,
+        callbacks: {
+          title: (context) => context[0].label,
+          label: context => `${context.parsed.y} times`
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          drawBorder: false,
+          color: alpha(theme.palette.divider, 0.1)
+        },
+        ticks: {
+          stepSize: 1,
+          padding: 10,
+          font: {
+            size: 12
+          }
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45,
+          padding: 10,
+          font: {
+            size: 11
+          }
+        }
+      }
+    },
+    barThickness: 'flex',
+    maxBarThickness: 35,
+    borderRadius: 6,
+    borderSkipped: false
   };
 
-  // Prepare Data for Mood vs. Activity Correlation (Scatter Chart)
   const moodActivityCorrelationData = useMemo(() => {
     const activityMap = {};
     filteredActivities.forEach(activity => {
@@ -269,23 +416,118 @@ const Insights = () => {
 
   const moodActivityCorrelationOptions = {
     responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 1500,
+      easing: 'easeInOutQuart'
+    },
     plugins: {
-      legend: { position: isSmallScreen ? 'bottom' : 'top' },
-      title: { display: true, text: 'Mood vs. Activity Correlation' },
-      tooltip: { callbacks: { label: context => `${context.parsed.y} ⭐` } },
-      zoom: {
-        pan: { enabled: true, mode: 'xy' },
-        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' },
+      legend: { 
+        position: isSmallScreen ? 'bottom' : 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            size: 12,
+            weight: 500
+          }
+        }
       },
+      title: { 
+        display: true, 
+        text: 'Mood vs. Activity Correlation',
+        font: {
+          size: 16,
+          weight: 600
+        },
+        padding: { bottom: 20 }
+      },
+      tooltip: {
+        backgroundColor: alpha(theme.palette.background.paper, 0.9),
+        titleColor: theme.palette.text.primary,
+        bodyColor: theme.palette.text.secondary,
+        borderColor: theme.palette.success.main,
+        borderWidth: 1,
+        padding: 12,
+        displayColors: false,
+        callbacks: {
+          title: (context) => `Activity: ${context[0].raw.x}`,
+          label: context => `Mood: ${context.raw.y} ⭐`
+        }
+      },
+      zoom: {
+        pan: { 
+          enabled: true, 
+          mode: 'xy',
+          modifierKey: 'ctrl'
+        },
+        zoom: {
+          wheel: { enabled: true },
+          pinch: { enabled: true },
+          mode: 'xy',
+          speed: 100,
+          threshold: 2
+        }
+      }
     },
     scales: {
-      x: { type: 'category', title: { display: true, text: 'Activities' } },
-      y: { min: 1, max: 5, title: { display: true, text: 'Mood Level' }, ticks: { stepSize: 1, callback: value => `${value} ⭐` } },
+      y: {
+        min: 1,
+        max: 5,
+        title: {
+          display: true,
+          text: 'Mood Level',
+          font: {
+            size: 14,
+            weight: 500
+          }
+        },
+        grid: {
+          drawBorder: false,
+          color: alpha(theme.palette.divider, 0.1)
+        },
+        ticks: {
+          stepSize: 1,
+          padding: 10,
+          font: {
+            size: 12
+          },
+          callback: value => `${value} ⭐`
+        }
+      },
+      x: {
+        type: 'category',
+        title: {
+          display: true,
+          text: 'Activities',
+          font: {
+            size: 14,
+            weight: 500
+          }
+        },
+        grid: {
+          display: false
+        },
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45,
+          padding: 10,
+          font: {
+            size: 11
+          }
+        }
+      }
     },
-    maintainAspectRatio: false,
+    elements: {
+      point: {
+        radius: 6,
+        hoverRadius: 8,
+        borderWidth: 2,
+        backgroundColor: alpha(theme.palette.success.main, 0.7)
+      }
+    }
   };
 
-  // Prepare Data for Sleep Duration Over Time Chart
   const sleepDurationOverTimeData = useMemo(() => {
     const sleepDurationMap = {};
     filteredSleepLogs.forEach(log => {
@@ -306,34 +548,148 @@ const Insights = () => {
       labels: labels.map(date => format(new Date(date), 'MMM d')),
       datasets: [
         {
-          label: 'Average Sleep Duration (Hours)',
+          label: 'Average Sleep Duration',
           data,
-          fill: false,
-          borderColor: theme.palette.secondary.main,
+          fill: true,
+          backgroundColor: alpha(theme.palette.info.main, 0.1),
+          borderColor: theme.palette.info.main,
           tension: 0.4,
           pointRadius: 5,
-          pointHoverRadius: 7,
+          pointHoverRadius: 7
         },
-      ],
+        {
+          label: 'Recommended Sleep (8hrs)',
+          data: labels.map(() => 8),
+          borderColor: alpha(theme.palette.success.main, 0.5),
+          borderDash: [5, 5],
+          fill: false,
+          pointRadius: 0
+        }
+      ]
     };
-  }, [filteredSleepLogs, theme.palette.secondary]);
+  }, [filteredSleepLogs, theme.palette.info, theme.palette.success]);
 
   const sleepDurationOverTimeOptions = {
     responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 1500,
+      easing: 'easeInOutQuart'
+    },
     plugins: {
-      legend: { position: isSmallScreen ? 'bottom' : 'top' },
-      title: { display: true, text: 'Average Sleep Duration Over Time' },
-      tooltip: { callbacks: { label: context => `${context.parsed.y} Hours` } },
-      zoom: {
-        pan: { enabled: true, mode: 'x' },
-        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+      legend: {
+        position: isSmallScreen ? 'bottom' : 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            size: 12,
+            weight: 500
+          }
+        }
       },
+      title: {
+        display: true,
+        text: 'Sleep Duration Over Time',
+        font: {
+          size: 16,
+          weight: 600
+        },
+        padding: { bottom: 20 }
+      },
+      tooltip: {
+        backgroundColor: alpha(theme.palette.background.paper, 0.9),
+        titleColor: theme.palette.text.primary,
+        bodyColor: theme.palette.text.secondary,
+        borderColor: theme.palette.info.main,
+        borderWidth: 1,
+        padding: 12,
+        displayColors: true,
+        callbacks: {
+          title: (context) => `Date: ${context[0].label}`,
+          label: (context) => {
+            if (context.dataset.label === 'Average Sleep Duration') {
+              const hours = Math.floor(context.parsed.y);
+              const minutes = Math.round((context.parsed.y - hours) * 60);
+              return `${context.dataset.label}: ${hours}h ${minutes}m`;
+            }
+            return `${context.dataset.label}`;
+          }
+        }
+      },
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: 'x',
+          modifierKey: 'ctrl'
+        },
+        zoom: {
+          wheel: { enabled: true },
+          pinch: { enabled: true },
+          mode: 'x',
+          speed: 100,
+          threshold: 2
+        }
+      }
     },
     scales: {
-      y: { beginAtZero: true, title: { display: true, text: 'Hours' } },
-      x: { type: 'category', ticks: { maxTicksLimit: 10 } },
+      y: {
+        suggestedMin: 4,
+        suggestedMax: 12,
+        grid: {
+          drawBorder: false,
+          color: alpha(theme.palette.divider, 0.1)
+        },
+        title: {
+          display: true,
+          text: 'Hours',
+          font: {
+            size: 14,
+            weight: 500
+          }
+        },
+        ticks: {
+          stepSize: 2,
+          padding: 10,
+          font: {
+            size: 12
+          },
+          callback: value => `${value}h`
+        }
+      },
+      x: {
+        type: 'category',
+        grid: {
+          display: false
+        },
+        ticks: {
+          maxTicksLimit: 10,
+          maxRotation: 45,
+          minRotation: 45,
+          padding: 10,
+          font: {
+            size: 11
+          }
+        }
+      }
     },
-    maintainAspectRatio: false,
+    elements: {
+      line: {
+        tension: 0.4,
+        borderWidth: 2
+      },
+      point: {
+        radius: 4,
+        hoverRadius: 6,
+        borderWidth: 2,
+        backgroundColor: theme.palette.background.paper
+      }
+    },
+    interaction: {
+      mode: 'nearest',
+      axis: 'x',
+      intersect: false
+    }
   };
 
   // Prepare Summary Statistics (using filtered data)
@@ -501,11 +857,45 @@ Use **bold** for emphasis on key points.`;
   const getMoodTrends = () => {
     if (!hasMoodOverTimeData) return null;
     const data = moodOverTimeData.datasets[0].data;
+    const labels = moodOverTimeData.labels;
+    
+    // Calculate overall trend
     const trend = data[data.length - 1] - data[0];
+    const percentageChange = ((data[data.length - 1] - data[0]) / data[0] * 100).toFixed(1);
+    
+    // Calculate weekly averages
+    const currentWeekMoods = data.slice(-7);
+    const previousWeekMoods = data.slice(-14, -7);
+    const currentWeekAvg = currentWeekMoods.reduce((a, b) => a + b, 0) / currentWeekMoods.length;
+    const previousWeekAvg = previousWeekMoods.length ? previousWeekMoods.reduce((a, b) => a + b, 0) / previousWeekMoods.length : null;
+    const weeklyChange = previousWeekAvg ? ((currentWeekAvg - previousWeekAvg) / previousWeekAvg * 100).toFixed(1) : null;
+    
+    // Calculate consistency score (standard deviation)
+    const mean = data.reduce((a, b) => a + b, 0) / data.length;
+    const variance = data.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / data.length;
+    const stdDev = Math.sqrt(variance);
+    const consistency = stdDev <= 0.5 ? 'High' : stdDev <= 1 ? 'Moderate' : 'Low';
+
+    // Get highest and lowest moods with dates
+    const highestMood = Math.max(...data);
+    const lowestMood = Math.min(...data);
+    const highestDate = labels[data.indexOf(highestMood)];
+    const lowestDate = labels[data.indexOf(lowestMood)];
+
     return {
       trend: trend.toFixed(2),
+      percentageChange,
       improving: trend > 0,
-      stable: Math.abs(trend) < 0.5
+      stable: Math.abs(trend) < 0.5,
+      currentWeekAvg: currentWeekAvg.toFixed(2),
+      previousWeekAvg: previousWeekAvg ? previousWeekAvg.toFixed(2) : null,
+      weeklyChange,
+      consistency,
+      consistencyScore: stdDev.toFixed(2),
+      highestMood,
+      lowestMood,
+      highestDate,
+      lowestDate
     };
   };
 
@@ -984,20 +1374,86 @@ Use **bold** for emphasis on key points.`;
                         }}>
                           Mood Trend Analysis
                         </Typography>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: 1,
-                          marginTop: 2 
-                        }}>
-                          <Typography variant="body1" sx={{
-                            fontSize: '1.1rem',
-                            color: getMoodTrends().improving ? theme.palette.success.main : 
-                                   getMoodTrends().stable ? theme.palette.info.main : 
-                                   theme.palette.warning.main
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {/* Overall Trend */}
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1,
+                            backgroundColor: alpha(theme.palette.background.paper, 0.5),
+                            padding: 1,
+                            borderRadius: 1
                           }}>
-                            {getMoodTrends().improving ? '📈 Improving' : getMoodTrends().stable ? '📊 Stable' : '📉 Needs Attention'}
-                          </Typography>
+                            <Typography variant="body1" sx={{
+                              fontSize: '1.1rem',
+                              color: getMoodTrends().improving ? theme.palette.success.main : 
+                                     getMoodTrends().stable ? theme.palette.info.main : 
+                                     theme.palette.warning.main,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1
+                            }}>
+                              {getMoodTrends().improving ? '📈' : getMoodTrends().stable ? '📊' : '📉'}
+                              {getMoodTrends().improving ? 'Improving' : getMoodTrends().stable ? 'Stable' : 'Declining'}
+                              <Typography component="span" sx={{ color: theme.palette.text.secondary }}>
+                                {getMoodTrends().stable ? 
+                                  '(Consistent)' : 
+                                  `(${getMoodTrends().percentageChange}%)`}
+                              </Typography>
+                            </Typography>
+                          </Box>
+
+                          {/* Weekly Comparison */}
+                          {getMoodTrends().previousWeekAvg && (
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                                Weekly Change:
+                              </Typography>
+                              <Typography variant="body1" sx={{
+                                color: getMoodTrends().weeklyChange > 0 ? theme.palette.success.main :
+                                       getMoodTrends().weeklyChange < 0 ? theme.palette.error.main :
+                                       theme.palette.text.primary
+                              }}>
+                                {getMoodTrends().weeklyChange > 0 ? '↗' : getMoodTrends().weeklyChange < 0 ? '↘' : '→'} {Math.abs(getMoodTrends().weeklyChange)}%
+                              </Typography>
+                            </Box>
+                          )}
+
+                          {/* Consistency Score */}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                              Mood Consistency:
+                            </Typography>
+                            <Chip
+                              label={getMoodTrends().consistency}
+                              size="small"
+                              color={
+                                getMoodTrends().consistency === 'High' ? 'success' :
+                                getMoodTrends().consistency === 'Moderate' ? 'warning' : 'error'
+                              }
+                              sx={{ fontWeight: 500 }}
+                            />
+                          </Box>
+
+                          {/* Highest and Lowest Points */}
+                          <Box sx={{ 
+                            mt: 1,
+                            p: 1,
+                            borderRadius: 1,
+                            backgroundColor: alpha(theme.palette.background.paper, 0.5)
+                          }}>
+                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+                              Peak Moods:
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                              <Typography variant="body2" sx={{ color: theme.palette.success.main }}>
+                                Highest: {getMoodTrends().highestMood}⭐ ({getMoodTrends().highestDate})
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: theme.palette.error.main }}>
+                                Lowest: {getMoodTrends().lowestMood}⭐ ({getMoodTrends().lowestDate})
+                              </Typography>
+                            </Box>
+                          </Box>
                         </Box>
                       </Paper>
                     </Grid>
@@ -1138,15 +1594,45 @@ Use **bold** for emphasis on key points.`;
                       title: "Mood Over Time",
                       content: (
                         hasMoodOverTimeData ? (
-                          <Line
-                            ref={moodOverTimeRef}
-                            data={moodOverTimeData}
-                            options={moodOverTimeOptions}
-                          />
+                          <Box sx={{ position: 'relative', height: '100%' }}>
+                            <Box sx={{ 
+                              position: 'absolute',
+                              right: 0,
+                              top: -35,
+                              display: 'flex',
+                              gap: 1
+                            }}>
+                              <Tooltip title="Pan: Hold Ctrl + Drag">
+                                <IconButton size="small">
+                                  <PanToolIcon sx={{ fontSize: '1.2rem' }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Zoom: Use Mouse Wheel">
+                                <IconButton size="small">
+                                  <ZoomInIcon sx={{ fontSize: '1.2rem' }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                            <Line
+                              ref={moodOverTimeRef}
+                              data={moodOverTimeData}
+                              options={moodOverTimeOptions}
+                            />
+                          </Box>
                         ) : (
-                          <Typography variant="body1" color="textSecondary" textAlign="center">
-                            No mood entries available to display.
-                          </Typography>
+                          <Box sx={{ 
+                            height: '100%', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            flexDirection: 'column',
+                            gap: 2
+                          }}>
+                            <SentimentDissatisfiedIcon sx={{ fontSize: '3rem', color: 'text.secondary', opacity: 0.5 }} />
+                            <Typography variant="body1" color="textSecondary" textAlign="center">
+                              No mood entries available to display.
+                            </Typography>
+                          </Box>
                         )
                       ),
                       accentColor: theme.palette.primary.main
@@ -1155,14 +1641,26 @@ Use **bold** for emphasis on key points.`;
                       title: "Activity Frequency",
                       content: (
                         hasActivityFrequencyData ? (
-                          <Bar
-                            data={activityFrequencyData}
-                            options={activityFrequencyOptions}
-                          />
+                          <Box sx={{ height: '100%' }}>
+                            <Bar
+                              data={activityFrequencyData}
+                              options={activityFrequencyOptions}
+                            />
+                          </Box>
                         ) : (
-                          <Typography variant="body1" color="textSecondary" textAlign="center">
-                            No activities available to display.
-                          </Typography>
+                          <Box sx={{ 
+                            height: '100%', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            flexDirection: 'column',
+                            gap: 2
+                          }}>
+                            <DirectionsRunIcon sx={{ fontSize: '3rem', color: 'text.secondary', opacity: 0.5 }} />
+                            <Typography variant="body1" color="textSecondary" textAlign="center">
+                              No activities available to display.
+                            </Typography>
+                          </Box>
                         )
                       ),
                       accentColor: theme.palette.secondary.main
@@ -1171,14 +1669,44 @@ Use **bold** for emphasis on key points.`;
                       title: "Mood vs. Activity Correlation",
                       content: (
                         hasMoodActivityCorrelationData ? (
-                          <Scatter
-                            data={moodActivityCorrelationData}
-                            options={moodActivityCorrelationOptions}
-                          />
+                          <Box sx={{ position: 'relative', height: '100%' }}>
+                            <Box sx={{ 
+                              position: 'absolute',
+                              right: 0,
+                              top: -35,
+                              display: 'flex',
+                              gap: 1
+                            }}>
+                              <Tooltip title="Pan: Hold Ctrl + Drag">
+                                <IconButton size="small">
+                                  <PanToolIcon sx={{ fontSize: '1.2rem' }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Zoom: Use Mouse Wheel">
+                                <IconButton size="small">
+                                  <ZoomInIcon sx={{ fontSize: '1.2rem' }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                            <Scatter
+                              data={moodActivityCorrelationData}
+                              options={moodActivityCorrelationOptions}
+                            />
+                          </Box>
                         ) : (
-                          <Typography variant="body1" color="textSecondary" textAlign="center">
-                            No correlation data available to display.
-                          </Typography>
+                          <Box sx={{ 
+                            height: '100%', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            flexDirection: 'column',
+                            gap: 2
+                          }}>
+                            <AssessmentIcon sx={{ fontSize: '3rem', color: 'text.secondary', opacity: 0.5 }} />
+                            <Typography variant="body1" color="textSecondary" textAlign="center">
+                              No correlation data available to display.
+                            </Typography>
+                          </Box>
                         )
                       ),
                       accentColor: theme.palette.success.main
@@ -1187,15 +1715,45 @@ Use **bold** for emphasis on key points.`;
                       title: "Sleep Duration Over Time",
                       content: (
                         hasSleepDurationOverTimeData ? (
-                          <Line
-                            ref={sleepDurationOverTimeRef}
-                            data={sleepDurationOverTimeData}
-                            options={sleepDurationOverTimeOptions}
-                          />
+                          <Box sx={{ position: 'relative', height: '100%' }}>
+                            <Box sx={{ 
+                              position: 'absolute',
+                              right: 0,
+                              top: -35,
+                              display: 'flex',
+                              gap: 1
+                            }}>
+                              <Tooltip title="Pan: Hold Ctrl + Drag">
+                                <IconButton size="small">
+                                  <PanToolIcon sx={{ fontSize: '1.2rem' }} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Zoom: Use Mouse Wheel">
+                                <IconButton size="small">
+                                  <ZoomInIcon sx={{ fontSize: '1.2rem' }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                            <Line
+                              ref={sleepDurationOverTimeRef}
+                              data={sleepDurationOverTimeData}
+                              options={sleepDurationOverTimeOptions}
+                            />
+                          </Box>
                         ) : (
-                          <Typography variant="body1" color="textSecondary" textAlign="center">
-                            No sleep data available to display.
-                          </Typography>
+                          <Box sx={{ 
+                            height: '100%', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            flexDirection: 'column',
+                            gap: 2
+                          }}>
+                            <BedtimeIcon sx={{ fontSize: '3rem', color: 'text.secondary', opacity: 0.5 }} />
+                            <Typography variant="body1" color="textSecondary" textAlign="center">
+                              No sleep data available to display.
+                            </Typography>
+                          </Box>
                         )
                       ),
                       accentColor: theme.palette.info.main
@@ -1218,6 +1776,9 @@ Use **bold** for emphasis on key points.`;
                             boxShadow: `0 8px 24px ${alpha(chart.accentColor, 0.15)}`,
                             '& .chart-header': {
                               borderColor: alpha(chart.accentColor, 0.3),
+                            },
+                            '& .chart-gradient': {
+                              opacity: 1
                             }
                           },
                           '&::before': {
@@ -1231,6 +1792,16 @@ Use **bold** for emphasis on key points.`;
                           }
                         }}
                       >
+                        <Box className="chart-gradient" sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: `radial-gradient(circle at top right, ${alpha(chart.accentColor, 0.05)} 0%, transparent 60%)`,
+                          opacity: 0,
+                          transition: 'opacity 0.3s ease'
+                        }} />
                         <Typography
                           variant="h6"
                           className="chart-header"
@@ -1240,12 +1811,18 @@ Use **bold** for emphasis on key points.`;
                             marginBottom: 3,
                             paddingBottom: 1.5,
                             borderBottom: `2px solid ${alpha(chart.accentColor, 0.1)}`,
-                            transition: 'border-color 0.3s ease'
+                            transition: 'border-color 0.3s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
                           }}
                         >
                           {chart.title}
                         </Typography>
-                        <Box sx={{ height: 'calc(100% - 70px)' }}>
+                        <Box sx={{ 
+                          height: 'calc(100% - 70px)',
+                          position: 'relative'
+                        }}>
                           {chart.content}
                         </Box>
                       </Paper>
