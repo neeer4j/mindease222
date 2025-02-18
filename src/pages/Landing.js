@@ -52,12 +52,34 @@ const GradientButton = styled(Button)(({ theme }) => ({
   },
 }));
 
+// Mobile Feature Carousel Container
 const MobileFeatureCarousel = styled(Box)(({ theme }) => ({
   width: '100%',
   position: 'relative',
   overflow: 'hidden',
-  padding: theme.spacing(2),
-  marginBottom: theme.spacing(4)
+  padding: theme.spacing(1),
+  marginBottom: theme.spacing(2),
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  '& .MuiCard-root': {
+    width: '100%',
+    maxWidth: 'min(400px, calc(100vw - 32px))', // Responsive width with padding
+    margin: '0 auto',
+    [theme.breakpoints.down(360)]: { // For extra small screens like folded devices
+      maxWidth: 'calc(100vw - 16px)',
+      margin: '0 8px'
+    }
+  },
+  [theme.breakpoints.down('sm')]: {
+    paddingTop: theme.spacing(2),
+    '& .MuiCardContent-root': {
+      paddingBottom: theme.spacing(1)
+    },
+    '& .MuiCardActions-root': {
+      paddingTop: 0
+    }
+  }
 }));
 
 const Landing = () => {
@@ -299,7 +321,7 @@ const Landing = () => {
     }
   };
 
-  // Modified touch handling logic
+  // Modified touch handling logic with enhanced haptic feedback
   const handleTouchEnd = (section) => {
     if (!touchStart || !touchEnd) return;
     
@@ -313,12 +335,13 @@ const Landing = () => {
     if (Math.abs(distance) > threshold) {
       const isLeftSwipe = distance > 0;
       
-      // Provide haptic feedback based on swipe velocity
-      const intensity = Math.min(velocity * 2, 1.0); // Scale velocity to max 1.0
-      const duration = Math.max(25, Math.min(50, velocity * 100)); // Duration between 25-50ms
-      provideFeedback(intensity, duration);
-      
+      // Enhanced haptic feedback based on section and velocity
       if (section === 'features') {
+        // Stronger, sharper feedback for features
+        const intensity = Math.min(Math.max(velocity * 1.5, 0.6), 1.0);
+        const duration = Math.max(20, Math.min(40, velocity * 80));
+        provideFeedback(intensity, duration);
+        
         setCurrentFeatureIndex(prev => {
           if (isLeftSwipe) {
             setSwipeDirection('left');
@@ -329,6 +352,7 @@ const Landing = () => {
           }
         });
       } else if (section === 'testimonials') {
+        // ...existing testimonials handling...
         setCurrentSlide(prev => {
           if (isLeftSwipe) {
             setSwipeDirection('left');
@@ -363,17 +387,31 @@ const Landing = () => {
     [handleTouchEnd]
   );
 
+  // Handle feature card click with haptic feedback
+  const handleFeatureCardClick = (action) => {
+    provideFeedback(1.0, 50); // Strong haptic feedback for card navigation
+    action();
+  };
+
+  // Handle feature dot navigation with haptic feedback
+  const handleFeatureDotClick = (index) => {
+    const intensity = 0.7; // Medium intensity for dot navigation
+    const duration = 35; // Shorter duration for a crisper feedback
+    provideFeedback(intensity, duration);
+    setCurrentFeatureIndex(index);
+  };
+
+  // Handle desktop feature card click with haptic feedback
+  const handleDesktopFeatureClick = (action) => {
+    // Less intense haptic for desktop card hover since it's a secondary interaction
+    provideFeedback(0.5, 30);
+    action();
+  };
+
   return (
     <PageLayout>
       <VideoPopup />
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.8 }}
-        style={{
-          background: theme.palette.background.gradient,
-        }}
       >
         {/* Hero Section */}
         <motion.section
@@ -724,32 +762,22 @@ const Landing = () => {
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={() => handleTouchEnd('features')}
+              sx={{
+                px: 2, // Reduced horizontal padding
+                py: 1, // Reduced vertical padding
+                mb: 2 // Reduced bottom margin
+              }}
             >
               <AnimatePresence initial={false} mode="wait" custom={swipeDirection}>
                 <motion.div
                   key={currentFeatureIndex}
                   custom={swipeDirection}
                   variants={{
-                    enterFromLeft: {
-                      x: '-100%',
-                      opacity: 0
-                    },
-                    enterFromRight: {
-                      x: '100%',
-                      opacity: 0
-                    },
-                    center: {
-                      x: 0,
-                      opacity: 1
-                    },
-                    exitToLeft: {
-                      x: '-100%',
-                      opacity: 0
-                    },
-                    exitToRight: {
-                      x: '100%',
-                      opacity: 0
-                    }
+                    enterFromLeft: { x: '-100%', opacity: 0 },
+                    enterFromRight: { x: '100%', opacity: 0 },
+                    center: { x: 0, opacity: 1 },
+                    exitToLeft: { x: '-100%', opacity: 0 },
+                    exitToRight: { x: '100%', opacity: 0 }
                   }}
                   initial={swipeDirection === 'left' ? 'enterFromRight' : 'enterFromLeft'}
                   animate="center"
@@ -762,9 +790,8 @@ const Landing = () => {
                   <Card
                     sx={{
                       margin: '0 auto',
-                      maxWidth: '90%',
-                      height: '450px',
-                      borderRadius: '20px',
+                      maxWidth: '100%', // Full width on mobile
+                      borderRadius: '16px',
                       background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
                         theme.palette.background.paper,
                         0.9
@@ -775,39 +802,34 @@ const Landing = () => {
                       transition: 'all 0.3s ease-in-out',
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      padding: theme.spacing(3),
-                      '&:hover': {
-                        boxShadow: theme.shadows[8],
-                        transform: 'translateY(-6px)',
-                      },
+                      height: 'auto', // Let height adjust based on content
+                      minHeight: '400px', // Minimum height
+                      maxHeight: '85vh' // Maximum height relative to viewport
                     }}
                   >
-                    <Box sx={{ textAlign: 'center', paddingTop: theme.spacing(3) }}>
+                    <Box sx={{ textAlign: 'center', pt: 2 }}>
                       <Avatar
                         sx={{
                           bgcolor: theme.palette.primary.light,
-                          width: isMobile ? 70 : 90,
-                          height: isMobile ? 70 : 90,
+                          width: 56, // Slightly smaller avatar
+                          height: 56,
                           margin: '0 auto',
-                          boxShadow: theme.shadows[3],
+                          boxShadow: theme.shadows[2]
                         }}
                       >
                         {features[currentFeatureIndex].icon}
                       </Avatar>
                     </Box>
-                    <CardContent sx={{ padding: theme.spacing(3) }}>
+                    <CardContent sx={{ p: 2, flex: 1 }}>
                       <Typography
-                        variant={isMobile ? 'h6' : 'h5'}
+                        variant="h6"
                         sx={{
                           fontWeight: 700,
                           color: theme.palette.text.primary,
                           textAlign: 'center',
-                          marginTop: theme.spacing(3),
-                          marginBottom: theme.spacing(2),
-                          textShadow: `1px 1px 1px ${theme.palette.grey[200]}`,
+                          mt: 1,
+                          mb: 1
                         }}
-                        gutterBottom
                       >
                         {features[currentFeatureIndex].title}
                       </Typography>
@@ -816,43 +838,37 @@ const Landing = () => {
                         color="textSecondary"
                         sx={{
                           textAlign: 'center',
-                          fontSize: '1rem',
-                          lineHeight: 1.6,
+                          fontSize: '0.9rem',
+                          lineHeight: 1.5,
+                          mb: 2
                         }}
                       >
                         {features[currentFeatureIndex].description}
                       </Typography>
                     </CardContent>
-                    <CardActions sx={{ justifyContent: 'center', padding: theme.spacing(3) }}>
-                      <Tooltip title={`Learn more about ${features[currentFeatureIndex].title}`}>
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          style={{ width: '100%' }}
+                    <CardActions sx={{ justifyContent: 'center', p: 2, pb: 3 }}>
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <GradientButton
+                          onClick={() => handleFeatureCardClick(features[currentFeatureIndex].action)}
+                          variant="contained"
+                          sx={{
+                            py: 1,
+                            px: 3,
+                            fontSize: '0.9rem',
+                            borderRadius: '12px'
+                          }}
                         >
-                          <GradientButton
-                            onClick={features[currentFeatureIndex].action}
-                            fullWidth
-                            variant="contained"
-                            sx={{
-                              paddingY: isMobile ? 1.2 : 1.6,
-                              fontSize: '1rem',
-                              borderRadius: '14px',
-                            }}
-                          >
-                            Learn More
-                          </GradientButton>
-                        </motion.div>
-                      </Tooltip>
+                          Learn More
+                        </GradientButton>
+                      </motion.div>
                     </CardActions>
                     <Box
                       sx={{
                         position: 'relative',
                         width: '100%',
-                        height: '150px',
-                        mt: 2,
-                        borderRadius: '20px',
-                        overflow: 'hidden',
+                        height: '140px', // Slightly reduced height
+                        borderRadius: '0 0 16px 16px',
+                        overflow: 'hidden'
                       }}
                     >
                       <img
@@ -863,47 +879,37 @@ const Landing = () => {
                           width: '100%',
                           height: '100%',
                           objectFit: 'cover',
-                          filter: isDarkMode ? 'none' : 'brightness(110%)',
-                          transition: 'filter 0.3s ease',
+                          filter: isDarkMode ? 'none' : 'brightness(105%)'
                         }}
-                        loading="lazy"
                       />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          background: 'rgba(0, 0, 0, 0.3)',
-                        }}
-                      ></Box>
                     </Box>
                   </Card>
                 </motion.div>
               </AnimatePresence>
-              {/* Feature navigation dots */}
+
+              {/* Feature navigation dots with adjusted spacing */}
               <Box
                 sx={{
                   display: 'flex',
                   justifyContent: 'center',
                   mt: 2,
-                  gap: 1
+                  gap: 0.75,
+                  mb: 1
                 }}
               >
                 {features.map((_, index) => (
                   <Box
                     key={index}
                     sx={{
-                      width: 8,
-                      height: 8,
+                      width: 6,
+                      height: 6,
                       borderRadius: '50%',
                       backgroundColor: currentFeatureIndex === index
                         ? theme.palette.primary.main
                         : theme.palette.grey[400],
                       transition: 'background-color 0.3s'
                     }}
-                    onClick={() => setCurrentFeatureIndex(index)}
+                    onClick={() => handleFeatureDotClick(index)}
                   />
                 ))}
               </Box>
