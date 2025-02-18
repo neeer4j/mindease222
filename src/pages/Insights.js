@@ -1159,12 +1159,18 @@ Use **bold** for emphasis on key points.`;
             </motion.div>
           </Collapse>
 
-          {/* Updated Reset Zoom Button with icons */}
+          {/* Updated Reset Zoom Button with mobile responsiveness */}
           <Box 
             sx={{ 
               position: 'fixed',
-              bottom: theme.spacing(4),
-              right: theme.spacing(4),
+              bottom: {
+                xs: 80, // Adjust height to be above bottom navigation on mobile
+                sm: theme.spacing(4)
+              },
+              right: {
+                xs: theme.spacing(2),
+                sm: theme.spacing(4)
+              },
               zIndex: 1000,
               display: 'flex',
               gap: 2
@@ -1182,7 +1188,18 @@ Use **bold** for emphasis on key points.`;
                   background: `linear-gradient(45deg, ${theme.palette.secondary.main} 30%, ${theme.palette.secondary.light} 90%)`,
                   boxShadow: `0 3px 5px 2px ${alpha(theme.palette.secondary.main, 0.3)}`,
                   borderRadius: '50px',
-                  padding: '10px 20px',
+                  padding: {
+                    xs: '8px 16px', // Smaller padding on mobile
+                    sm: '10px 20px'
+                  },
+                  fontSize: {
+                    xs: '0.8rem', // Smaller font size on mobile
+                    sm: 'inherit'
+                  },
+                  minWidth: {
+                    xs: 'auto', // Allow button to shrink on mobile
+                    sm: 'inherit'
+                  },
                   '&:hover': {
                     background: `linear-gradient(45deg, ${theme.palette.secondary.dark} 30%, ${theme.palette.secondary.main} 90%)`,
                     transform: 'scale(1.05)'

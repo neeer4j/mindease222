@@ -32,6 +32,11 @@ import LocalActivityIcon from '@mui/icons-material/LocalActivity';
 import HotelIcon from '@mui/icons-material/Hotel';
 import SelfImprovementIcon from '@mui/icons-material/SelfImprovement';
 
+// Import additional icons for new menu items
+import HelpIcon from '@mui/icons-material/Help';
+import InfoIcon from '@mui/icons-material/Info';
+import ContactSupportIcon from '@mui/icons-material/ContactSupport';
+
 // Import the AuthContext to get the auth state
 import { AuthContext } from '../contexts/AuthContext';
 
@@ -146,6 +151,25 @@ const BottomNav = () => {
     }
   ];
 
+  // Define additional menu items
+  const menuItems = [
+    {
+      title: 'Profile',
+      path: '/profile',
+      icon: <ProfileIcon />
+    },
+    {
+      title: 'About Us',
+      path: '/about',
+      icon: <InfoIcon />
+    },
+    {
+      title: 'Contact Us',
+      path: '/contact',
+      icon: <ContactSupportIcon />
+    }
+  ];
+
   // Preload images
   useEffect(() => {
     features.forEach(feature => {
@@ -170,22 +194,30 @@ const BottomNav = () => {
     }
   }, [location.pathname]);
 
-  // Handle navigation changes.
+  // Handle navigation changes with proper menu handling
   const handleChange = (event, newValue) => {
-    if (newValue === 'features') {
-      setAnchorEl(event.currentTarget);
+    if (newValue === 'features' || newValue === 'more') {
+      // Get the button element that was clicked
+      const button = event.currentTarget.querySelector(`[value="${newValue}"]`);
+      setAnchorEl(button);
+      setValue(newValue);
       return;
     }
     setValue(newValue);
     navigate(newValue);
   };
 
-  const handleCloseFeatures = (path) => {
+  const handleCloseMenu = (path) => {
     setAnchorEl(null);
     if (path) {
-      setValue('features');
+      setValue(path);
       navigate(path);
     }
+  };
+
+  const handleButtonClick = (event, type) => {
+    setAnchorEl(event.currentTarget);
+    setValue(type);
   };
 
   // Styling for the modern drop-up (features) menu.
@@ -286,7 +318,12 @@ const BottomNav = () => {
       >
         <BottomNavigation
           value={value}
-          onChange={handleChange}
+          onChange={(event, newValue) => {
+            if (!['features', 'more'].includes(newValue)) {
+              setValue(newValue);
+              navigate(newValue);
+            }
+          }}
           showLabels
           sx={{
             backgroundColor: 'transparent',
@@ -318,29 +355,31 @@ const BottomNav = () => {
             icon={<ChatIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
           />
           <BottomNavigationAction
-            label="Features"
-            value="features"
-            icon={<MoodIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
-          />
-          <BottomNavigationAction
             label="Insights"
             value="/insights"
             icon={<InsightsIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
           />
           <BottomNavigationAction
-            label="Profile"
-            value="/profile"
-            icon={<ProfileIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
+            label="Features"
+            value="features"
+            onClick={(e) => handleButtonClick(e, 'features')}
+            icon={<MoodIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
+          />
+          <BottomNavigationAction
+            label="More"
+            value="more"
+            onClick={(e) => handleButtonClick(e, 'more')}
+            icon={<HelpIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
           />
         </BottomNavigation>
       </Paper>
 
-      {/* Updated drop-up menu for the "Features" button */}
+      {/* Features Menu */}
       <Menu
         id="features-menu"
         anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={() => handleCloseFeatures(null)}
+        open={Boolean(anchorEl) && value === 'features'}
+        onClose={() => handleCloseMenu(null)}
         anchorOrigin={{
           vertical: 'top',
           horizontal: 'center',
@@ -360,7 +399,7 @@ const BottomNav = () => {
               : '1px solid rgba(255, 255, 255, 0.1)',
             maxHeight: 'none',
             display: 'flex',
-            width: '500px',
+            width: '400px',
             height: '400px',
             overflow: 'hidden'
           }
@@ -370,7 +409,7 @@ const BottomNav = () => {
           {features.map((feature) => (
             <MenuItem 
               key={feature.path}
-              onClick={() => handleCloseFeatures(feature.path)}
+              onClick={() => handleCloseMenu(feature.path)}
               onMouseEnter={() => setActivePhoto(feature.photoUrl)}
               sx={{
                 borderRadius: '8px',
@@ -408,6 +447,54 @@ const BottomNav = () => {
             }}
           />
         </Box>
+      </Menu>
+
+      {/* More Menu */}
+      <Menu
+        id="more-menu"
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl) && value === 'more'}
+        onClose={() => handleCloseMenu(null)}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'center',
+        }}
+        transformOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+        PaperProps={{
+          sx: {
+            backgroundColor: menuBg,
+            borderRadius: '12px',
+            boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.15)',
+            backdropFilter: 'blur(10px)',
+            border: currentMode === 'light'
+              ? '1px solid rgba(0, 0, 0, 0.1)'
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            mt: 1,
+            minWidth: '180px',
+            maxWidth: '200px'
+          }
+        }}
+      >
+        {menuItems.map((item) => (
+          <MenuItem
+            key={item.path}
+            onClick={() => handleCloseMenu(item.path)}
+            sx={{
+              borderRadius: '8px',
+              m: 1,
+              py: 1.5,
+              '&:hover': {
+                backgroundColor: 'action.hover'
+              }
+            }}
+          >
+            {React.cloneElement(item.icon, { sx: { mr: 2, fontSize: { xs: 20, sm: 24 } } })}
+            {item.title}
+          </MenuItem>
+        ))}
       </Menu>
     </ThemeProvider>
   );

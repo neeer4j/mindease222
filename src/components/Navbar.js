@@ -390,7 +390,7 @@ const Navbar = ({ toggleTheme }) => {
   return (
     <>
       {/* Move Admin Toggle outside of navbar - Only show when authenticated and admin, and not on login/signup pages */}
-      {isAdmin && isAuthenticated && !hideToggle && (
+      {isAdmin && isAuthenticated && !hideToggle && !isMobile && (
         <Box 
           sx={{
             ...FixedAdminToggleStyle,
@@ -438,9 +438,9 @@ const Navbar = ({ toggleTheme }) => {
             px: 2,
             py: 0,
             display: 'flex',
-            alignItems: 'flex-start',
+            alignItems: 'center', // Changed to center
             justifyContent: 'space-between',
-            height: '100px',
+            height: '64px', // Reduced height to match theme toggle
             opacity: showTitle ? 1 : 0,
             transform: showTitle ? 'translateY(0)' : 'translateY(-20px)',
             transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out',
@@ -452,26 +452,54 @@ const Navbar = ({ toggleTheme }) => {
               display: 'flex', 
               textDecoration: 'none',
               position: 'relative',
-              height: '100%',
-              alignItems: 'flex-start' // Changed to align from top
+              height: '70px', // Adjusted to match visible image height
+              width: '140px', // Adjusted to match visible image width
+              alignItems: 'center',
+              overflow: 'hidden' // Added to clip the clickable area
             }}
           >
             <img
               src="/navbar/title/mindwasess.png"
               alt="MindEase AI"
               style={{
-                height: '300px', // Increased size
+                height: '300px',
                 width: 'auto',
                 filter: theme.palette.mode === 'dark' ? 'brightness(1.5)' : 'none',
                 transition: 'all 0.3s ease',
-                marginLeft: '-40px', // Increased negative margin to move left
-                marginTop: '-100px', // Adjusted to show more of the top portion
-                marginBottom: '-100px',
+                marginLeft: '-40px',
+                marginTop: '-110px', // Adjusted to center the visible portion
+                marginBottom: '-120px', // Adjusted to center the visible portion
                 objectFit: 'contain',
-                transform: 'translateX(-25px)' // Added translation to move left
+                transform: 'translateX(-25px)'
               }}
             />
           </Link>
+
+          {/* Theme Toggle for Mobile */}
+          {!hideToggle && (
+            <Box sx={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                animate={{ rotate: theme.palette.mode === 'dark' ? 180 : 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <IconButton
+                  onClick={toggleTheme}
+                  color="inherit"
+                  aria-label="Toggle light and dark mode"
+                  disableRipple
+                  disableFocusRipple
+                  sx={{ 
+                    '&:hover': { backgroundColor: 'transparent' }, 
+                    transition: 'color 0s ease-in-out',
+                    color: mobileTextColor
+                  }}
+                >
+                  {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                </IconButton>
+              </motion.div>
+            </Box>
+          )}
         </Box>
       )}
 
@@ -497,8 +525,10 @@ const Navbar = ({ toggleTheme }) => {
               display: 'flex', 
               textDecoration: 'none',
               position: 'relative',
-              height: '100%',
-              alignItems: 'flex-start' // Align from top
+              height: '100px', // Match visible height
+              width: '200px', // Match visible width
+              alignItems: 'flex-start', // Align from top
+              overflow: 'hidden' // Added to clip the clickable area
             }}
           >
             <img
