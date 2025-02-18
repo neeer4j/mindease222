@@ -22,62 +22,6 @@
     <link rel="icon" href="images/mindeaselogo.png" type="image/png" />
     <link rel="apple-touch-icon" href="images/mindeaselogo.png" />
     
-    <!-- Splash Screen Styles -->
-    <style>
-      #splash-screen {
-        display: none; /* Hidden by default */
-      }
-
-      /* Only show splash screen on mobile devices */
-      @media (max-width: 768px) {
-        #splash-screen {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: #ffffff;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          transition: opacity 0.3s ease-out;
-          z-index: 9999;
-        }
-
-        @media (prefers-color-scheme: dark) {
-          #splash-screen {
-            background-color: #1b2226;
-          }
-        }
-
-        #splash-screen.fade-out {
-          opacity: 0;
-        }
-
-        #splash-screen img {
-          width: 150px;
-          height: 150px;
-          animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-          0% {
-            transform: scale(0.95);
-            opacity: 0.8;
-          }
-          50% {
-            transform: scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: scale(0.95);
-            opacity: 0.8;
-          }
-        }
-      }
-    </style>
-
     <!-- Preload Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -89,29 +33,12 @@
     <title>MindEase AI</title>
   </head>
   <body>
-    <!-- Splash Screen -->
-    <div id="splash-screen">
-      <img src="images/mindeaselogo.png" alt="MindEase" />
-    </div>
-
     <div id="root"></div>
 
-    <!-- Service Worker and Splash Screen Handler -->
+    <!-- Service Worker Registration -->
     <script>
-      // Handle splash screen
-      window.addEventListener('load', () => {
-        const splashScreen = document.getElementById('splash-screen');
-        
-        // Wait for app to be ready
-        setTimeout(() => {
-          splashScreen.classList.add('fade-out');
-          setTimeout(() => {
-            splashScreen.style.display = 'none';
-          }, 300);
-        }, 2000);
-
-        // Service Worker Registration
-        if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
           navigator.serviceWorker.register('/service-worker.js')
             .then(registration => {
               console.log('ServiceWorker registration successful');
@@ -119,17 +46,17 @@
             .catch(err => {
               console.log('ServiceWorker registration failed: ', err);
             });
-        }
 
-        // Update theme-color based on system theme
-        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const updateThemeColor = (e) => {
-          const themeColor = e.matches ? '#1b2226' : '#ffffff';
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', themeColor);
-        };
-        darkModeMediaQuery.addListener(updateThemeColor);
-        updateThemeColor(darkModeMediaQuery);
-      });
+          // Update theme-color based on system theme
+          const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+          const updateThemeColor = (e) => {
+            const themeColor = e.matches ? '#1b2226' : '#ffffff';
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', themeColor);
+          };
+          darkModeMediaQuery.addListener(updateThemeColor);
+          updateThemeColor(darkModeMediaQuery);
+        });
+      }
     </script>
   </body>
 </html>
