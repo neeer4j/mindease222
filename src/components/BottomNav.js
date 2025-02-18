@@ -256,6 +256,10 @@ const BottomNav = () => {
             bottom: 0,
             left: 0,
             right: 0,
+            zIndex: 1100, // Higher z-index to stay above all content
+            borderTopLeftRadius: '20px',
+            borderTopRightRadius: '20px',
+            boxShadow: '0px -2px 10px rgba(0, 0, 0, 0.1)',
             // For unauthenticated users on mobile (and also on chat, if needed),
             // use a solid background without gradient fade.
             background: isChatPage ? bottomNavTheme.palette.background.paper : navBgGradient,
@@ -309,6 +313,10 @@ const BottomNav = () => {
           bottom: 0,
           left: 0,
           right: 0,
+          zIndex: 1100, // Higher z-index to stay above all content
+          borderTopLeftRadius: '20px',
+          borderTopRightRadius: '20px',
+          boxShadow: '0px -2px 10px rgba(0, 0, 0, 0.1)',
           // When on the chat page on mobile, remove the fade and use a solid background with minimal borders.
           background: isChatPage ? bottomNavTheme.palette.background.paper : navBgGradient,
           boxShadow: 'none',
