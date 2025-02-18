@@ -149,83 +149,44 @@ export const AuthProvider = ({ children }) => {
 
       unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
         console.log("[onAuthStateChanged] firebaseUser:", firebaseUser);
-        if (firebaseUser) {
-          try {
-            const isUserAdmin = await checkUserRole(firebaseUser);
-            const userBanned = await checkUserBanStatus(firebaseUser);
-            
-            if (userBanned) {
-              setIsBanned(true);
-              setUser(firebaseUser); // Keep user info to display in banned screen
-              setIsAdmin(false);
-            } else {
-              setIsBanned(false);
-              const userProfile = await fetchUserProfile(firebaseUser.uid);
-              setUser({
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-                displayName: firebaseUser.displayName,
-                ...userProfile,
-              });
-              setIsAdmin(isUserAdmin);
-              console.log("[onAuthStateChanged] User profile loaded and state updated.");
-            }
-          } catch (err) {
-            console.error("Error fetching user profile in onAuthStateChanged:", err);
-            setError("Failed to load user profile.");
-            setUser(null);
-          } finally {
-            setLoading(false);
-            console.log("[onAuthStateChanged] Loading set to false.");
-          }
-        } else {
-          console.log("[onAuthStateChanged] No user detected. Checking for redirect result...");
-          getRedirectResult(auth)
-            .then(async (result) => {
-              console.log("[getRedirectResult] Result:", result);
-              if (result && result.user) {
-                const firebaseUserFromRedirect = result.user;
-                try {
-                  const isUserAdmin = await checkUserRole(firebaseUserFromRedirect);
-                  const isBanned = await checkUserBanStatus(firebaseUserFromRedirect);
+        if (!firebaseUser) {
+          setUser(null);
+          setIsAdmin(false);
+          setIsInAdminMode(false); // Reset admin mode when no user is logged in
+          setLoading(false);
+          return;
+        }
 
-                  if (isBanned) {
-                    await signOut(auth);
-                    setUser(null);
-                    setIsAdmin(false);
-                  } else {
-                    const userProfile = await fetchUserProfile(firebaseUserFromRedirect.uid);
-                    setUser({
-                      uid: firebaseUserFromRedirect.uid,
-                      email: firebaseUserFromRedirect.email,
-                      displayName: firebaseUserFromRedirect.displayName,
-                      ...userProfile,
-                    });
-                    setIsAdmin(isUserAdmin);
-                    setSuccess("Signed in with Google successfully.");
-                    console.log("[getRedirectResult] Redirect user profile loaded.");
-                  }
-                } catch (profileErr) {
-                  console.error("Error fetching user profile after redirect:", profileErr);
-                  setError("Failed to load user profile after Google Sign-in.");
-                  setUser(null);
-                } finally {
-                  setLoading(false);
-                  console.log("[getRedirectResult] Loading set to false after redirect.");
-                }
-              } else {
-                console.log("[getRedirectResult] No redirect result found.");
-                setLoading(false);
-                console.log("[getRedirectResult] Loading set to false - no redirect result.");
-              }
-            })
-            .catch((redirectError) => {
-              console.error("[getRedirectResult] Error:", redirectError);
-              handleFirebaseError(redirectError);
-              setUser(null);
-              setLoading(false);
-              console.log("[getRedirectResult] Loading set to false after redirect error.");
+        try {
+          const isUserAdmin = await checkUserRole(firebaseUser);
+          const userBanned = await checkUserBanStatus(firebaseUser);
+          
+          if (userBanned) {
+            setIsBanned(true);
+            setUser(firebaseUser);
+            setIsAdmin(false);
+            setIsInAdminMode(false); // Reset admin mode for banned users
+          } else {
+            setIsBanned(false);
+            const userProfile = await fetchUserProfile(firebaseUser.uid);
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              ...userProfile,
             });
+            setIsAdmin(isUserAdmin);
+            console.log("[onAuthStateChanged] User profile loaded and state updated.");
+          }
+        } catch (err) {
+          console.error("Error fetching user profile in onAuthStateChanged:", err);
+          setError("Failed to load user profile.");
+          setUser(null);
+          setIsAdmin(false);
+          setIsInAdminMode(false);
+        } finally {
+          setLoading(false);
+          console.log("[onAuthStateChanged] Loading set to false.");
         }
       });
 
@@ -322,6 +283,8 @@ export const AuthProvider = ({ children }) => {
     try {
       await signOut(auth);
       setUser(null);
+      setIsAdmin(false);
+      setIsInAdminMode(false); // Reset admin mode on logout
       setSuccess("Logged out successfully.");
     } catch (err) {
       console.error("Logout Error:", err);

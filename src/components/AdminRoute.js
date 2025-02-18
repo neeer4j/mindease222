@@ -3,14 +3,16 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const AdminRoute = ({ children }) => {
-  const { user, isAdmin, isInAdminMode } = useAuth();
+  const { user, isAdmin, isInAdminMode, isAuthenticated } = useAuth();
 
-  if (!user) {
-    return <Navigate to="/login" />;
+  // First check authentication
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
   }
 
+  // Then check admin status and mode
   if (!isAdmin || !isInAdminMode) {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;

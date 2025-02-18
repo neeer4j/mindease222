@@ -120,6 +120,14 @@ const TimelineItem = styled(Box)(({ theme }) => ({
   }
 }));
 
+const DashboardContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  width: '100%',
+  minHeight: '100vh',
+  paddingTop: '60px', // Adjusted to account for removed title and better spacing
+}));
+
 // Framer Motion variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -866,7 +874,7 @@ const AdminDashboard = () => {
 
   return (
     <PageLayout>
-      <Box
+      <DashboardContainer
         component={motion.div}
         variants={containerVariants}
         initial="hidden"
@@ -1079,7 +1087,7 @@ const AdminDashboard = () => {
 
           <UserDetailDialog />
         </LoadingOverlay>
-      </Box>
+      </DashboardContainer>
     </PageLayout>
   );
 };
