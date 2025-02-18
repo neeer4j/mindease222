@@ -1,60 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Meta Tags -->
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-    <!-- Dynamic Theme Color for Android -->
+    <!-- PWA Meta Tags -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1b2226" />
+    <meta name="description" content="MindEase - Your personalized mental wellness companion" />
     
-    <!-- iOS Status Bar Style -->
+    <!-- iOS Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="MindEase">
-
-    <!-- PWA Meta Tags -->
-    <meta name="description" content="MindEase - Your personalized mental wellness companion" />
+    
+    <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- Favicon & App Icons -->
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="512x512"
-      href="/images/logo1.png?v=2"
-    />
-    <link 
-      rel="apple-touch-icon" 
-      sizes="512x512"
-      href="/images/logo1.png?v=2" 
-    />
-    <link rel="icon" href="images/mindeaselogo.png" sizes="any">
-    <link rel="icon" href="images/mindeaselogo.png" type="image/x-icon">
-    <link rel="shortcut icon" href="images/mindeaselogo.png" type="image/x-icon">
+    <!-- App Icons -->
+    <link rel="icon" href="images/mindeaselogo.png" type="image/png" />
+    <link rel="apple-touch-icon" href="images/mindeaselogo.png" />
     
+    <!-- Splash Screen Styles -->
     <style>
-      /* Override default favicon size in browsers */
-      link[rel="icon"] {
-        width: 512px !important;
-        height: 512px !important;
+      #splash-screen {
+        display: none; /* Hidden by default */
       }
 
-      /* Add PWA safe area insets */
-      @supports (padding-top: env(safe-area-inset-top)) {
-        body {
-          padding-top: env(safe-area-inset-top);
-          padding-bottom: env(safe-area-inset-bottom);
+      /* Only show splash screen on mobile devices */
+      @media (max-width: 768px) {
+        #splash-screen {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ffffff;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          transition: opacity 0.3s ease-out;
+          z-index: 9999;
+        }
+
+        @media (prefers-color-scheme: dark) {
+          #splash-screen {
+            background-color: #1b2226;
+          }
+        }
+
+        #splash-screen.fade-out {
+          opacity: 0;
+        }
+
+        #splash-screen img {
+          width: 150px;
+          height: 150px;
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% {
+            transform: scale(0.95);
+            opacity: 0.8;
+          }
+          50% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(0.95);
+            opacity: 0.8;
+          }
         }
       }
     </style>
 
-    <!-- Fonts -->
+    <!-- Preload Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -65,34 +89,47 @@
     <title>MindEase AI</title>
   </head>
   <body>
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+      <img src="images/mindeaselogo.png" alt="MindEase" />
+    </div>
+
     <div id="root"></div>
 
-    <!-- Service Worker Registration -->
+    <!-- Service Worker and Splash Screen Handler -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          // Update theme-color based on system theme
-          const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-          const updateThemeColor = (e) => {
-            const themeColor = e.matches ? '#1b2226' : '#ffffff';
-            document.querySelector('meta[name="theme-color"]').setAttribute('content', themeColor);
-          };
-          darkModeMediaQuery.addListener(updateThemeColor);
-          updateThemeColor(darkModeMediaQuery);
+      // Handle splash screen
+      window.addEventListener('load', () => {
+        const splashScreen = document.getElementById('splash-screen');
+        
+        // Wait for app to be ready
+        setTimeout(() => {
+          splashScreen.classList.add('fade-out');
+          setTimeout(() => {
+            splashScreen.style.display = 'none';
+          }, 300);
+        }, 2000);
 
-          navigator.serviceWorker
-            .register('/service-worker.js')
-            .then((registration) => {
-              console.log(
-                'Service Worker registered with scope:',
-                registration.scope
-              );
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+              console.log('ServiceWorker registration successful');
             })
-            .catch((error) => {
-              console.error('Service Worker registration failed:', error);
+            .catch(err => {
+              console.log('ServiceWorker registration failed: ', err);
             });
-        });
-      }
+        }
+
+        // Update theme-color based on system theme
+        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const updateThemeColor = (e) => {
+          const themeColor = e.matches ? '#1b2226' : '#ffffff';
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', themeColor);
+        };
+        darkModeMediaQuery.addListener(updateThemeColor);
+        updateThemeColor(darkModeMediaQuery);
+      });
     </script>
   </body>
 </html>

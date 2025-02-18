@@ -36,6 +36,7 @@
     "framer-motion": "^11.18.2",
     "gsap": "^3.12.7",
     "install": "^0.13.0",
+    "ldrs": "^1.0.2",
     "mdb-react-ui-kit": "^9.0.0",
     "natural": "^8.0.1",
     "notistack": "^3.0.2",
