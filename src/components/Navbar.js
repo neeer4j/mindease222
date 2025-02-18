@@ -457,13 +457,13 @@ const Navbar = ({ toggleTheme }) => {
           sx={{
             position: 'fixed',
             top: 0,
-            left: 0, // Changed from theme.spacing(1) to 0
+            left: 0,
             zIndex: theme.zIndex.drawer + 2,
             opacity: showTitle ? 1 : 0,
             transition: 'opacity 0.3s ease-in-out',
             height: '100px',
             display: 'flex',
-            alignItems: 'flex-start' // Align from top
+            alignItems: 'flex-start'
           }}
         >
           {(isAdmin && isInAdminMode) ? (
@@ -487,22 +487,23 @@ const Navbar = ({ toggleTheme }) => {
                 textDecoration: 'none',
                 position: 'relative',
                 height: '100%',
-                alignItems: 'flex-start' // Align from top
+                alignItems: 'flex-start',
+                marginLeft: '-30px' // Added negative margin to push further left
               }}
             >
               <img
                 src="/navbar/title/mindwasess.png"
                 alt="MindEase AI"
                 style={{
-                  height: '280px', // Further increased size
+                  height: '340px',
                   width: 'auto',
                   filter: theme.palette.mode === 'dark' ? 'brightness(1.5)' : 'none',
                   transition: 'all 0.3s ease',
-                  marginLeft: '-25px', // Increased negative margin to move left
-                  marginTop: '-90px', // Adjusted to show more of the top portion
+                  marginLeft: '-13px', // Increased negative margin
+                  marginTop: '-130px',
                   marginBottom: '-90px',
                   objectFit: 'contain',
-                  transform: 'translateX(-20px)' // Added translation to move left
+                  transform: 'translateX(-40px)' // Increased negative translation
                 }}
               />
             </Link>
