@@ -44,6 +44,13 @@ import PageLayout from '../components/PageLayout';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import MoodIcon from '@mui/icons-material/Mood';
+import StarIcon from '@mui/icons-material/Star';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import NightsStayIcon from '@mui/icons-material/NightsStay';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import TuneIcon from '@mui/icons-material/Tune';
 
 // Register Chart.js components and plugins
 ChartJS.register(
@@ -375,23 +382,32 @@ const Insights = () => {
     setAiInsightsLoading(true);
     setAiInsightsError('');
     try {
+      const moodTrends = getMoodTrends();
+      const topActivities = getTopActivities();
+      const sleepInsights = getSleepQualityInsights();
+
       const prompt = `
-You are an expert mental health analyst. Based on the following data, provide a comprehensive and actionable analysis of the user's mental well-being along with suggestions for improvement, always make it short.
+You are an expert mental health analyst. Based on the following data, provide a comprehensive and actionable analysis of the user's mental well-being along with suggestions for improvement. Keep it concise and impactful.
 
 **Summary Data:**
-- **Total Moods Logged:** ${summaryStatistics.totalMoods}
-- **Average Mood:** ${summaryStatistics.averageMood} (scale 1-5)
-- **Total Activities Logged:** ${summaryStatistics.totalActivities}
-- **Total Sleep Logs:** ${summaryStatistics.totalSleepLogs}
+- Total Moods Logged: ${summaryStatistics.totalMoods}
+- Average Mood: ${summaryStatistics.averageMood} (scale 1-5)
+- Total Activities Logged: ${summaryStatistics.totalActivities}
+- Total Sleep Logs: ${summaryStatistics.totalSleepLogs}
 
-Additionally, consider the trends from the charts:
-- *Mood Over Time* shows how the average mood varies day by day.
-- *Activity Frequency* indicates which activities are most common.
-- *Mood vs. Activity Correlation* shows the relationship between mood levels and specific activities.
-- *Sleep Duration Over Time* shows average sleep duration trends.
+**Detailed Analysis:**
+${moodTrends ? `- Mood Trend: ${moodTrends.improving ? 'Improving' : moodTrends.stable ? 'Stable' : 'Declining'} (${moodTrends.trend})` : ''}
+${topActivities.length ? `- Top Activities: ${topActivities.map(a => `${a.name} (${a.count}x)`).join(', ')}` : ''}
+${sleepInsights ? `- Sleep Quality: ${sleepInsights.averageDuration}hrs avg, Consistency: ${sleepInsights.consistency}` : ''}
 
-Please provide insights that help the user understand their overall mental well-being and practical suggestions to maintain or improve it. Use **bold** for emphasis where needed.
-      `;
+Please provide:
+1. A brief overview of current well-being status
+2. Key patterns identified
+3. Specific, actionable recommendations
+4. Areas needing attention
+
+Use **bold** for emphasis on key points.`;
+
       const chat = aiModel.startChat({ history: [{ role: 'user', parts: [{ text: prompt }] }] });
       const result = await chat.sendMessage('');
       const responseText = await result.response.text();
@@ -481,6 +497,47 @@ Please provide insights that help the user understand their overall mental well-
 
   // ---- End of AI insights modifications ----
 
+  // Add new data analysis functions before the return statement
+  const getMoodTrends = () => {
+    if (!hasMoodOverTimeData) return null;
+    const data = moodOverTimeData.datasets[0].data;
+    const trend = data[data.length - 1] - data[0];
+    return {
+      trend: trend.toFixed(2),
+      improving: trend > 0,
+      stable: Math.abs(trend) < 0.5
+    };
+  };
+
+  const getTopActivities = () => {
+    if (!hasActivityFrequencyData) return [];
+    const activities = activityFrequencyData.labels.map((label, index) => ({
+      name: label,
+      count: activityFrequencyData.datasets[0].data[index]
+    }));
+    return activities.sort((a, b) => b.count - a.count).slice(0, 3);
+  };
+
+  const getSleepQualityInsights = () => {
+    if (!hasSleepDurationOverTimeData) return null;
+    const durations = sleepDurationOverTimeData.datasets[0].data;
+    const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
+    return {
+      averageDuration: avgDuration.toFixed(1),
+      isHealthy: avgDuration >= 7 && avgDuration <= 9,
+      consistency: calculateSleepConsistency(durations)
+    };
+  };
+
+  const calculateSleepConsistency = (durations) => {
+    if (durations.length < 2) return 'N/A';
+    const variations = durations.slice(1).map((dur, i) => 
+      Math.abs(dur - durations[i])
+    );
+    const avgVariation = variations.reduce((a, b) => a + b, 0) / variations.length;
+    return avgVariation <= 1 ? 'High' : avgVariation <= 2 ? 'Moderate' : 'Low';
+  };
+
   return (
     <PageLayout>
       <motion.div
@@ -541,25 +598,45 @@ Please provide insights that help the user understand their overall mental well-
           <Collapse in={showFilters} timeout="auto" unmountOnExit>
             <motion.div
               variants={{
-                hidden: { opacity: 0, y: -10 },
+                hidden: { opacity: 0, y: -20 },
                 visible: { opacity: 1, y: 0 },
-                exit: { opacity: 0, y: -10 },
+                exit: { opacity: 0, y: -20 },
               }}
               initial="hidden"
               animate="visible"
               exit="exit"
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
               style={{ marginBottom: theme.spacing(4) }}
             >
               <Paper
-                elevation={2}
+                elevation={3}
                 sx={{
-                  padding: theme.spacing(2),
-                  borderRadius: 2,
-                  backgroundColor: theme.palette.background.paper,
+                  padding: theme.spacing(3),
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.97)} 0%, ${alpha(theme.palette.background.paper, 0.92)} 100%)`,
+                  borderRadius: 3,
+                  backdropFilter: 'blur(10px)',
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '4px',
+                    background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                    opacity: 0.7
+                  }
                 }}
               >
-                <Grid container spacing={2} alignItems="center">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 3 }}>
+                  <TuneIcon sx={{ color: theme.palette.primary.main }} />
+                  <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
+                    Filter Options
+                  </Typography>
+                </Box>
+                <Grid container spacing={3} alignItems="center">
                   {/* Date Range Filters */}
                   <Grid item xs={12} sm={6} md={4}>
                     <TextField
@@ -567,10 +644,24 @@ Please provide insights that help the user understand their overall mental well-
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      InputLabelProps={{ shrink: true }}
+                      InputLabelProps={{ 
+                        shrink: true,
+                        sx: { color: theme.palette.text.secondary }
+                      }}
                       fullWidth
-                      size="small"
-                      margin="dense"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: alpha(theme.palette.primary.main, 0.2),
+                          },
+                          '&:hover fieldset': {
+                            borderColor: alpha(theme.palette.primary.main, 0.3),
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: theme.palette.primary.main,
+                          },
+                        },
+                      }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={4}>
@@ -579,40 +670,76 @@ Please provide insights that help the user understand their overall mental well-
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      InputLabelProps={{ shrink: true }}
+                      InputLabelProps={{ 
+                        shrink: true,
+                        sx: { color: theme.palette.text.secondary }
+                      }}
                       fullWidth
-                      size="small"
-                      margin="dense"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: alpha(theme.palette.primary.main, 0.2),
+                          },
+                          '&:hover fieldset': {
+                            borderColor: alpha(theme.palette.primary.main, 0.3),
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: theme.palette.primary.main,
+                          },
+                        },
+                      }}
                     />
                   </Grid>
-                  {/* Apply Filters Button */}
-                  <Grid item xs={12} md={4} sx={{ textAlign: 'right' }}>
+                  {/* Apply and Reset Buttons */}
+                  <Grid item xs={12} md={4} sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
                     <Button
-                      variant="contained"
-                      color="primary"
+                      variant="outlined"
                       onClick={() => {
-                        if (moodOverTimeRef.current) {
-                          moodOverTimeRef.current.resetZoom();
-                        }
-                        if (sleepDurationOverTimeRef.current) {
-                          sleepDurationOverTimeRef.current.resetZoom();
-                        }
+                        setStartDate('');
+                        setEndDate('');
+                        setSelectedActivities([]);
                       }}
-                      size="small"
                       sx={{
-                        padding: isMobile ? '6px 12px' : '8px 16px',
-                        fontSize: isMobile ? '0.8rem' : '0.9rem',
+                        borderColor: alpha(theme.palette.error.main, 0.5),
+                        color: theme.palette.error.main,
+                        '&:hover': {
+                          borderColor: theme.palette.error.main,
+                          backgroundColor: alpha(theme.palette.error.main, 0.04),
+                        },
                       }}
                     >
-                      Apply
+                      Reset
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => {
+                        if (moodOverTimeRef.current) moodOverTimeRef.current.resetZoom();
+                        if (sleepDurationOverTimeRef.current) sleepDurationOverTimeRef.current.resetZoom();
+                      }}
+                      sx={{
+                        background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.light} 90%)`,
+                        boxShadow: `0 3px 5px 2px ${alpha(theme.palette.primary.main, 0.3)}`,
+                        '&:hover': {
+                          background: `linear-gradient(45deg, ${theme.palette.primary.dark} 30%, ${theme.palette.primary.main} 90%)`,
+                        },
+                      }}
+                    >
+                      Apply Filters
                     </Button>
                   </Grid>
-                  {/* Activity Type Filters */}
+                  {/* Activity Filters */}
                   <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                    <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ marginBottom: 1 }}>
                       Filter by Activities:
                     </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexWrap: 'wrap', 
+                      gap: 1,
+                      padding: 1,
+                      borderRadius: 1,
+                      backgroundColor: alpha(theme.palette.background.default, 0.4)
+                    }}>
                       {activities.map((activity) => (
                         <Chip
                           key={activity.title}
@@ -620,11 +747,18 @@ Please provide insights that help the user understand their overall mental well-
                           onClick={handleActivityChange}
                           name={activity.title}
                           color={selectedActivities.includes(activity.title) ? "primary" : "default"}
-                          variant={selectedActivities.includes(activity.title) ? "contained" : "outlined"}
-                          size="small"
+                          variant={selectedActivities.includes(activity.title) ? "filled" : "outlined"}
                           sx={{
-                            transition: 'transform 0.2s',
-                            '&:hover': { transform: 'scale(1.05)' },
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              transform: 'scale(1.05)',
+                              backgroundColor: selectedActivities.includes(activity.title) 
+                                ? alpha(theme.palette.primary.main, 0.85)
+                                : alpha(theme.palette.action.hover, 0.15)
+                            },
+                            '&.MuiChip-filled': {
+                              background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.light} 90%)`,
+                            }
                           }}
                         />
                       ))}
@@ -634,6 +768,42 @@ Please provide insights that help the user understand their overall mental well-
               </Paper>
             </motion.div>
           </Collapse>
+
+          {/* Updated Reset Zoom Button with icons */}
+          <Box 
+            sx={{ 
+              position: 'fixed',
+              bottom: theme.spacing(4),
+              right: theme.spacing(4),
+              zIndex: 1000,
+              display: 'flex',
+              gap: 2
+            }}
+          >
+            <Tooltip title="Reset Zoom">
+              <Button
+                variant="contained"
+                onClick={() => {
+                  if (moodOverTimeRef.current) moodOverTimeRef.current.resetZoom();
+                  if (sleepDurationOverTimeRef.current) sleepDurationOverTimeRef.current.resetZoom();
+                }}
+                startIcon={<ZoomOutIcon />}
+                sx={{
+                  background: `linear-gradient(45deg, ${theme.palette.secondary.main} 30%, ${theme.palette.secondary.light} 90%)`,
+                  boxShadow: `0 3px 5px 2px ${alpha(theme.palette.secondary.main, 0.3)}`,
+                  borderRadius: '50px',
+                  padding: '10px 20px',
+                  '&:hover': {
+                    background: `linear-gradient(45deg, ${theme.palette.secondary.dark} 30%, ${theme.palette.secondary.main} 90%)`,
+                    transform: 'scale(1.05)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Reset Zoom
+              </Button>
+            </Tooltip>
+          </Box>
 
           {/* Loading and Error States */}
           <AnimatePresence>
@@ -673,291 +843,480 @@ Please provide insights that help the user understand their overall mental well-
                       label: 'Total Moods Logged',
                       value: summaryStatistics.totalMoods,
                       color: theme.palette.primary.main,
+                      icon: <MoodIcon sx={{ fontSize: 40, color: theme.palette.primary.light }} />,
+                      bgGradient: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.primary.main, 0.1)} 100%)`,
                     },
                     {
                       label: 'Average Mood',
-                      value: `${summaryStatistics.averageMood} ⭐`,
-                      color: theme.palette.primary.main,
+                      value: `${summaryStatistics.averageMood}`,
+                      suffix: ' ⭐',
+                      color: theme.palette.warning.main,
+                      icon: <StarIcon sx={{ fontSize: 40, color: theme.palette.warning.light }} />,
+                      bgGradient: `linear-gradient(135deg, ${alpha(theme.palette.warning.main, 0.05)} 0%, ${alpha(theme.palette.warning.main, 0.1)} 100%)`,
                     },
                     {
                       label: 'Total Activities Logged',
                       value: summaryStatistics.totalActivities,
-                      color: theme.palette.primary.main,
+                      color: theme.palette.success.main,
+                      icon: <DirectionsRunIcon sx={{ fontSize: 40, color: theme.palette.success.light }} />,
+                      bgGradient: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.05)} 0%, ${alpha(theme.palette.success.main, 0.1)} 100%)`,
                     },
                     {
                       label: 'Total Sleep Logs',
                       value: summaryStatistics.totalSleepLogs,
                       color: theme.palette.secondary.main,
+                      icon: <NightsStayIcon sx={{ fontSize: 40, color: theme.palette.secondary.light }} />,
+                      bgGradient: `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
                     },
                   ].map((stat, idx) => (
                     <Grid item xs={12} sm={6} md={3} key={idx}>
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      >
+                        <Paper
+                          elevation={2}
+                          sx={{
+                            padding: theme.spacing(3),
+                            textAlign: 'center',
+                            borderRadius: 4,
+                            background: stat.bgGradient,
+                            border: `1px solid ${alpha(stat.color, 0.1)}`,
+                            boxShadow: `0 4px 20px ${alpha(stat.color, 0.1)}`,
+                            position: 'relative',
+                            overflow: 'hidden',
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              background: `linear-gradient(135deg, ${alpha(stat.color, 0.1)} 0%, transparent 100%)`,
+                              opacity: 0,
+                              transition: 'opacity 0.3s ease-in-out',
+                            },
+                            '&:hover::before': {
+                              opacity: 1,
+                            },
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: 2,
+                            }}
+                          >
+                            {stat.icon}
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                color: alpha(theme.palette.text.primary, 0.7),
+                                fontWeight: 500,
+                                fontSize: '1rem',
+                                marginBottom: 1,
+                              }}
+                            >
+                              {stat.label}
+                            </Typography>
+                            <Typography
+                              variant="h4"
+                              sx={{
+                                color: stat.color,
+                                fontWeight: 600,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}
+                            >
+                              {stat.value}
+                              {stat.suffix && (
+                                <Typography
+                                  component="span"
+                                  sx={{
+                                    fontSize: '1.5rem',
+                                    opacity: 0.8,
+                                  }}
+                                >
+                                  {stat.suffix}
+                                </Typography>
+                              )}
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </motion.div>
+                    </Grid>
+                  ))}
+                </Grid>
+              </motion.div>
+
+              {/* Enhanced Insights Summary */}
+              <motion.div variants={sectionVariants} initial="hidden" animate="visible" style={{ marginBottom: theme.spacing(4) }}>
+                <Grid container spacing={3}>
+                  {/* Mood Trends Card */}
+                  {getMoodTrends() && (
+                    <Grid item xs={12} md={4}>
                       <Paper
-                        elevation={2}
+                        elevation={3}
                         sx={{
-                          padding: theme.spacing(2),
-                          textAlign: 'center',
-                          borderRadius: 2,
-                          background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                          boxShadow: theme.shadows[3],
+                          padding: theme.spacing(3),
+                          background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.95)} 0%, ${alpha(theme.palette.background.paper, 0.85)} 100%)`,
+                          borderRadius: 3,
+                          height: '100%',
+                          backdropFilter: 'blur(10px)',
+                          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
                           transition: 'all 0.3s ease-in-out',
                           '&:hover': {
-                            boxShadow: theme.shadows[8],
-                            transform: 'translateY(-6px)',
-                          },
+                            transform: 'translateY(-4px)',
+                            boxShadow: theme.shadows[6],
+                            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                          }
                         }}
                       >
-                        <Typography variant="h6" color="textSecondary" gutterBottom>
-                          {stat.label}
+                        <Typography variant="h6" gutterBottom sx={{ 
+                          color: theme.palette.text.primary,
+                          fontWeight: 600,
+                          borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                          paddingBottom: 1
+                        }}>
+                          Mood Trend Analysis
                         </Typography>
-                        <Typography variant="h4" sx={{ color: stat.color }}>
-                          {stat.value}
+                        <Box sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 1,
+                          marginTop: 2 
+                        }}>
+                          <Typography variant="body1" sx={{
+                            fontSize: '1.1rem',
+                            color: getMoodTrends().improving ? theme.palette.success.main : 
+                                   getMoodTrends().stable ? theme.palette.info.main : 
+                                   theme.palette.warning.main
+                          }}>
+                            {getMoodTrends().improving ? '📈 Improving' : getMoodTrends().stable ? '📊 Stable' : '📉 Needs Attention'}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  )}
+                  
+                  {/* Top Activities Card */}
+                  {getTopActivities().length > 0 && (
+                    <Grid item xs={12} md={4}>
+                      <Paper
+                        elevation={3}
+                        sx={{
+                          padding: theme.spacing(3),
+                          background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.95)} 0%, ${alpha(theme.palette.background.paper, 0.85)} 100%)`,
+                          borderRadius: 3,
+                          height: '100%',
+                          backdropFilter: 'blur(10px)',
+                          border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
+                          transition: 'all 0.3s ease-in-out',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: theme.shadows[6],
+                            border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
+                          }
+                        }}
+                      >
+                        <Typography variant="h6" gutterBottom sx={{ 
+                          color: theme.palette.text.primary,
+                          fontWeight: 600,
+                          borderBottom: `2px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
+                          paddingBottom: 1
+                        }}>
+                          Most Frequent Activities
                         </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, marginTop: 2 }}>
+                          {getTopActivities().map((activity, index) => (
+                            <Chip
+                              key={activity.name}
+                              label={`${activity.name} (${activity.count}x)`}
+                              color={index === 0 ? "secondary" : "default"}
+                              variant={index === 0 ? "filled" : "outlined"}
+                              size="medium"
+                              sx={{
+                                fontSize: '0.9rem',
+                                padding: '8px 0',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  transform: 'scale(1.02)',
+                                  backgroundColor: index === 0 ? alpha(theme.palette.secondary.main, 0.9) : alpha(theme.palette.action.hover, 0.1)
+                                }
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  )}
+                  
+                  {/* Sleep Quality Card */}
+                  {getSleepQualityInsights() && (
+                    <Grid item xs={12} md={4}>
+                      <Paper
+                        elevation={3}
+                        sx={{
+                          padding: theme.spacing(3),
+                          background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.95)} 0%, ${alpha(theme.palette.background.paper, 0.85)} 100%)`,
+                          borderRadius: 3,
+                          height: '100%',
+                          backdropFilter: 'blur(10px)',
+                          border: `1px solid ${alpha(theme.palette.info.main, 0.1)}`,
+                          transition: 'all 0.3s ease-in-out',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: theme.shadows[6],
+                            border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                          }
+                        }}
+                      >
+                        <Typography variant="h6" gutterBottom sx={{ 
+                          color: theme.palette.text.primary,
+                          fontWeight: 600,
+                          borderBottom: `2px solid ${alpha(theme.palette.info.main, 0.1)}`,
+                          paddingBottom: 1
+                        }}>
+                          Sleep Quality
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                              Average Duration:
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: getSleepQualityInsights().isHealthy ? theme.palette.success.main : theme.palette.warning.main }}>
+                              {getSleepQualityInsights().averageDuration}hrs
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                              Sleep Consistency:
+                            </Typography>
+                            <Chip
+                              label={getSleepQualityInsights().consistency}
+                              color={
+                                getSleepQualityInsights().consistency === 'High' ? 'success' :
+                                getSleepQualityInsights().consistency === 'Moderate' ? 'warning' : 'error'
+                              }
+                              size="small"
+                              sx={{ fontWeight: 500 }}
+                            />
+                          </Box>
+                          {!getSleepQualityInsights().isHealthy && (
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                color: theme.palette.warning.main,
+                                backgroundColor: alpha(theme.palette.warning.main, 0.1),
+                                padding: theme.spacing(1),
+                                borderRadius: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5
+                              }}
+                            >
+                              ⚠️ Consider adjusting sleep schedule for optimal rest
+                            </Typography>
+                          )}
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  )}
+                </Grid>
+              </motion.div>
+
+              {/* Charts Section with Updated Styling */}
+              <motion.div variants={sectionVariants} initial="hidden" animate="visible">
+                <Grid container spacing={4}>
+                  {/* Chart containers with consistent styling */}
+                  {[
+                    {
+                      title: "Mood Over Time",
+                      content: (
+                        hasMoodOverTimeData ? (
+                          <Line
+                            ref={moodOverTimeRef}
+                            data={moodOverTimeData}
+                            options={moodOverTimeOptions}
+                          />
+                        ) : (
+                          <Typography variant="body1" color="textSecondary" textAlign="center">
+                            No mood entries available to display.
+                          </Typography>
+                        )
+                      ),
+                      accentColor: theme.palette.primary.main
+                    },
+                    {
+                      title: "Activity Frequency",
+                      content: (
+                        hasActivityFrequencyData ? (
+                          <Bar
+                            data={activityFrequencyData}
+                            options={activityFrequencyOptions}
+                          />
+                        ) : (
+                          <Typography variant="body1" color="textSecondary" textAlign="center">
+                            No activities available to display.
+                          </Typography>
+                        )
+                      ),
+                      accentColor: theme.palette.secondary.main
+                    },
+                    {
+                      title: "Mood vs. Activity Correlation",
+                      content: (
+                        hasMoodActivityCorrelationData ? (
+                          <Scatter
+                            data={moodActivityCorrelationData}
+                            options={moodActivityCorrelationOptions}
+                          />
+                        ) : (
+                          <Typography variant="body1" color="textSecondary" textAlign="center">
+                            No correlation data available to display.
+                          </Typography>
+                        )
+                      ),
+                      accentColor: theme.palette.success.main
+                    },
+                    {
+                      title: "Sleep Duration Over Time",
+                      content: (
+                        hasSleepDurationOverTimeData ? (
+                          <Line
+                            ref={sleepDurationOverTimeRef}
+                            data={sleepDurationOverTimeData}
+                            options={sleepDurationOverTimeOptions}
+                          />
+                        ) : (
+                          <Typography variant="body1" color="textSecondary" textAlign="center">
+                            No sleep data available to display.
+                          </Typography>
+                        )
+                      ),
+                      accentColor: theme.palette.info.main
+                    }
+                  ].map((chart, index) => (
+                    <Grid item xs={12} lg={6} key={index}>
+                      <Paper
+                        elevation={3}
+                        sx={{
+                          padding: theme.spacing(3),
+                          background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.97)} 0%, ${alpha(theme.palette.background.paper, 0.92)} 100%)`,
+                          borderRadius: 3,
+                          height: isSmallScreen ? 350 : 450,
+                          border: `1px solid ${alpha(chart.accentColor, 0.1)}`,
+                          transition: 'all 0.3s ease-in-out',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: `0 8px 24px ${alpha(chart.accentColor, 0.15)}`,
+                            '& .chart-header': {
+                              borderColor: alpha(chart.accentColor, 0.3),
+                            }
+                          },
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '4px',
+                            background: `linear-gradient(90deg, ${alpha(chart.accentColor, 0.4)} 0%, transparent 100%)`,
+                          }
+                        }}
+                      >
+                        <Typography
+                          variant="h6"
+                          className="chart-header"
+                          sx={{
+                            color: theme.palette.text.primary,
+                            fontWeight: 600,
+                            marginBottom: 3,
+                            paddingBottom: 1.5,
+                            borderBottom: `2px solid ${alpha(chart.accentColor, 0.1)}`,
+                            transition: 'border-color 0.3s ease'
+                          }}
+                        >
+                          {chart.title}
+                        </Typography>
+                        <Box sx={{ height: 'calc(100% - 70px)' }}>
+                          {chart.content}
+                        </Box>
                       </Paper>
                     </Grid>
                   ))}
                 </Grid>
               </motion.div>
 
-              {/* Charts Section */}
-              <motion.div variants={sectionVariants} initial="hidden" animate="visible">
-                <Grid container spacing={6}>
-                  {/* Mood Over Time Line Chart */}
-                  <Grid item xs={12} lg={6}>
-                    <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
-                      Mood Over Time
-                    </Typography>
-                    <Box
-                      component={Paper}
-                      elevation={2}
-                      sx={{
-                        padding: theme.spacing(2),
-                        borderRadius: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: theme.shadows[3],
-                        height: isSmallScreen ? 300 : 400,
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: theme.shadows[8],
-                          transform: 'translateY(-6px)',
-                        },
-                      }}
-                    >
-                      {hasMoodOverTimeData ? (
-                        <Line
-                          ref={moodOverTimeRef}
-                          data={moodOverTimeData}
-                          options={moodOverTimeOptions}
-                          onClick={(event, elements) => {
-                            if (elements && elements.length > 0) {
-                              const chart = event.chart;
-                              const index = elements[0].index;
-                              const label = chart.data.labels[index];
-                              const value = chart.data.datasets[0].data[index];
-                              alert(`Date: ${label}\nAverage Mood: ${value} ⭐`);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <Typography variant="body1" color="textSecondary" textAlign="center">
-                          No mood entries available to display.
-                        </Typography>
-                      )}
-                    </Box>
-                  </Grid>
-
-                  {/* Activity Frequency Bar Chart */}
-                  <Grid item xs={12} lg={6}>
-                    <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
-                      Activity Frequency
-                    </Typography>
-                    <Box
-                      component={Paper}
-                      elevation={2}
-                      sx={{
-                        padding: theme.spacing(2),
-                        borderRadius: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: theme.shadows[3],
-                        height: isSmallScreen ? 300 : 400,
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: theme.shadows[8],
-                          transform: 'translateY(-6px)',
-                        },
-                      }}
-                    >
-                      {hasActivityFrequencyData ? (
-                        <Bar
-                          data={activityFrequencyData}
-                          options={activityFrequencyOptions}
-                          onClick={(event, elements) => {
-                            if (elements && elements.length > 0) {
-                              const chart = event.chart;
-                              const index = elements[0].index;
-                              const label = chart.data.labels[index];
-                              const value = chart.data.datasets[0].data[index];
-                              alert(`Activity: ${label}\nCount: ${value}`);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <Typography variant="body1" color="textSecondary" textAlign="center">
-                          No activities available to display.
-                        </Typography>
-                      )}
-                    </Box>
-                  </Grid>
-
-                  {/* Mood vs. Activity Correlation Scatter Chart */}
-                  <Grid item xs={12} lg={6}>
-                    <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
-                      Mood vs. Activity Correlation
-                    </Typography>
-                    <Box
-                      component={Paper}
-                      elevation={2}
-                      sx={{
-                        padding: theme.spacing(2),
-                        borderRadius: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: theme.shadows[3],
-                        height: isSmallScreen ? 300 : 400,
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: theme.shadows[8],
-                          transform: 'translateY(-6px)',
-                        },
-                      }}
-                    >
-                      {hasMoodActivityCorrelationData ? (
-                        <Scatter
-                          data={moodActivityCorrelationData}
-                          options={moodActivityCorrelationOptions}
-                          onClick={(event, elements) => {
-                            if (elements && elements.length > 0) {
-                              const chart = event.chart;
-                              const index = elements[0].index;
-                              const activity = chart.data.datasets[0].data[index].x;
-                              const mood = chart.data.datasets[0].data[index].y;
-                              alert(`Activity: ${activity}\nMood: ${mood} ⭐`);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <Typography variant="body1" color="textSecondary" textAlign="center">
-                          No correlation data available to display.
-                        </Typography>
-                      )}
-                    </Box>
-                  </Grid>
-
-                  {/* Sleep Duration Over Time Line Chart */}
-                  <Grid item xs={12} lg={6}>
-                    <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
-                      Sleep Duration Over Time
-                    </Typography>
-                    <Box
-                      component={Paper}
-                      elevation={2}
-                      sx={{
-                        padding: theme.spacing(2),
-                        borderRadius: 2,
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: theme.shadows[3],
-                        height: isSmallScreen ? 300 : 400,
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: theme.shadows[8],
-                          transform: 'translateY(-6px)',
-                        },
-                      }}
-                    >
-                      {hasSleepDurationOverTimeData ? (
-                        <Line
-                          ref={sleepDurationOverTimeRef}
-                          data={sleepDurationOverTimeData}
-                          options={sleepDurationOverTimeOptions}
-                          onClick={(event, elements) => {
-                            if (elements && elements.length > 0) {
-                              const chart = event.chart;
-                              const index = elements[0].index;
-                              const label = chart.data.labels[index];
-                              const value = chart.data.datasets[0].data[index];
-                              alert(`Date: ${label}\nAverage Sleep Duration: ${value} Hours`);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <Typography variant="body1" color="textSecondary" textAlign="center">
-                          No sleep data available to display.
-                        </Typography>
-                      )}
-                    </Box>
-                  </Grid>
-                </Grid>
-              </motion.div>
-
-              {/* Reset Zoom Button */}
-              <Box textAlign="center" mt={4}>
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => {
-                    if (moodOverTimeRef.current) {
-                      moodOverTimeRef.current.resetZoom();
-                    }
-                    if (sleepDurationOverTimeRef.current) {
-                      sleepDurationOverTimeRef.current.resetZoom();
-                    }
-                  }}
-                  sx={{
-                    padding: isMobile ? '8px 16px' : '12px 24px',
-                    fontSize: isMobile ? '0.875rem' : '1rem',
-                  }}
-                >
-                  Reset Zoom
-                </Button>
-              </Box>
-
-              {/* AI Generated Insights Section */}
+              {/* AI Generated Insights Section with Updated Styling */}
               <motion.div
                 variants={sectionVariants}
                 initial="hidden"
                 animate="visible"
                 style={{ marginTop: theme.spacing(6) }}
               >
-                <Typography variant="h5" gutterBottom sx={{ color: theme.palette.text.primary }}>
+                <Typography variant="h5" gutterBottom sx={{ 
+                  color: theme.palette.text.primary,
+                  fontWeight: 600,
+                  marginBottom: theme.spacing(3)
+                }}>
                   AI Generated Insights
                 </Typography>
                 <Paper
-                  elevation={2}
+                  elevation={3}
                   sx={{
-                    padding: theme.spacing(3),
-                    borderRadius: 2,
-                    background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                    boxShadow: theme.shadows[3],
+                    padding: theme.spacing(4),
+                    borderRadius: 3,
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.97)} 0%, ${alpha(theme.palette.background.paper, 0.92)} 100%)`,
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
                     transition: 'all 0.3s ease-in-out',
+                    position: 'relative',
+                    overflow: 'hidden',
                     '&:hover': {
-                      boxShadow: theme.shadows[8],
-                      transform: 'translateY(-6px)',
+                      transform: 'translateY(-4px)',
+                      boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.15)}`,
                     },
+                    '& p': {
+                      color: theme.palette.text.secondary,
+                      lineHeight: 1.7
+                    },
+                    '& strong': {
+                      color: theme.palette.primary.main,
+                      fontWeight: 600
+                    }
                   }}
                 >
                   {aiInsightsLoading ? (
-                    <Box textAlign="center">
-                      <CircularProgress />
-                      <Typography variant="body1" sx={{ mt: 2 }}>
-                        Generating insights...
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center',
+                      gap: 2,
+                      padding: theme.spacing(4)
+                    }}>
+                      <CircularProgress size={40} />
+                      <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                        Analyzing your well-being data...
                       </Typography>
                     </Box>
                   ) : aiInsightsError ? (
-                    <Alert severity="error">{aiInsightsError}</Alert>
+                    <Alert 
+                      severity="error"
+                      sx={{
+                        borderRadius: 2,
+                        '& .MuiAlert-message': {
+                          fontSize: '1rem'
+                        }
+                      }}
+                    >
+                      {aiInsightsError}
+                    </Alert>
                   ) : (
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiInsights}</ReactMarkdown>
                   )}
