@@ -481,42 +481,57 @@ const Navbar = ({ toggleTheme }) => {
           sx={{
             position: 'fixed',
             top: 0,
-            left: 0, // Changed from theme.spacing(1) to 0
+            left: 0,
             zIndex: theme.zIndex.drawer + 2,
             opacity: showTitle ? 1 : 0,
             transform: showTitle ? 'translateY(0)' : 'translateY(-20px)',
             transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out',
             height: '100px',
             display: 'flex',
-            alignItems: 'flex-start' // Align from top
+            alignItems: 'flex-start'
           }}
         >
-          <Link 
-            to="/" 
-            style={{ 
-              display: 'flex', 
-              textDecoration: 'none',
-              position: 'relative',
-              height: '100%',
-              alignItems: 'flex-start' // Align from top
-            }}
-          >
-            <img
-              src="/navbar/title/mindwasess.png"
-              alt="MindEase AI"
-              style={{
-                height: '280px', // Further increased size
-                width: 'auto',
-                filter: theme.palette.mode === 'dark' ? 'brightness(1.5)' : 'none',
-                transition: 'all 0.3s ease',
-                marginLeft: '-25px', // Increased negative margin to move left
-                marginTop: '-90px', // Adjusted to show more of the top portion
-                marginBottom: '-90px',
-                objectFit: 'contain',
-                transform: 'translateX(-20px)' // Added translation to move left
+          {(isAdmin && isInAdminMode) ? (
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: '"Roboto", sans-serif',
+                fontWeight: 700,
+                color: theme.palette.text.primary,
+                textShadow: '4px 4px 8px rgba(0,0,0,0.8)',
+                transition: 'color 0s ease-in-out',
               }}
-            />
-          </Link>
+            >
+              Admin Dashboard
+            </Typography>
+          ) : (
+            <Link 
+              to="/" 
+              style={{ 
+                display: 'flex', 
+                textDecoration: 'none',
+                position: 'relative',
+                height: '100%',
+                alignItems: 'flex-start' // Align from top
+              }}
+            >
+              <img
+                src="/navbar/title/mindwasess.png"
+                alt="MindEase AI"
+                style={{
+                  height: '280px', // Further increased size
+                  width: 'auto',
+                  filter: theme.palette.mode === 'dark' ? 'brightness(1.5)' : 'none',
+                  transition: 'all 0.3s ease',
+                  marginLeft: '-25px', // Increased negative margin to move left
+                  marginTop: '-90px', // Adjusted to show more of the top portion
+                  marginBottom: '-90px',
+                  objectFit: 'contain',
+                  transform: 'translateX(-20px)' // Added translation to move left
+                }}
+              />
+            </Link>
+          )}
         </Box>
       )}
 

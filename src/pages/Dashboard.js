@@ -789,9 +789,9 @@ const DashboardPage = () => {
                     <HeroGreeting variant="primary" component="h1">
                       {timeOfDayGreeting}, {userName},
                     </HeroGreeting>
-                    <HeroQuote variant="primary">"{heroQuote}"</HeroQuote>
+                    <HeroQuote variant="primary">"{heroQuote}"  </HeroQuote>
                     <HeroSubtitle variant="primary" color="textSecondary">
-                      Here's your daily overview for a calmer, clearer mind.
+                      - Here's your daily overview for a calmer, clearer mind.
                       <IconButton
                         aria-label="refresh quote"
                         size="small"
