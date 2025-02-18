@@ -5,21 +5,6 @@
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1b2226",
-  "theme_mode": "light dark",
-  "handle_bars": {
-    "light": {
-      "status_bar": "#ffffff",
-      "navigation_bar": "#ffffff",
-      "status_bar_text": "dark",
-      "navigation_bar_divider": "#e0e0e0"
-    },
-    "dark": {
-      "status_bar": "#1b2226",
-      "navigation_bar": "#1b2226",
-      "status_bar_text": "light",
-      "navigation_bar_divider": "#2d3439"
-    }
-  },
   "icons": [
     {
       "src": "images/mindeaselogo.png",

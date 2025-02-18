@@ -253,7 +253,53 @@ const Landing = () => {
 
   const handleTouchMove = (e) => setTouchEnd(e.touches[0].clientX);
 
-  // Modified touch handling logic with haptic feedback
+  // Add haptics support check
+  const [hasHaptics, setHasHaptics] = useState(false);
+
+  // Check for haptics support on mount
+  useEffect(() => {
+    const checkHaptics = async () => {
+      if ('vibrate' in navigator) {
+        try {
+          // Try to get haptics actuator
+          const actuator = await navigator.vibrate ? 
+            (await navigator.gamepad?.hapticActuators?.[0]) : null;
+          setHasHaptics(!!actuator);
+        } catch (e) {
+          setHasHaptics(false);
+        }
+      }
+    };
+    checkHaptics();
+  }, []);
+
+  // Haptic feedback function
+  const provideFeedback = async (intensity = 1.0, duration = 50) => {
+    try {
+      if (hasHaptics) {
+        // Use Web Haptics API for supported devices
+        const gamepad = navigator.getGamepads?.()?.[0];
+        const actuator = gamepad?.hapticActuators?.[0];
+        if (actuator) {
+          await actuator.pulse(intensity, duration);
+          return;
+        }
+      }
+      
+      // Fallback to basic vibration pattern
+      if ('vibrate' in navigator) {
+        // Create a more nuanced vibration pattern based on intensity
+        const pattern = intensity === 1.0 ? 
+          [duration] : // Strong feedback
+          [duration/2, duration/2]; // Gentler feedback
+        navigator.vibrate(pattern);
+      }
+    } catch (e) {
+      console.log('Haptic feedback not available');
+    }
+  };
+
+  // Modified touch handling logic
   const handleTouchEnd = (section) => {
     if (!touchStart || !touchEnd) return;
     
@@ -267,15 +313,14 @@ const Landing = () => {
     if (Math.abs(distance) > threshold) {
       const isLeftSwipe = distance > 0;
       
-      // Provide haptic feedback if available
-      if (window.navigator && window.navigator.vibrate) {
-        window.navigator.vibrate(50); // Short vibration for feedback
-      }
+      // Provide haptic feedback based on swipe velocity
+      const intensity = Math.min(velocity * 2, 1.0); // Scale velocity to max 1.0
+      const duration = Math.max(25, Math.min(50, velocity * 100)); // Duration between 25-50ms
+      provideFeedback(intensity, duration);
       
       if (section === 'features') {
         setCurrentFeatureIndex(prev => {
           if (isLeftSwipe) {
-            // Always set direction based on the swipe direction
             setSwipeDirection('left');
             return prev === features.length - 1 ? 0 : prev + 1;
           } else {
