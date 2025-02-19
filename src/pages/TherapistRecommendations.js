@@ -63,62 +63,76 @@ const DashboardContainer = styled(Box)(({ theme }) => ({
 
 // Updated WidgetCard: Retains the old gradient & border but removes backdropFilter
 const WidgetCard = styled(Card)(({ theme }) => ({
-  borderRadius: '24px',
-  // Use theme-based shadow instead of a custom heavy box-shadow
-  boxShadow: theme.shadows[3],
+  borderRadius: '16px',
+  boxShadow: 'none',
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
-  height: 240,
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
-    theme.palette.background.paper,
-    0.9
-  )} 100%)`,
-  // Removed backdropFilter for smoother performance
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-  transition: 'all 0.3s ease-in-out',
+  height: 280,
+  background: `linear-gradient(135deg, 
+    ${alpha(theme.palette.background.paper, 0.9)} 0%,
+    ${alpha(theme.palette.background.paper, 0.7)} 100%)`,
+  position: 'relative',
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '4px',
+    background: `linear-gradient(90deg, 
+      ${theme.palette.primary.main} 0%,
+      ${theme.palette.secondary.main} 100%)`,
+    opacity: 0,
+    transition: 'opacity 0.3s ease',
+  },
   '&:hover': {
-    boxShadow: theme.shadows[8],
-    transform: 'translateY(-6px)',
+    transform: 'translateY(-8px)',
+    boxShadow: `0 12px 24px -10px ${alpha(theme.palette.primary.main, 0.15)}`,
+    border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+    '&:before': {
+      opacity: 1,
+    },
   },
 }));
 
 const WidgetContent = styled(CardContent)(({ theme }) => ({
-  padding: theme.spacing(2),
+  padding: theme.spacing(3),
   flexGrow: 1,
   overflowY: 'auto',
   scrollBehavior: 'smooth',
   '&::-webkit-scrollbar': {
-    width: '6px',
+    width: '4px',
   },
   '&::-webkit-scrollbar-track': {
-    background: alpha(theme.palette.background.paper, 0.1),
-    borderRadius: '6px',
+    background: 'transparent',
   },
   '&::-webkit-scrollbar-thumb': {
-    backgroundColor: alpha(theme.palette.primary.main, 0.2),
-    borderRadius: '6px',
-    '&:hover': {
-      backgroundColor: alpha(theme.palette.primary.main, 0.3),
-    },
+    background: alpha(theme.palette.primary.main, 0.2),
+    borderRadius: '4px',
   },
   display: 'flex',
   flexDirection: 'column',
-  justifyContent: 'flex-start',
-  '& .MuiTypography-body2': {
-    fontSize: { xs: '0.9rem', sm: '1rem' },
-  },
+  gap: theme.spacing(2),
 }));
 
 const WidgetHeader = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(1, 2),
-  backgroundColor: theme.palette.background.paper,
-  borderBottom: `1px solid ${theme.palette.divider}`,
+  padding: theme.spacing(2, 3),
+  backgroundColor: 'transparent',
+  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
   '& .MuiTypography-subtitle2': {
-    fontSize: { xs: '1rem', sm: '1.1rem' },
+    fontSize: '1.1rem',
+    fontWeight: 600,
+    color: theme.palette.text.primary,
+    letterSpacing: '0.5px',
+  },
+  '& .MuiSvgIcon-root': {
+    color: theme.palette.primary.main,
   },
 }));
 
@@ -214,61 +228,97 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
   const googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${therapist.id}`;
 
   return (
-    <motion.div variants={widgetItemVariants} style={{ height: '100%' }}>
+    <motion.div 
+      variants={widgetItemVariants} 
+      style={{ height: '100%' }}
+      whileHover={{ scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300 }}
+    >
       <WidgetCard>
         <WidgetHeader>
           <Typography variant="subtitle2">{therapist.name}</Typography>
-          <PersonIcon fontSize="small" />
+          <PersonIcon />
         </WidgetHeader>
         <WidgetContent ref={contentRef}>
-          <Box mb={1}>
-            <Typography variant="body2" color="textSecondary">
-              <strong>Specialty:</strong> {therapist.specialty}
+          <Box 
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.05),
+              borderRadius: '8px',
+              padding: 1.5
+            }}
+          >
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                fontWeight: 500,
+                color: 'primary.main'
+              }}
+            >
+              {therapist.specialty}
             </Typography>
           </Box>
-          <Box mb={1} display="flex" alignItems="center">
-            <LocationOnIcon fontSize="medium" color="primary" sx={{ mr: 0.5 }} />
-            <Typography variant="body2" color="textSecondary">
+          
+          <Box display="flex" alignItems="center" gap={1}>
+            <LocationOnIcon color="primary" />
+            <Typography variant="body2" color="text.secondary">
               {therapist.address}
             </Typography>
           </Box>
-          <Box display="flex" alignItems="center">
-            <StarIcon fontSize="medium" color="warning" sx={{ mr: 0.5 }} />
-            <Typography variant="body2" color="textSecondary">
+
+          <Box display="flex" alignItems="center" gap={1}>
+            <StarIcon color="warning" />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.1),
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontWeight: 500
+              }}
+            >
               {therapist.rating} / 5
             </Typography>
           </Box>
-          <Box mt={1} display="flex" alignItems="center">
-            <PhoneIcon fontSize="medium" color="primary" sx={{ mr: 0.5 }} />
-            <Typography variant="body2" color="textSecondary">
+
+          <Box display="flex" alignItems="center" gap={1}>
+            <PhoneIcon color="primary" />
+            <Typography variant="body2" color="text.secondary">
               {therapist.phone}
             </Typography>
           </Box>
         </WidgetContent>
-        <CardActions
-          sx={{
-            justifyContent: 'space-between',
-            '& .MuiButton-root': {
-              fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.9rem' },
-              padding: { xs: '4px 8px', sm: '6px 12px', md: '8px 16px' },
-            },
-          }}
-        >
+        
+        <CardActions sx={{
+          padding: 2,
+          gap: 1,
+          borderTop: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          '& .MuiButton-root': {
+            borderRadius: '8px',
+            textTransform: 'none',
+            fontWeight: 500,
+            flex: 1,
+          }
+        }}>
           <Button
-            size="small"
+            variant="contained"
             onClick={() => handleDetailsClick(therapist)}
-            startIcon={<VisibilityIcon fontSize="small" />}
+            startIcon={<VisibilityIcon />}
+            size="large"
           >
-            Details
+            View Details
           </Button>
           <Button
-            size="small"
+            variant="outlined"
             color="secondary"
             href={googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
+            size="large"
           >
-            Google Maps
+            Maps
           </Button>
         </CardActions>
       </WidgetCard>
