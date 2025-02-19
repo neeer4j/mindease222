@@ -47,6 +47,15 @@ const AboutUs = () => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
+      style={{
+        minHeight: '100vh',
+        background: theme.palette.background.gradient,
+        paddingTop: theme.spacing(8),
+        paddingBottom: theme.spacing(8),
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
       <Container maxWidth="lg" sx={{ py: 6, mt: { xs: 8, sm: 9 } }}>
         <Paper

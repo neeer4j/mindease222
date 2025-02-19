@@ -18,8 +18,17 @@ const TermsOfService = () => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
+      style={{
+        minHeight: '100vh',
+        background: theme.palette.background.gradient,
+        paddingTop: theme.spacing(16), // Increased from 12 to 16
+        paddingBottom: theme.spacing(8),
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
-      <Container maxWidth="lg" sx={{ py: 6, mt: { xs: 8, sm: 9 } }}>
+      <Container maxWidth="lg">
         <Paper
           elevation={3}
           sx={{
@@ -27,6 +36,7 @@ const TermsOfService = () => {
             borderRadius: '24px',
             background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
             border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            boxShadow: theme.shadows[4],
           }}
         >
           <Typography 
@@ -291,19 +301,6 @@ const TermsOfService = () => {
               }}
             >
               Any dispute arising from these Terms shall be governed by the laws of [Your Jurisdiction]. You agree to first attempt to resolve any disputes informally by contacting us. If a dispute cannot be resolved informally, both parties agree to submit to the exclusive jurisdiction of the courts in [Your Jurisdiction].
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                mt: 4,
-                color: theme.palette.text.secondary,
-                fontSize: '0.95rem'
-              }}
-            >
-              Last updated: {new Date().toLocaleDateString()}
             </Typography>
           </Box>
         </Paper>
