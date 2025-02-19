@@ -405,10 +405,49 @@ const Landing = () => {
     action();
   };
 
+  // Modified testimonials section to include continuous scroll
+  const TestimonialScroll = () => {
+    const duplicatedTestimonials = [...testimonials, ...testimonials, ...testimonials];
+    const [isHovered, setIsHovered] = useState(false);
+    const controls = useAnimation();
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+      let currentX = 0;
+
+      const startAnimation = async () => {
+        // Get current position when animation resumes
+        if (containerRef.current) {
+          const transform = getComputedStyle(containerRef.current).transform;
+          const matrix = new DOMMatrix(transform);
+          currentX = matrix.m41; // Get current X translation
+        }
+
+        await controls.start({
+          x: -100 * testimonials.length + '%',
+          transition: {
+            duration: 180,
+            ease: "linear",
+            repeat: Infinity,
+            repeatType: "loop",
+            repeatDelay: 0,
+            from: currentX // Resume from current position
+          }
+        });
+      };
+
+      if (!isHovered) {
+        startAnimation();
+      } else {
+        controls.stop();
+      }
+    }, [isHovered, controls, testimonials.length]);
+
   return (
     <PageLayout>
       <VideoPopup />
-      <motion.div>
+      <motion.div
+      >
         {/* Hero Section */}
         <motion.section
           initial={{ opacity: 0 }}
@@ -1368,15 +1407,13 @@ const Landing = () => {
         <motion.section>
           {isMobile ? (
             <>
-              <Box
-                sx={{
-                  mt: 6,
-                  mb: 4,
-                  px: 2,
-                  position: 'relative',
-                  zIndex: 1,
-                }}
-              >
+              <Box sx={{ 
+                mt: 6, 
+                mb: 4, 
+                px: 2,
+                position: 'relative',
+                zIndex: 1
+              }}>
                 <Typography
                   variant="h4"
                   align="center"
@@ -1397,7 +1434,7 @@ const Landing = () => {
                   sx={{
                     maxWidth: 600,
                     margin: '0 auto',
-                    mb: 2,
+                    mb: 2
                   }}
                 >
                   Real stories from people who found peace and growth with MindEase
@@ -1413,8 +1450,8 @@ const Landing = () => {
                   zIndex: 1,
                   '& .MuiCard-root': {
                     position: 'relative',
-                    zIndex: 1,
-                  },
+                    zIndex: 1
+                  }
                 }}
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
@@ -1427,31 +1464,31 @@ const Landing = () => {
                     variants={{
                       enterFromLeft: {
                         x: '-100%',
-                        opacity: 0,
+                        opacity: 0
                       },
                       enterFromRight: {
                         x: '100%',
-                        opacity: 0,
+                        opacity: 0
                       },
                       center: {
                         x: 0,
-                        opacity: 1,
+                        opacity: 1
                       },
                       exitToLeft: {
                         x: '-100%',
-                        opacity: 0,
+                        opacity: 0
                       },
                       exitToRight: {
                         x: '100%',
-                        opacity: 0,
-                      },
+                        opacity: 0
+                      }
                     }}
                     initial={swipeDirection === 'left' ? 'enterFromRight' : 'enterFromLeft'}
                     animate="center"
                     exit={swipeDirection === 'left' ? 'exitToLeft' : 'exitToRight'}
                     transition={{
-                      x: { type: 'spring', stiffness: 300, damping: 30 },
-                      opacity: { duration: 0.2 },
+                      x: { type: "spring", stiffness: 300, damping: 30 },
+                      opacity: { duration: 0.2 }
                     }}
                   >
                     <Card
@@ -1479,6 +1516,7 @@ const Landing = () => {
                         zIndex: 2,
                       }}
                     >
+                      {/* Single testimonial content */}
                       <CardContent>
                         <Typography
                           variant="body1"
@@ -1523,12 +1561,13 @@ const Landing = () => {
                     </Card>
                   </motion.div>
                 </AnimatePresence>
+                {/* Testimonial navigation dots */}
                 <Box
                   sx={{
                     display: 'flex',
                     justifyContent: 'center',
                     mt: 2,
-                    gap: 1,
+                    gap: 1
                   }}
                 >
                   {[...Array(testimonials.length)].map((_, index) => (
@@ -1538,11 +1577,10 @@ const Landing = () => {
                         width: 8,
                         height: 8,
                         borderRadius: '50%',
-                        backgroundColor:
-                          currentSlide === index
-                            ? theme.palette.primary.main
-                            : theme.palette.grey[400],
-                        transition: 'background-color 0.3s',
+                        backgroundColor: currentSlide === index
+                          ? theme.palette.primary.main
+                          : theme.palette.grey[400],
+                        transition: 'background-color 0.3s'
                       }}
                       onClick={() => setCurrentSlide(index)}
                     />
@@ -1636,31 +1674,31 @@ const Landing = () => {
                       variants={{
                         enterFromLeft: {
                           x: '-100%',
-                          opacity: 0,
+                          opacity: 0
                         },
                         enterFromRight: {
                           x: '100%',
-                          opacity: 0,
+                          opacity: 0
                         },
                         center: {
                           x: 0,
-                          opacity: 1,
+                          opacity: 1
                         },
                         exitToLeft: {
                           x: '-100%',
-                          opacity: 0,
+                          opacity: 0
                         },
                         exitToRight: {
                           x: '100%',
-                          opacity: 0,
-                        },
+                          opacity: 0
+                        }
                       }}
                       initial={swipeDirection === 'left' ? 'enterFromRight' : 'enterFromLeft'}
                       animate="center"
                       exit={swipeDirection === 'left' ? 'exitToLeft' : 'exitToRight'}
                       transition={{
-                        x: { type: 'spring', stiffness: 300, damping: 30 },
-                        opacity: { duration: 0.2 },
+                        x: { type: "spring", stiffness: 300, damping: 30 },
+                        opacity: { duration: 0.2 }
                       }}
                       style={{ position: 'absolute', width: '100%' }}
                     >
@@ -1673,6 +1711,7 @@ const Landing = () => {
                                   theme.palette.background.paper,
                                   0.9
                                 )} 100%)`,
+                                // Removed heavy backdropFilter for smoother performance
                                 border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
                                 borderRadius: '24px',
                                 boxShadow: theme.shadows[3],
