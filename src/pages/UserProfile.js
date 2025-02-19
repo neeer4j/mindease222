@@ -21,6 +21,7 @@ import {
   DialogActions,
   LinearProgress,
   Avatar,
+  Card,
 } from '@mui/material';
 import { styled, alpha } from '@mui/system';
 import { AuthContext } from '../contexts/AuthContext';
@@ -40,12 +41,13 @@ const ProfileContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
   marginTop: theme.spacing(4),
   borderRadius: '24px',
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+  background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.paper, 0.8)} 100%)`,
   backdropFilter: 'blur(10px)',
   border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
   boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
   transition: 'all 0.3s ease-in-out',
   '&:hover': {
+    background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.95)} 0%, ${alpha(theme.palette.background.paper, 0.85)} 100%)`,
     boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
     transform: 'translateY(-6px)',
   },
@@ -292,50 +294,107 @@ const UserProfile = () => {
           </Typography>
 
           {/* Avatar Section */}
-          <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
-            <Avatar
-              src={avatarPreview}
-              alt={formData.name}
-              sx={{
-                width: 120,
-                height: 120,
-                fontSize: 50,
-                bgcolor: theme.palette.primary.main,
-              }}
-            >
-              {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
-            </Avatar>
-            <input
-              accept="image/*"
-              style={{ display: 'none' }}
-              id="avatar-upload"
-              type="file"
-              onChange={handleAvatarChange}
-              ref={fileInputRef}
-            />
-            <label htmlFor="avatar-upload">
-              <Button variant="contained" component="span" startIcon={<PhotoCamera />} sx={{ mt: 2 }} disabled={authLoading}>
-                Upload Avatar
-              </Button>
-            </label>
-            {avatarFile && (
-              <Box mt={2} display="flex" alignItems="center">
-                <GradientButton variant="contained" color="success" startIcon={<SaveIcon />} onClick={handleAvatarUpload} sx={{ mr: 2 }} disabled={authLoading}>
-                  Save
-                </GradientButton>
-                <Button variant="outlined" color="secondary" startIcon={<CancelIcon />} onClick={handleAvatarCancel} disabled={authLoading}>
-                  Cancel
-                </Button>
-              </Box>
-            )}
-            {user?.avatar && (
-              <Box mt={2}>
-                <Button variant="text" color="error" startIcon={<DeleteForeverIcon />} onClick={handleAvatarRemove} disabled={authLoading}>
-                  Remove Avatar
-                </Button>
-              </Box>
-            )}
-          </Box>
+          <Grid container justifyContent="center" mb={4}>
+            <Grid item xs={12} sm={6}>
+              <motion.div variants={fieldVariants} initial="hidden" animate="visible" exit="hidden" custom={0}>
+                <Card sx={{
+                  p: 3,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.light, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  borderRadius: '16px',
+                  boxShadow: theme.shadows[3],
+                  transition: 'all 0.3s ease-in-out',
+                  backdropFilter: 'blur(10px)',
+                  '&:hover': {
+                    boxShadow: theme.shadows[8],
+                    transform: 'translateY(-4px)',
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.light, 0.15)} 0%, ${alpha(theme.palette.secondary.main, 0.08)} 100%)`,
+                  },
+                }}>
+                  <Typography variant="subtitle2" color="textSecondary" gutterBottom sx={{ alignSelf: 'flex-start' }}>
+                    Profile Picture
+                  </Typography>
+                  <Avatar
+                    src={avatarPreview}
+                    alt={formData.name}
+                    sx={{
+                      width: { xs: 120, sm: 160 },
+                      height: { xs: 120, sm: 160 },
+                      fontSize: { xs: 50, sm: 64 },
+                      bgcolor: theme.palette.primary.main,
+                      border: `4px solid ${alpha(theme.palette.background.paper, 0.8)}`,
+                      boxShadow: theme.shadows[4],
+                      mb: 2
+                    }}
+                  >
+                    {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
+                  </Avatar>
+                  <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <label htmlFor="avatar-upload" style={{ width: '100%' }}>
+                      <Button 
+                        variant="contained" 
+                        component="span" 
+                        startIcon={<PhotoCamera />} 
+                        disabled={authLoading}
+                        fullWidth
+                      >
+                        Upload Avatar
+                      </Button>
+                    </label>
+                    <input
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id="avatar-upload"
+                      type="file"
+                      onChange={handleAvatarChange}
+                      ref={fileInputRef}
+                    />
+                    
+                    {avatarFile && (
+                      <Box sx={{ display: 'flex', gap: 1, width: '100%' }}>
+                        <GradientButton 
+                          variant="contained" 
+                          color="success" 
+                          startIcon={<SaveIcon />} 
+                          onClick={handleAvatarUpload} 
+                          disabled={authLoading}
+                          fullWidth
+                        >
+                          Save
+                        </GradientButton>
+                        <Button 
+                          variant="outlined" 
+                          color="secondary" 
+                          startIcon={<CancelIcon />} 
+                          onClick={handleAvatarCancel} 
+                          disabled={authLoading}
+                          fullWidth
+                        >
+                          Cancel
+                        </Button>
+                      </Box>
+                    )}
+                    
+                    {user?.avatar && !avatarFile && (
+                      <Button 
+                        variant="text" 
+                        color="error" 
+                        startIcon={<DeleteForeverIcon />} 
+                        onClick={handleAvatarRemove} 
+                        disabled={authLoading}
+                        fullWidth
+                      >
+                        Remove Avatar
+                      </Button>
+                    )}
+                  </Box>
+                </Card>
+              </motion.div>
+            </Grid>
+          </Grid>
 
           {/* Feedback Messages */}
           <AnimatePresence>
@@ -362,150 +421,198 @@ const UserProfile = () => {
             {/* Name Field */}
             <Grid item xs={12} sm={6}>
               <motion.div variants={fieldVariants} initial="hidden" animate="visible" exit="hidden" custom={1}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Name:
-                </Typography>
-                {!editMode.name ? (
-                  <Box display="flex" alignItems="center">
-                    <Typography variant="body1" color="textPrimary" sx={{ flexGrow: 1 }}>
-                      {formData.name || 'N/A'}
-                    </Typography>
-                    <Tooltip title="Edit Name">
-                      <IconButton color="primary" onClick={() => setEditMode((prev) => ({ ...prev, name: true }))} aria-label="Edit Name">
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                ) : (
-                  <Box sx={{ mt: 1 }}>
-                    <TextField
-                      label="Name"
-                      name="name"
-                      variant="outlined"
-                      fullWidth
-                      value={formData.name}
-                      onChange={handleChange}
-                      required
-                      InputLabelProps={{ shrink: true }}
-                      sx={{ mb: 1 }}
-                    />
-                    <Box display="flex" justifyContent="flex-end">
-                      <GradientButton variant="contained" size="small" startIcon={<SaveIcon />} onClick={() => openConfirmDialog('name')} sx={{ mr: 1 }} disabled={authLoading}>
-                        Save
-                      </GradientButton>
-                      <Button variant="outlined" color="secondary" size="small" startIcon={<CancelIcon />} onClick={() => handleCancelEdit('name')} disabled={authLoading}>
-                        Cancel
-                      </Button>
+                <Card sx={{
+                  p: 2,
+                  height: '100%',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.1)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  borderRadius: '16px',
+                  boxShadow: theme.shadows[3],
+                  transition: 'all 0.3s ease-in-out',
+                  backdropFilter: 'blur(10px)',
+                  '&:hover': {
+                    boxShadow: theme.shadows[8],
+                    transform: 'translateY(-4px)',
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.15)} 0%, ${alpha(theme.palette.primary.main, 0.08)} 100%)`,
+                  },
+                }}>
+                  <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 2 }}>
+                    Name:
+                  </Typography>
+                  {!editMode.name ? (
+                    <Box display="flex" alignItems="center">
+                      <Typography variant="body1" color="textPrimary" sx={{ flexGrow: 1 }}>
+                        {formData.name || 'N/A'}
+                      </Typography>
+                      <Tooltip title="Edit Name">
+                        <IconButton color="primary" onClick={() => setEditMode((prev) => ({ ...prev, name: true }))} aria-label="Edit Name">
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
-                  </Box>
-                )}
+                  ) : (
+                    <Box sx={{ mt: 1 }}>
+                      <TextField
+                        label="Name"
+                        name="name"
+                        variant="outlined"
+                        fullWidth
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                        InputLabelProps={{ shrink: true }}
+                        sx={{ mb: 1 }}
+                      />
+                      <Box display="flex" justifyContent="flex-end">
+                        <GradientButton variant="contained" size="small" startIcon={<SaveIcon />} onClick={() => openConfirmDialog('name')} sx={{ mr: 1 }} disabled={authLoading}>
+                          Save
+                        </GradientButton>
+                        <Button variant="outlined" color="secondary" size="small" startIcon={<CancelIcon />} onClick={() => handleCancelEdit('name')} disabled={authLoading}>
+                          Cancel
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
+                </Card>
               </motion.div>
             </Grid>
 
             {/* Email Field */}
             <Grid item xs={12} sm={6}>
               <motion.div variants={fieldVariants} initial="hidden" animate="visible" exit="hidden" custom={2}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Email:
-                </Typography>
-                {!editMode.email ? (
-                  <Box display="flex" alignItems="center">
-                    <Typography variant="body1" color="textPrimary" sx={{ flexGrow: 1 }}>
-                      {formData.email || 'N/A'}
-                    </Typography>
-                    <Tooltip title="Edit Email">
-                      <IconButton color="primary" onClick={() => setEditMode((prev) => ({ ...prev, email: true }))} aria-label="Edit Email">
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                ) : (
-                  <Box sx={{ mt: 1 }}>
-                    <TextField
-                      label="Email"
-                      name="email"
-                      variant="outlined"
-                      type="email"
-                      fullWidth
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      InputLabelProps={{ shrink: true }}
-                      sx={{ mb: 1 }}
-                    />
-                    <Box display="flex" justifyContent="flex-end">
-                      <GradientButton variant="contained" size="small" startIcon={<SaveIcon />} onClick={() => openConfirmDialog('email')} sx={{ mr: 1 }} disabled={authLoading}>
-                        Save
-                      </GradientButton>
-                      <Button variant="outlined" color="secondary" size="small" startIcon={<CancelIcon />} onClick={() => handleCancelEdit('email')} disabled={authLoading}>
-                        Cancel
-                      </Button>
+                <Card sx={{
+                  p: 2,
+                  height: '100%',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.info.light, 0.1)} 0%, ${alpha(theme.palette.info.main, 0.05)} 100%)`,
+                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  borderRadius: '16px',
+                  boxShadow: theme.shadows[3],
+                  transition: 'all 0.3s ease-in-out',
+                  backdropFilter: 'blur(10px)',
+                  '&:hover': {
+                    boxShadow: theme.shadows[8],
+                    transform: 'translateY(-4px)',
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.info.light, 0.15)} 0%, ${alpha(theme.palette.info.main, 0.08)} 100%)`,
+                  },
+                }}>
+                  <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 2 }}>
+                    Email:
+                  </Typography>
+                  {!editMode.email ? (
+                    <Box display="flex" alignItems="center">
+                      <Typography variant="body1" color="textPrimary" sx={{ flexGrow: 1 }}>
+                        {formData.email || 'N/A'}
+                      </Typography>
+                      <Tooltip title="Edit Email">
+                        <IconButton color="primary" onClick={() => setEditMode((prev) => ({ ...prev, email: true }))} aria-label="Edit Email">
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
-                  </Box>
-                )}
+                  ) : (
+                    <Box sx={{ mt: 1 }}>
+                      <TextField
+                        label="Email"
+                        name="email"
+                        variant="outlined"
+                        type="email"
+                        fullWidth
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        InputLabelProps={{ shrink: true }}
+                        sx={{ mb: 1 }}
+                      />
+                      <Box display="flex" justifyContent="flex-end">
+                        <GradientButton variant="contained" size="small" startIcon={<SaveIcon />} onClick={() => openConfirmDialog('email')} sx={{ mr: 1 }} disabled={authLoading}>
+                          Save
+                        </GradientButton>
+                        <Button variant="outlined" color="secondary" size="small" startIcon={<CancelIcon />} onClick={() => handleCancelEdit('email')} disabled={authLoading}>
+                          Cancel
+                        </Button>
+                      </Box>
+                    </Box>
+                  )}
+                </Card>
               </motion.div>
             </Grid>
 
             {/* Password Field */}
             <Grid item xs={12} sm={6}>
               <motion.div variants={fieldVariants} initial="hidden" animate="visible" exit="hidden" custom={3}>
-                <Typography variant="subtitle2" color="textSecondary">
-                  Password:
-                </Typography>
-                {!editMode.password ? (
-                  <Box display="flex" alignItems="center">
-                    <Typography variant="body1" color="textPrimary" sx={{ flexGrow: 1 }}>
-                      ********
-                    </Typography>
-                    <Tooltip title="Change Password">
-                      <IconButton color="primary" onClick={() => setEditMode((prev) => ({ ...prev, password: true }))} aria-label="Change Password">
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                ) : (
-                  <Box sx={{ mt: 1 }}>
-                    <TextField
-                      label="New Password"
-                      name="password"
-                      variant="outlined"
-                      type={showPassword ? 'text' : 'password'}
-                      fullWidth
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                      helperText="Enter a new password to update."
-                      InputLabelProps={{ shrink: true }}
-                      sx={{ mb: 1 }}
-                      InputProps={{
-                        endAdornment: (
-                          <IconButton onClick={handleTogglePassword} edge="end" aria-label="Toggle Password Visibility">
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        ),
-                      }}
-                    />
-                    <Box sx={{ mb: 1 }}>
-                      <Typography variant="caption" color="textSecondary">
-                        Password Strength:
+                <Card sx={{
+                  p: 2,
+                  height: '100%',
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.success.light, 0.1)} 0%, ${alpha(theme.palette.success.main, 0.05)} 100%)`,
+                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  borderRadius: '16px',
+                  boxShadow: theme.shadows[3],
+                  transition: 'all 0.3s ease-in-out',
+                  backdropFilter: 'blur(10px)',
+                  '&:hover': {
+                    boxShadow: theme.shadows[8],
+                    transform: 'translateY(-4px)',
+                    background: `linear-gradient(135deg, ${alpha(theme.palette.success.light, 0.15)} 0%, ${alpha(theme.palette.success.main, 0.08)} 100%)`,
+                  },
+                }}>
+                  <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 2 }}>
+                    Password:
+                  </Typography>
+                  {!editMode.password ? (
+                    <Box display="flex" alignItems="center">
+                      <Typography variant="body1" color="textPrimary" sx={{ flexGrow: 1 }}>
+                        ********
                       </Typography>
-                      <LinearProgress
-                        variant="determinate"
-                        value={passwordStrength}
-                        color={getPasswordStrengthColor()}
-                        sx={{ height: 8, borderRadius: 4, mt: 0.5 }}
+                      <Tooltip title="Change Password">
+                        <IconButton color="primary" onClick={() => setEditMode((prev) => ({ ...prev, password: true }))} aria-label="Change Password">
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  ) : (
+                    <Box sx={{ mt: 1 }}>
+                      <TextField
+                        label="New Password"
+                        name="password"
+                        variant="outlined"
+                        type={showPassword ? 'text' : 'password'}
+                        fullWidth
+                        value={formData.password}
+                        onChange={handleChange}
+                        required
+                        helperText="Enter a new password to update."
+                        InputLabelProps={{ shrink: true }}
+                        sx={{ mb: 1 }}
+                        InputProps={{
+                          endAdornment: (
+                            <IconButton onClick={handleTogglePassword} edge="end" aria-label="Toggle Password Visibility">
+                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          ),
+                        }}
                       />
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" color="textSecondary">
+                          Password Strength:
+                        </Typography>
+                        <LinearProgress
+                          variant="determinate"
+                          value={passwordStrength}
+                          color={getPasswordStrengthColor()}
+                          sx={{ height: 8, borderRadius: 4, mt: 0.5 }}
+                        />
+                      </Box>
+                      <Box display="flex" justifyContent="flex-end">
+                        <GradientButton variant="contained" size="small" startIcon={<SaveIcon />} onClick={() => openConfirmDialog('password')} sx={{ mr: 1 }} disabled={authLoading}>
+                          Save
+                        </GradientButton>
+                        <Button variant="outlined" color="secondary" size="small" startIcon={<CancelIcon />} onClick={() => handleCancelEdit('password')} disabled={authLoading}>
+                          Cancel
+                        </Button>
+                      </Box>
                     </Box>
-                    <Box display="flex" justifyContent="flex-end">
-                      <GradientButton variant="contained" size="small" startIcon={<SaveIcon />} onClick={() => openConfirmDialog('password')} sx={{ mr: 1 }} disabled={authLoading}>
-                        Save
-                      </GradientButton>
-                      <Button variant="outlined" color="secondary" size="small" startIcon={<CancelIcon />} onClick={() => handleCancelEdit('password')} disabled={authLoading}>
-                        Cancel
-                      </Button>
-                    </Box>
-                  </Box>
-                )}
+                  )}
+                </Card>
               </motion.div>
             </Grid>
           </Grid>
