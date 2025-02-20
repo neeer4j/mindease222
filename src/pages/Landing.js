@@ -408,46 +408,215 @@ const Landing = () => {
   // Modified testimonials section to include continuous scroll
   const TestimonialScroll = () => {
     const duplicatedTestimonials = [...testimonials, ...testimonials, ...testimonials];
-    const [isHovered, setIsHovered] = useState(false);
-    const controls = useAnimation();
     const containerRef = useRef(null);
 
-    useEffect(() => {
-      let currentX = 0;
-
-      const startAnimation = async () => {
-        // Get current position when animation resumes
-        if (containerRef.current) {
-          const transform = getComputedStyle(containerRef.current).transform;
-          const matrix = new DOMMatrix(transform);
-          currentX = matrix.m41; // Get current X translation
-        }
-
-        await controls.start({
-          x: -100 * testimonials.length + '%',
-          transition: {
-            duration: 180,
+    return (
+      <div 
+        style={{ 
+          display: 'flex', 
+          overflow: 'hidden',
+          position: 'relative',
+          width: '100%'
+        }}
+      >
+        <motion.div
+          ref={containerRef}
+          style={{
+            display: 'flex',
+            gap: '2rem',
+            padding: '2rem',
+          }}
+          animate={{ 
+            x: [-2000, 0]  // Changed to start from -2000 and go to 0
+          }}
+          transition={{
+            duration: 50,
             ease: "linear",
             repeat: Infinity,
-            repeatType: "loop",
-            repeatDelay: 0,
-            from: currentX // Resume from current position
-          }
-        });
-      };
+            repeatType: "reverse"  // Changed to reverse for smooth loop
+          }}
+        >
+          {duplicatedTestimonials.map((testimonial, index) => (
+            <motion.div
+              key={index}
+              style={{
+                flex: '0 0 auto',
+              }}
+              whileHover={{
+                scale: 1.02,
+                y: -4,
+                transition: { 
+                  duration: 0.5,
+                  ease: "easeOut"
+                }
+              }}
+            >
+              <Card
+                sx={{
+                  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
+                    theme.palette.background.paper,
+                    0.9
+                  )} 100%)`,
+                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  borderRadius: '24px',
+                  boxShadow: theme.shadows[3],
+                  padding: theme.spacing(2),
+                  height: '100%',
+                  width: '300px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  position: 'relative',
+                  zIndex: 2,
+                }}
+              >
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundImage: `url(${testimonial.imageUrl})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    opacity: isDarkMode ? 0.1 : 0.05,
+                    filter: 'blur(4px)',
+                    borderRadius: '28px',
+                    zIndex: -1,
+                  }}
+                />
+                <CardContent>
+                  <Typography
+                    variant="body1"
+                    fontStyle="italic"
+                    align="center"
+                    gutterBottom
+                    sx={{
+                      fontSize: '1.1rem',
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    " {testimonial.quote} "
+                  </Typography>
+                </CardContent>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: 'column',
+                    mb: 3,
+                  }}
+                >
+                  <Avatar
+                    alt={testimonial.author}
+                    src={testimonial.avatarUrl}
+                    sx={{
+                      width: 96,
+                      height: 96,
+                      mb: 2,
+                      boxShadow: theme.shadows[2],
+                    }}
+                    loading="lazy"
+                  />
+                  <Typography
+                    variant="subtitle1"
+                    color="textPrimary"
+                    sx={{ fontWeight: 600 }}
+                  >
+                    {testimonial.author}
+                  </Typography>
+                </Box>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    );
+  };
 
-      if (!isHovered) {
-        startAnimation();
-      } else {
-        controls.stop();
-      }
-    }, [isHovered, controls, testimonials.length]);
+  // Replace the existing testimonials section with continuous scroll
+  const ContinuousTestimonialsSection = () => (
+    <motion.section
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ duration: 0.8, delay: 0.1 }}
+    >
+      <Box
+        mt={14}
+        mb={isMobile ? 10 : 14}
+        sx={{
+          backgroundColor: theme.palette.background.default,
+          paddingY: 8,
+          borderRadius: '25px',
+          border: `1px solid ${theme.palette.grey[400]}`,
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundImage:
+              'url(https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: isDarkMode ? 0.15 : 0.1,
+            filter: 'blur(8px)',
+            zIndex: 1,
+          }}
+        />
+        <Typography
+          variant={isMobile ? 'h4' : 'h3'}
+          align="center"
+          gutterBottom
+          sx={{
+            fontWeight: 800,
+            color: theme.palette.text.primary,
+            paddingX: isMobile ? theme.spacing(2) : 0,
+            textShadow: `1px 1px 1px ${theme.palette.grey[300]}`,
+            lineHeight: 1.3,
+            position: 'relative',
+            zIndex: 2,
+          }}
+        >
+          Hear From Our Community...
+        </Typography>
+        <Typography
+          variant="h6"
+          align="center"
+          color="textSecondary"
+          gutterBottom
+          sx={{
+            paddingX: isMobile ? theme.spacing(3) : 0,
+            maxWidth: 750,
+            margin: '0 auto',
+            fontSize: '1.05rem',
+            fontWeight: 400,
+            position: 'relative',
+            zIndex: 2,
+            mb: 6,
+          }}
+        >
+          Real stories from real users who have found peace and growth with MindEase.
+        </Typography>
+
+        <Box sx={{ overflow: 'hidden', position: 'relative', zIndex: 2 }}>
+          <TestimonialScroll />
+        </Box>
+      </Box>
+    </motion.section>
+  );
 
   return (
     <PageLayout>
       <VideoPopup />
-      <motion.div
-      >
+      <motion.div>
         {/* Hero Section */}
         <motion.section
           initial={{ opacity: 0 }}
@@ -629,6 +798,81 @@ const Landing = () => {
                       >
                         Find Your <span>Peace</span> with MindEase
                       </Typography>
+                      <Typography
+                        variant="h6"
+                        color="textSecondary"
+                        sx={{
+                          textAlign: 'center',
+                          fontSize: '1.1rem',
+                          lineHeight: 1.6,
+                          mb: 2, // Increased from mb: 4 to mb: 6
+                          px: 2,
+                          maxWidth: '600px',
+                          margin: '1 auto',
+                        }}
+                      >
+                        Your personalized mental wellness companion. Track your mood,
+                        chat with AI, and discover tools to cultivate a balanced and
+                        joyful life.
+                      </Typography>
+                      {/* Mobile CTA Buttons */}
+                      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 1 }}>
+                        {isAuthenticated ? (
+                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <GradientButton
+                              variant="contained"
+                              onClick={() => navigate('/dashboard')}
+                              sx={{
+                                py: 1.5,
+                                px: 4,
+                                borderRadius: '12px',
+                                fontSize: '1rem',
+                              }}
+                            >
+                              Go to Dashboard
+                            </GradientButton>
+                          </motion.div>
+                        ) : (
+                          <>
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                              <GradientButton
+                                variant="contained"
+                                onClick={() => navigate('/signup')}
+                                sx={{
+                                  py: 1.5,
+                                  px: 4,
+                                  borderRadius: '12px',
+                                  fontSize: '1rem',
+                                }}
+                              >
+                                Get Started
+                              </GradientButton>
+                            </motion.div>
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                              <Button
+                                variant="outlined"
+                                color="primary"
+                                onClick={() => navigate('/login')}
+                                sx={{
+                                  py: 1.5,
+                                  px: 4,
+                                  borderRadius: '12px',
+                                  fontSize: '1rem',
+                                  borderColor: theme.palette.primary.main,
+                                  color: theme.palette.primary.main,
+                                  '&:hover': {
+                                    backgroundColor: theme.palette.primary.main,
+                                    color: theme.palette.primary.contrastText,
+                                    borderColor: theme.palette.primary.dark,
+                                  },
+                                }}
+                              >
+                                Login
+                              </Button>
+                            </motion.div>
+                          </>
+                        )}
+                      </Box>
                     </motion.div>
                   </Grid>
                 </>
@@ -863,162 +1107,191 @@ const Landing = () => {
         {/* Modified Features Section */}
         <motion.section>
           {isMobile ? (
-            <MobileFeatureCarousel
-              ref={featureRef}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={() => handleTouchEnd('features')}
-              sx={{
-                px: 2,
-                py: 1,
-                mb: 2,
-              }}
-            >
-              <AnimatePresence initial={false} mode="wait" custom={swipeDirection}>
-                <motion.div
-                  key={currentFeatureIndex}
-                  custom={swipeDirection}
-                  variants={{
-                    enterFromLeft: { x: '-100%', opacity: 0 },
-                    enterFromRight: { x: '100%', opacity: 0 },
-                    center: { x: 0, opacity: 1 },
-                    exitToLeft: { x: '-100%', opacity: 0 },
-                    exitToRight: { x: '100%', opacity: 0 },
-                  }}
-                  initial={swipeDirection === 'left' ? 'enterFromRight' : 'enterFromLeft'}
-                  animate="center"
-                  exit={swipeDirection === 'left' ? 'exitToLeft' : 'exitToRight'}
-                  transition={{
-                    x: { type: 'spring', stiffness: 300, damping: 30 },
-                    opacity: { duration: 0.2 },
+            <>
+              <Box sx={{ textAlign: 'center', mb: 4, px: 2 }}>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 800,
+                    color: theme.palette.text.primary,
+                    textShadow: `1px 1px 1px ${theme.palette.grey[300]}`,
+                    lineHeight: 1.3,
+                    mb: 2
                   }}
                 >
-                  <Card
-                    sx={{
-                      margin: '0 auto',
-                      maxWidth: '100%',
-                      borderRadius: '16px',
-                      background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
-                        theme.palette.background.paper,
-                        0.9
-                      )} 100%)`,
-                      border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                      boxShadow: theme.shadows[3],
-                      overflow: 'hidden',
-                      transition: 'all 0.3s ease-in-out',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      height: 'auto',
-                      minHeight: '400px',
-                      maxHeight: '85vh',
-                    }}
-                  >
-                    <Box sx={{ textAlign: 'center', pt: 2 }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: theme.palette.primary.light,
-                          width: 56,
-                          height: 56,
-                          margin: '0 auto',
-                          boxShadow: theme.shadows[2],
-                        }}
-                      >
-                        {features[currentFeatureIndex].icon}
-                      </Avatar>
-                    </Box>
-                    <CardContent sx={{ p: 2, flex: 1 }}>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontWeight: 700,
-                          color: theme.palette.text.primary,
-                          textAlign: 'center',
-                          mt: 1,
-                          mb: 1,
-                        }}
-                      >
-                        {features[currentFeatureIndex].title}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="textSecondary"
-                        sx={{
-                          textAlign: 'center',
-                          fontSize: '0.9rem',
-                          lineHeight: 1.5,
-                          mb: 2,
-                        }}
-                      >
-                        {features[currentFeatureIndex].description}
-                      </Typography>
-                    </CardContent>
-                    <CardActions sx={{ justifyContent: 'center', p: 2, pb: 3 }}>
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <GradientButton
-                          onClick={() => handleFeatureCardClick(features[currentFeatureIndex].action)}
-                          variant="contained"
-                          sx={{
-                            py: 1,
-                            px: 3,
-                            fontSize: '0.9rem',
-                            borderRadius: '12px',
-                          }}
-                        >
-                          Learn More
-                        </GradientButton>
-                      </motion.div>
-                    </CardActions>
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        width: '100%',
-                        height: '140px',
-                        borderRadius: '0 0 16px 16px',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <img
-                        src={features[currentFeatureIndex].imageUrl}
-                        alt={features[currentFeatureIndex].alt}
-                        {...optimizeImageLoading(currentFeatureIndex)}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          filter: isDarkMode ? 'none' : 'brightness(105%)',
-                        }}
-                      />
-                    </Box>
-                  </Card>
-                </motion.div>
-              </AnimatePresence>
-              <Box
+                  Explore Our Key Features
+                </Typography>
+                <Typography
+                  variant="body1"
+                  color="textSecondary"
+                  sx={{
+                    maxWidth: 750,
+                    margin: '0 auto',
+                    fontSize: '1.05rem',
+                    fontWeight: 400,
+                  }}
+                >
+                  Empowering tools designed to support your mental well-being and
+                  personal growth, seamlessly integrated for your daily life.
+                </Typography>
+              </Box>
+              <MobileFeatureCarousel
+                ref={featureRef}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={() => handleTouchEnd('features')}
                 sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  mt: 2,
-                  gap: 0.75,
-                  mb: 1,
+                  px: 2,
+                  py: 1,
+                  mb: 2,
                 }}
               >
-                {features.map((_, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      backgroundColor:
-                        currentFeatureIndex === index
-                          ? theme.palette.primary.main
-                          : theme.palette.grey[400],
-                      transition: 'background-color 0.3s',
+                <AnimatePresence initial={false} mode="wait" custom={swipeDirection}>
+                  <motion.div
+                    key={currentFeatureIndex}
+                    custom={swipeDirection}
+                    variants={{
+                      enterFromLeft: { x: '-100%', opacity: 0 },
+                      enterFromRight: { x: '100%', opacity: 0 },
+                      center: { x: 0, opacity: 1 },
+                      exitToLeft: { x: '-100%', opacity: 0 },
+                      exitToRight: { x: '100%', opacity: 0 },
                     }}
-                    onClick={() => handleFeatureDotClick(index)}
-                  />
-                ))}
-              </Box>
-            </MobileFeatureCarousel>
+                    initial={swipeDirection === 'left' ? 'enterFromRight' : 'enterFromLeft'}
+                    animate="center"
+                    exit={swipeDirection === 'left' ? 'exitToLeft' : 'exitToRight'}
+                    transition={{
+                      x: { type: 'spring', stiffness: 300, damping: 30 },
+                      opacity: { duration: 0.2 },
+                    }}
+                  >
+                    <Card
+                      sx={{
+                        margin: '0 auto',
+                        maxWidth: '100%',
+                        borderRadius: '16px',
+                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
+                          theme.palette.background.paper,
+                          0.9
+                        )} 100%)`,
+                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        boxShadow: theme.shadows[3],
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease-in-out',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: 'auto',
+                        minHeight: '400px',
+                        maxHeight: '85vh',
+                      }}
+                    >
+                      <Box sx={{ textAlign: 'center', pt: 2 }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: theme.palette.primary.light,
+                            width: 56,
+                            height: 56,
+                            margin: '0 auto',
+                            boxShadow: theme.shadows[2],
+                          }}
+                        >
+                          {features[currentFeatureIndex].icon}
+                        </Avatar>
+                      </Box>
+                      <CardContent sx={{ p: 2, flex: 1 }}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: 700,
+                            color: theme.palette.text.primary,
+                            textAlign: 'center',
+                            mt: 1,
+                            mb: 1,
+                          }}
+                        >
+                          {features[currentFeatureIndex].title}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="textSecondary"
+                          sx={{
+                            textAlign: 'center',
+                            fontSize: '0.9rem',
+                            lineHeight: 1.5,
+                            mb: 2,
+                          }}
+                        >
+                          {features[currentFeatureIndex].description}
+                        </Typography>
+                      </CardContent>
+                      <CardActions sx={{ justifyContent: 'center', p: 2, pb: 3 }}>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <GradientButton
+                            onClick={() => handleFeatureCardClick(features[currentFeatureIndex].action)}
+                            variant="contained"
+                            sx={{
+                              py: 1,
+                              px: 3,
+                              fontSize: '0.9rem',
+                              borderRadius: '12px',
+                            }}
+                          >
+                            Learn More
+                          </GradientButton>
+                        </motion.div>
+                      </CardActions>
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          width: '100%',
+                          height: '140px',
+                          borderRadius: '0 0 16px 16px',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <img
+                          src={features[currentFeatureIndex].imageUrl}
+                          alt={features[currentFeatureIndex].alt}
+                          {...optimizeImageLoading(currentFeatureIndex)}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            filter: isDarkMode ? 'none' : 'brightness(105%)',
+                          }}
+                        />
+                      </Box>
+                    </Card>
+                  </motion.div>
+                </AnimatePresence>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    mt: 2,
+                    gap: 0.75,
+                    mb: 1,
+                  }}
+                >
+                  {features.map((_, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        backgroundColor:
+                          currentFeatureIndex === index
+                            ? theme.palette.primary.main
+                            : theme.palette.grey[400],
+                        transition: 'background-color 0.3s',
+                      }}
+                      onClick={() => handleFeatureDotClick(index)}
+                    />
+                  ))}
+                </Box>
+              </MobileFeatureCarousel>
+            </>
           ) : (
             <motion.section
               initial={{ opacity: 0 }}
@@ -1404,434 +1677,7 @@ const Landing = () => {
         </motion.section>
 
         {/* Modified Testimonials Section */}
-        <motion.section>
-          {isMobile ? (
-            <>
-              <Box sx={{ 
-                mt: 6, 
-                mb: 4, 
-                px: 2,
-                position: 'relative',
-                zIndex: 1
-              }}>
-                <Typography
-                  variant="h4"
-                  align="center"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 800,
-                    color: theme.palette.text.primary,
-                    textShadow: `1px 1px 1px ${theme.palette.grey[300]}`,
-                    lineHeight: 1.3,
-                  }}
-                >
-                  What Our Users Say
-                </Typography>
-                <Typography
-                  variant="body1"
-                  align="center"
-                  color="textSecondary"
-                  sx={{
-                    maxWidth: 600,
-                    margin: '0 auto',
-                    mb: 2
-                  }}
-                >
-                  Real stories from people who found peace and growth with MindEase
-                </Typography>
-              </Box>
-              <Box
-                ref={testimonialRef}
-                sx={{
-                  position: 'relative',
-                  overflow: 'hidden',
-                  padding: theme.spacing(2),
-                  marginBottom: theme.spacing(8),
-                  zIndex: 1,
-                  '& .MuiCard-root': {
-                    position: 'relative',
-                    zIndex: 1
-                  }
-                }}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={() => debouncedHandleSwipe('testimonials')}
-              >
-                <AnimatePresence initial={false} mode="wait" custom={swipeDirection}>
-                  <motion.div
-                    key={currentSlide}
-                    custom={swipeDirection}
-                    variants={{
-                      enterFromLeft: {
-                        x: '-100%',
-                        opacity: 0
-                      },
-                      enterFromRight: {
-                        x: '100%',
-                        opacity: 0
-                      },
-                      center: {
-                        x: 0,
-                        opacity: 1
-                      },
-                      exitToLeft: {
-                        x: '-100%',
-                        opacity: 0
-                      },
-                      exitToRight: {
-                        x: '100%',
-                        opacity: 0
-                      }
-                    }}
-                    initial={swipeDirection === 'left' ? 'enterFromRight' : 'enterFromLeft'}
-                    animate="center"
-                    exit={swipeDirection === 'left' ? 'exitToLeft' : 'exitToRight'}
-                    transition={{
-                      x: { type: "spring", stiffness: 300, damping: 30 },
-                      opacity: { duration: 0.2 }
-                    }}
-                  >
-                    <Card
-                      sx={{
-                        margin: '0 auto',
-                        maxWidth: '90%',
-                        borderRadius: '20px',
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
-                          theme.palette.background.paper,
-                          0.9
-                        )} 100%)`,
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: theme.shadows[3],
-                        padding: theme.spacing(4),
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between',
-                        transition: 'all 0.3s ease-in-out',
-                        '&:hover': {
-                          boxShadow: theme.shadows[8],
-                          transform: 'translateY(-6px)',
-                        },
-                        position: 'relative',
-                        zIndex: 2,
-                      }}
-                    >
-                      {/* Single testimonial content */}
-                      <CardContent>
-                        <Typography
-                          variant="body1"
-                          fontStyle="italic"
-                          align="center"
-                          gutterBottom
-                          sx={{
-                            fontSize: '1.1rem',
-                            lineHeight: 1.7,
-                          }}
-                        >
-                          " {currentTestimonials[0].quote} "
-                        </Typography>
-                      </CardContent>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          flexDirection: 'column',
-                          mb: 3,
-                        }}
-                      >
-                        <Avatar
-                          alt={currentTestimonials[0].author}
-                          src={currentTestimonials[0].avatarUrl}
-                          sx={{
-                            width: 64,
-                            height: 64,
-                            mb: 2,
-                            boxShadow: theme.shadows[2],
-                          }}
-                          loading="lazy"
-                        />
-                        <Typography
-                          variant="subtitle1"
-                          color="textPrimary"
-                          sx={{ fontWeight: 600 }}
-                        >
-                          {currentTestimonials[0].author}
-                        </Typography>
-                      </Box>
-                    </Card>
-                  </motion.div>
-                </AnimatePresence>
-                {/* Testimonial navigation dots */}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    mt: 2,
-                    gap: 1
-                  }}
-                >
-                  {[...Array(testimonials.length)].map((_, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        backgroundColor: currentSlide === index
-                          ? theme.palette.primary.main
-                          : theme.palette.grey[400],
-                        transition: 'background-color 0.3s'
-                      }}
-                      onClick={() => setCurrentSlide(index)}
-                    />
-                  ))}
-                </Box>
-              </Box>
-            </>
-          ) : (
-            <motion.section
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.8, delay: 0.1, staggerChildren: 0.3 }}
-            >
-              <Box
-                mt={14}
-                mb={isMobile ? 10 : 14}
-                sx={{
-                  backgroundColor: theme.palette.background.default,
-                  paddingY: 8,
-                  borderRadius: '25px',
-                  border: `1px solid ${theme.palette.grey[400]}`,
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Faded Background Image */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    backgroundImage:
-                      'url(https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80)',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    opacity: isDarkMode ? 0.15 : 0.1,
-                    filter: 'blur(8px)',
-                    zIndex: 1,
-                  }}
-                ></Box>
-                <Typography
-                  variant={isMobile ? 'h4' : 'h3'}
-                  align="center"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 800,
-                    color: theme.palette.text.primary,
-                    paddingX: isMobile ? theme.spacing(2) : 0,
-                    textShadow: `1px 1px 1px ${theme.palette.grey[300]}`,
-                    lineHeight: 1.3,
-                    position: 'relative',
-                    zIndex: 2,
-                  }}
-                >
-                  Hear From Our Community...
-                </Typography>
-                <Typography
-                  variant="h6"
-                  align="center"
-                  color="textSecondary"
-                  gutterBottom
-                  sx={{
-                    paddingX: isMobile ? theme.spacing(3) : 0,
-                    maxWidth: 750,
-                    margin: '0 auto',
-                    fontSize: '1.05rem',
-                    fontWeight: 400,
-                    position: 'relative',
-                    zIndex: 2,
-                  }}
-                >
-                  Real stories from real users who have found peace and growth with MindEase.
-                </Typography>
-
-                {/* Slider Container */}
-                <Box
-                  sx={{
-                    position: 'relative',
-                    height: isMobile ? 350 : 400,
-                    mt: 6,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <AnimatePresence exitBeforeEnter>
-                    <motion.div
-                      key={currentSlide}
-                      custom={swipeDirection}
-                      variants={{
-                        enterFromLeft: {
-                          x: '-100%',
-                          opacity: 0
-                        },
-                        enterFromRight: {
-                          x: '100%',
-                          opacity: 0
-                        },
-                        center: {
-                          x: 0,
-                          opacity: 1
-                        },
-                        exitToLeft: {
-                          x: '-100%',
-                          opacity: 0
-                        },
-                        exitToRight: {
-                          x: '100%',
-                          opacity: 0
-                        }
-                      }}
-                      initial={swipeDirection === 'left' ? 'enterFromRight' : 'enterFromLeft'}
-                      animate="center"
-                      exit={swipeDirection === 'left' ? 'exitToLeft' : 'exitToRight'}
-                      transition={{
-                        x: { type: "spring", stiffness: 300, damping: 30 },
-                        opacity: { duration: 0.2 }
-                      }}
-                      style={{ position: 'absolute', width: '100%' }}
-                    >
-                      <Grid container spacing={isMobile ? 4 : 6} justifyContent="center">
-                        {currentTestimonials.map((testimonial, index) => (
-                          <Grid item xs={12} md={isMobile ? 12 : 4} key={index}>
-                            <Card
-                              sx={{
-                                background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
-                                  theme.palette.background.paper,
-                                  0.9
-                                )} 100%)`,
-                                // Removed heavy backdropFilter for smoother performance
-                                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                borderRadius: '24px',
-                                boxShadow: theme.shadows[3],
-                                padding: theme.spacing(4),
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                transition: 'all 0.3s ease-in-out',
-                                '&:hover': {
-                                  boxShadow: theme.shadows[8],
-                                  transform: 'translateY(-6px)',
-                                },
-                                position: 'relative',
-                                zIndex: 2,
-                              }}
-                            >
-                              {/* Faded Testimonial Background Image */}
-                              <Box
-                                sx={{
-                                  position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                  width: '100%',
-                                  height: '100%',
-                                  backgroundImage: `url(${testimonial.imageUrl})`,
-                                  backgroundSize: 'cover',
-                                  backgroundPosition: 'center',
-                                  opacity: isDarkMode ? 0.1 : 0.05,
-                                  filter: 'blur(4px)',
-                                  borderRadius: '28px',
-                                  zIndex: -1,
-                                }}
-                              ></Box>
-                              <CardContent>
-                                <Typography
-                                  variant="body1"
-                                  fontStyle="italic"
-                                  align="center"
-                                  gutterBottom
-                                  sx={{
-                                    fontSize: '1.1rem',
-                                    lineHeight: 1.7,
-                                  }}
-                                >
-                                  " {testimonial.quote} "
-                                </Typography>
-                              </CardContent>
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  flexDirection: 'column',
-                                  mb: 3,
-                                }}
-                              >
-                                <Avatar
-                                  alt={testimonial.author}
-                                  src={testimonial.avatarUrl}
-                                  sx={{
-                                    width: 64,
-                                    height: 64,
-                                    mb: 2,
-                                    boxShadow: theme.shadows[2],
-                                  }}
-                                  loading="lazy"
-                                />
-                                <Typography
-                                  variant="subtitle1"
-                                  color="textPrimary"
-                                  sx={{ fontWeight: 600 }}
-                                >
-                                  {testimonial.author}
-                                </Typography>
-                              </Box>
-                            </Card>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </motion.div>
-                  </AnimatePresence>
-
-                  {/* Manual Navigation Controls */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: 10,
-                      transform: 'translateY(-50%)',
-                      zIndex: 3,
-                      cursor: 'pointer',
-                      backgroundColor: theme.palette.background.paper,
-                      borderRadius: '50%',
-                      p: 0.5,
-                    }}
-                    onClick={handlePrev}
-                  >
-                    <ArrowBackIos fontSize="small" />
-                  </Box>
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: '50%',
-                      right: 10,
-                      transform: 'translateY(-50%)',
-                      zIndex: 3,
-                      cursor: 'pointer',
-                      backgroundColor: theme.palette.background.paper,
-                      borderRadius: '50%',
-                      p: 0.5,
-                    }}
-                    onClick={handleNext}
-                  >
-                    <ArrowForwardIos fontSize="small" />
-                  </Box>
-                </Box>
-              </Box>
-            </motion.section>
-          )}
-        </motion.section>
+        {ContinuousTestimonialsSection()}
 
         {/* Call to Action Section */}
         <motion.section
