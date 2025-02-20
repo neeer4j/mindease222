@@ -154,6 +154,10 @@ const MainContent = styled(motion.main)(({ theme }) => ({
   flexDirection: 'column',
   minHeight: '100%',
   flex: 1,
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(2),
+    paddingBottom: theme.spacing(8), // Add space for bottom navigation on mobile
+  },
 }));
 
 // HeroSectionCard with better light mode contrast
@@ -177,6 +181,16 @@ const HeroSectionCard = styled(Card)(({ theme }) => ({
   boxShadow: theme.palette.mode === 'light'
     ? `0 8px 32px -8px ${alpha(theme.palette.primary.main, 0.25)}`
     : `0 8px 32px -8px ${alpha(theme.palette.primary.main, 0.15)}`,
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(2),
+    borderRadius: '28px',
+    marginBottom: theme.spacing(2),
+    '& .MuiAvatar-root': {
+      width: 60,
+      height: 60,
+      marginBottom: theme.spacing(2),
+    },
+  },
   '&:before': {
     content: '""',
     position: 'absolute',
@@ -222,10 +236,16 @@ const HeroAvatar = styled(Avatar)(({ theme, variant = 'default' }) => {
   };
 });
 
-const HeroTextContainer = styled(Box)({
+const HeroTextContainer = styled(Box)(({ theme }) => ({
   textAlign: 'left',
   flexGrow: 1,
-});
+  [theme.breakpoints.down('sm')]: {
+    textAlign: 'center',
+    '& .MuiTypography-root': {
+      textAlign: 'center',
+    },
+  },
+}));
 
 const HeroGreeting = styled(Typography)(({ theme, variant = 'default' }) => ({
   fontWeight: 800,
@@ -315,6 +335,14 @@ const DashboardCard = styled(Card)(({ theme, cardcolor, bggradient }) => ({
   display: 'flex',
   flexDirection: 'column',
   transition: 'all 0.3s ease-in-out',
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(2),
+    borderRadius: 24,
+    boxShadow: `0 12px 24px ${alpha(cardcolor || theme.palette.primary.main, 0.2)}`,
+    '&:active': {
+      transform: 'scale(0.98)',
+    },
+  },
   '&::before': {
     content: '""',
     position: 'absolute',
@@ -349,7 +377,12 @@ const WidgetTitle = styled(Typography)(({ theme }) => ({
     color: theme.palette.mode === 'light'
       ? alpha(theme.palette.primary.dark, 0.9)
       : alpha(theme.palette.primary.main, 0.8),
-  }
+  },
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '1rem',
+    marginBottom: theme.spacing(2),
+    paddingBottom: theme.spacing(1),
+  },
 }));
 
 const CardActions = styled(MuiCardActions)(({ theme }) => ({
@@ -848,23 +881,37 @@ const DashboardPage = () => {
     setSelectedTherapist(null);
   };
 
+  // Add a new component for mobile grid spacing
+  const MobileGrid = styled(Grid)(({ theme }) => ({
+    [theme.breakpoints.down('sm')]: {
+      '& .MuiGrid-item': {
+        paddingTop: theme.spacing(1),
+        paddingBottom: theme.spacing(1),
+      },
+    },
+  }));
+
   return (
     <DashboardContainer>
       <PageLayout>
         <MainContent variants={mainContentVariants} initial="hidden" animate="visible">
           <Container maxWidth="lg" sx={{ paddingBottom: theme.spacing(3) }}>
             {/* Hero Section */}
-            <motion.div variants={widgetItemVariants} style={{ marginBottom: theme.spacing(4) }}>
+            <motion.div variants={widgetItemVariants} style={{ marginBottom: theme.spacing(isMobile ? 2 : 4) }}>
               <HeroSectionCard variant="primary">
-                <motion.div style={{ display: 'flex', alignItems: 'center' }}>
+                <motion.div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  flexDirection: isMobile ? 'column' : 'row'
+                }}>
                   <HeroAvatar alt={userName} src={userAvatarUrl} variant="primary" />
                   <HeroTextContainer>
                     <HeroGreeting variant="primary" component="h1">
-                      {timeOfDayGreeting}, {userName},
+                      {timeOfDayGreeting}, {userName}
                     </HeroGreeting>
-                    <HeroQuote variant="primary">"{heroQuote}"  </HeroQuote>
+                    <HeroQuote variant="primary">"{heroQuote}"</HeroQuote>
                     <HeroSubtitle variant="primary" color="textSecondary">
-                      - Here's your daily overview for a calmer, clearer mind.
+                      Here's your daily overview
                       <IconButton
                         aria-label="refresh quote"
                         size="small"
@@ -881,7 +928,7 @@ const DashboardPage = () => {
 
             {/* Widgets Grid */}
             <motion.div variants={widgetVariants} initial="hidden" animate="visible">
-              <Grid container spacing={isMobile ? 2 : 3}>
+              <MobileGrid container spacing={isMobile ? 2 : 3}>
                 {/* Mood Summary Widget */}
                 <Grid item xs={12} md={4}>
                   <motion.div variants={widgetItemVariants}>
@@ -1454,7 +1501,7 @@ const DashboardPage = () => {
                     </DashboardCard>
                   </motion.div>
                 </Grid>
-              </Grid>
+              </MobileGrid>
             </motion.div>
           </Container>
         </MainContent>
@@ -1463,9 +1510,22 @@ const DashboardPage = () => {
           open={snackbarOpen}
           autoHideDuration={6000}
           onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          anchorOrigin={{ 
+            vertical: isMobile ? 'bottom' : 'bottom',
+            horizontal: isMobile ? 'center' : 'center'
+          }}
+          sx={{
+            bottom: isMobile ? '80px !important' : '24px',
+          }}
         >
-          <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          <Alert 
+            onClose={handleSnackbarClose} 
+            severity={snackbarSeverity} 
+            sx={{ 
+              width: '100%',
+              borderRadius: isMobile ? '16px' : '8px',
+            }}
+          >
             {snackbarMessage}
           </Alert>
         </Snackbar>

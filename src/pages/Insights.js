@@ -120,7 +120,7 @@ const Insights = () => {
 
   // Initialize the Gemini AI model using the API key
   const genAI = useMemo(() => new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY2), []);
-  const aiModel = useMemo(() => genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }), [genAI]);
+  const aiModel = useMemo(() => genAI.getGenerativeModel({ model: 'gemini-2.0-flash-thinking-exp' }), [genAI]);
 
   // Handle Activity Selection using Chips
   const handleActivityChange = (event) => {
@@ -947,15 +947,36 @@ Use **bold** for emphasis on key points.`;
           {/* Page Header */}
           <Box textAlign="center" mb={6}>
             <motion.div variants={sectionVariants} initial="hidden" animate="visible">
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: { xs: '0.25rem', sm: '0.5rem' }, mb: 2 }}>
+                <Typography
+                  variant={isMobile ? 'h3' : 'h2'}
+                  component="h1"
+                  sx={{
+                    fontWeight: 800,
+                    color: theme.palette.text.primary,
+                    position: 'relative',
+                    zIndex: 1,
+                    textShadow: `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
+                    background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.primary.main, 0.8)} 100%)`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  Insights & Analytics
+                </Typography>
+              </Box>
               <Typography
-                variant={isMobile ? 'h5' : 'h4'}
-                component="h1"
-                sx={{ fontWeight: 800, color: theme.palette.text.primary }}
-                gutterBottom
+                variant="h5"
+                sx={{
+                  color: theme.palette.text.secondary,
+                  maxWidth: 800,
+                  mx: 'auto',
+                  position: 'relative',
+                  zIndex: 1,
+                  fontWeight: 400,
+                  px: 2,
+                }}
               >
-                Insights & Analytics 📊
-              </Typography>
-              <Typography variant="subtitle1" color="textSecondary" sx={{ maxWidth: 700, margin: '0 auto' }}>
                 Dive deep into your mental well-being with detailed insights and analytics based on your logged moods, activities, and sleep.
               </Typography>
             </motion.div>

@@ -42,6 +42,7 @@ import 'chartjs-adapter-date-fns';
 import { styled } from '@mui/system';
 import { MoodContext } from '../contexts/MoodContext';
 import PageLayout from '../components/PageLayout';
+import { alpha } from '@mui/material/styles';
 
 // Import Google Generative AI library
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -60,7 +61,7 @@ if (!apiKey) {
   console.error("REACT_APP_GEMINI_API_KEY is not set in your environment variables.");
 }
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-thinking-exp" });
 
 // Styled Gradient Button
 const GradientButton = styled(Button)(({ theme }) => ({
@@ -628,10 +629,42 @@ If mood is high (4-5), focus on maintaining positivity and gratitude.`;
           {/* Header */}
           <motion.div variants={textVariants} initial="hidden" animate="visible">
             <Box textAlign="center" mb={isMobile ? 4 : 6}>
-              <Typography variant={isMobile ? "h5" : "h4"} component="h2" gutterBottom sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
-                Mood Journal 📆
-              </Typography>
-              <Typography variant="subtitle1" color="textSecondary">
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                <Typography 
+                  variant={isMobile ? 'h3' : 'h2'} 
+                  component="h1" 
+                  sx={{
+                    fontWeight: 800,
+                    color: theme.palette.text.primary,
+                    position: 'relative',
+                    zIndex: 1,
+                    textShadow: `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
+                    background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.primary.main, 0.8)} 100%)`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  Mood Journal
+                </Typography>
+                <Typography 
+                  variant={isMobile ? 'h3' : 'h2'}
+                  sx={{ color: 'text.primary' }}
+                >
+                  📆
+                </Typography>
+              </Box>
+              <Typography
+                variant="h5"
+                sx={{
+                  color: theme.palette.text.secondary,
+                  maxWidth: 800,
+                  mx: 'auto',
+                  position: 'relative',
+                  zIndex: 1,
+                  fontWeight: 400,
+                  px: 2,
+                }}
+              >
                 Track your moods to gain insights into your emotional well-being.
               </Typography>
             </Box>

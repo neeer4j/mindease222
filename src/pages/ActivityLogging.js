@@ -465,26 +465,45 @@ const ActivityLogging = () => {
           {/* **Page Header with Animated Text (minor font size adjustment)** */}
           <Box textAlign="center" mb={6}>
             <motion.div
-              initial={{ opacity: 0, y: -20 }} // Reduced initial Y offset
+              initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }} // Slightly faster animation
+              transition={{ duration: 0.5 }}
             >
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                <Typography
+                  variant={isMobile ? 'h3' : 'h2'}
+                  component="h1"
+                  sx={{
+                    fontWeight: 800,
+                    color: theme.palette.text.primary,
+                    position: 'relative',
+                    zIndex: 1,
+                    textShadow: `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
+                    background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.primary.main, 0.8)} 100%)`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  Activity Logging
+                </Typography>
+                <Typography 
+                  variant={isMobile ? 'h3' : 'h2'}
+                  sx={{ color: 'text.primary' }}
+                >
+                  📓
+                </Typography>
+              </Box>
               <Typography
-                variant={isMobile ? 'h4' : 'h2'} // Slightly larger title on desktop
-                component="h1"
+                variant="h5"
                 sx={{
-                  fontWeight: 800,
-                  color: theme.palette.text.primary,
-                  mb: 1, // Add some bottom margin for spacing
+                  color: theme.palette.text.secondary,
+                  maxWidth: 600,
+                  margin: '0 auto',
+                  position: 'relative',
+                  zIndex: 1,
+                  fontWeight: 400,
+                  px: 2,
                 }}
-                gutterBottom
-              >
-                Activity Logging 📓
-              </Typography>
-              <Typography
-                variant="subtitle1"
-                color="textSecondary"
-                sx={{ maxWidth: 600, margin: '0 auto' }}
               >
                 Record and review your daily activities to understand your time and improve your productivity.
               </Typography>

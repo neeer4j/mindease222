@@ -68,6 +68,9 @@ service cloud.firestore {
     // Admin-only collections
     match /reports/{reportId} {
       allow read, write: if isAdmin();
+      allow create: if request.auth != null && 
+        request.resource.data.keys().hasAll(['reportType', 'reason', 'timestamp', 'status']) &&
+        request.resource.data.status == 'pending';
     }
 
     match /adminAuditLog/{logId} {
