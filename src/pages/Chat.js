@@ -78,7 +78,7 @@ const MOOD_OPTIONS = [
   { label: '😕 Neutral', value: 'neutral' },
 ];
 
-const BOTTOM_NAV_HEIGHT = 48;
+const BOTTOM_NAV_HEIGHT = 56;
 const CHAT_INPUT_HEIGHT = 52;
 const MOOD_PROMPT_INTERVAL = 15 * 60 * 1000; // 15 minutes
 
@@ -518,12 +518,12 @@ The user's name is ${userName}. You have access to their mood and sleep history.
       isBot: false,
       timestamp: new Date().toISOString(),
     };
-    const messageId = await addMessage(
+    const userMessageId = await addMessage(
       userMessage.text,
       userMessage.isBot,
       { timestamp: userMessage.timestamp }
     );
-    if (!messageId) {
+    if (!userMessageId) {
       setSnackbar({
         open: true,
         message: 'Failed to send message.',
@@ -911,7 +911,7 @@ Format as simple reply options without bullets or numbers.`;
             overflowY: 'auto',
             px: 2,
             pt: 2,
-            pb: `${BOTTOM_NAV_HEIGHT + CHAT_INPUT_HEIGHT + 16}px`,
+            pb: `${BOTTOM_NAV_HEIGHT + CHAT_INPUT_HEIGHT + 32}px`,
             scrollBehavior: 'smooth',
             '::-webkit-scrollbar': {
               width: '4px',
@@ -1048,9 +1048,10 @@ Format as simple reply options without bullets or numbers.`;
                 ? 'rgba(255, 255, 255, 0.8)'
                 : 'rgba(18, 18, 18, 0.8)',
             backdropFilter: 'blur(10px)',
-            borderTop: `1px solid ${theme.palette.divider}`,
+            borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
             px: 2,
-            py: 1,
+            py: 1.5,
+            pb: 2,
             zIndex: 2,
           }}
         >
@@ -1059,6 +1060,7 @@ Format as simple reply options without bullets or numbers.`;
               display: 'flex',
               gap: 1,
               alignItems: 'flex-end',
+              mb: 0.5,
             }}
           >
             <TextField
