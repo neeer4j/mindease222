@@ -33,54 +33,59 @@ import {
   LibraryMusic as LibraryMusicIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/system';
 import PageLayout from '../components/PageLayout';
 import MeditationSplash from '../components/MeditationSplash';
 import SplashScreenToggle from '../components/SplashScreenToggle';
+import { alpha } from '@mui/material/styles';
+import { Fade } from '@mui/material';
 
 // ----------------------
 // Styled Components
 // ----------------------
 
 const GradientButton = styled(Button)(({ theme }) => ({
-  background: `linear-gradient(45deg, ${theme.palette.primary.light} 30%, ${theme.palette.primary.main} 90%)`,
+  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.light, 0.9)} 100%)`,
   color: theme.palette.primary.contrastText,
-  borderRadius: '12px',
-  padding: '10px 22px',
-  boxShadow: theme.shadows[4],
-  transition: 'background 0.5s, box-shadow 0.3s, transform 0.3s',
+  borderRadius: '20px',
+  padding: '14px 28px',
+  boxShadow: `0 4px 15px ${alpha(theme.palette.primary.main, 0.25)}`,
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   '&:hover': {
-    background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
-    boxShadow: theme.shadows[6],
-    transform: 'scale(1.03)',
+    background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+    boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.35)}`,
+    transform: 'translateY(-2px)',
+  },
+  '&:active': {
+    transform: 'translateY(1px)',
   },
 }));
 
 const MeditationCard = styled(Card)(({ theme, isPlaying }) => ({
-  background: theme.palette.background.paper,
-  backdropFilter: 'blur(8px)',
-  borderRadius: '28px',
-  boxShadow: theme.shadows[3],
+  background: theme.palette.mode === 'dark'
+    ? `linear-gradient(165deg, ${alpha(theme.palette.primary.dark, 0.15)} 0%, ${alpha(theme.palette.background.paper, 0.95)} 100%)`
+    : `linear-gradient(165deg, ${alpha(theme.palette.primary.light, 0.1)} 0%, ${alpha(theme.palette.background.paper, 0.95)} 100%)`,
+  backdropFilter: 'blur(10px)',
+  borderRadius: '30px',
+  boxShadow: isPlaying
+    ? `0 15px 35px ${alpha(theme.palette.primary.main, 0.2)}`
+    : `0 8px 20px ${alpha(theme.palette.primary.main, 0.1)}`,
   overflow: 'hidden',
-  transition: 'transform 0.3s ease, box-shadow 0.3s ease, backdropFilter 0.3s ease, border 0.3s ease',
+  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
   padding: theme.spacing(3),
-  border: `1px solid ${theme.palette.divider}`,
-  ...(isPlaying && {
-    border: `2px solid ${theme.palette.primary.main}`,
-    boxShadow: theme.shadows[7],
-    transform: 'scale(1.02)',
-    backdropFilter: 'none',
-  }),
+  border: isPlaying
+    ? `2px solid ${alpha(theme.palette.primary.main, 0.8)}`
+    : `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
   '&:hover': {
-    transform: 'translateY(-7px)',
-    boxShadow: theme.shadows[7],
-    backdropFilter: 'none',
-    border: `1px solid ${theme.palette.primary.light}`,
+    transform: 'translateY(-8px) scale(1.02)',
+    boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.25)}`,
+    border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
   },
 }));
 
@@ -106,6 +111,81 @@ const wavySliderSx = {
   },
 };
 
+// Update PlayerContainer styling for smoother transitions
+const PlayerContainer = styled(Box)(({ theme, show }) => ({
+  position: 'fixed',
+  bottom: theme.spacing(8),
+  left: '50%',
+  transform: show ? 'translate(-50%, 0)' : 'translate(-50%, 100%)',
+  width: 'calc(100% - ${theme.spacing(4)})',
+  maxWidth: '1168px',
+  background: theme.palette.mode === 'light'
+    ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.95)} 0%, ${alpha(theme.palette.background.paper, 0.98)} 100%)`
+    : `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.paper, 0.95)} 100%)`,
+  backdropFilter: 'blur(20px)',
+  padding: theme.spacing(3),
+  display: show ? 'block' : 'none',
+  borderRadius: '24px',
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+  boxShadow: `0 -4px 30px ${alpha(theme.palette.primary.main, 0.15)}`,
+  zIndex: 1000,
+  [theme.breakpoints.down('sm')]: {
+    width: 'calc(100% - ${theme.spacing(2)})',
+    padding: theme.spacing(2),
+    borderRadius: '20px',
+    bottom: theme.spacing(7),
+  }
+}));
+
+const ProgressSlider = styled(Slider)(({ theme }) => ({
+  height: 4,
+  padding: 0,
+  '& .MuiSlider-thumb': {
+    width: 12,
+    height: 12,
+    transition: 'none',
+    '&:hover, &.Mui-focusVisible': {
+      boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`,
+    },
+    '&.Mui-active': {
+      width: 16,
+      height: 16,
+    },
+  },
+  '& .MuiSlider-rail, & .MuiSlider-track': {
+    background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+    border: 'none',
+    borderRadius: 2,
+  }
+}));
+
+// Update ToggleButton styling
+const ToggleButton = styled(IconButton)(({ theme, isVisible }) => ({
+  position: 'absolute',
+  top: -18,
+  left: '50%',
+  transform: `translate(-50%, 0) rotate(${isVisible ? 180 : 0}deg)`,
+  background: theme.palette.mode === 'light'
+    ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.9)} 0%, ${alpha(theme.palette.primary.light, 0.9)} 100%)`
+    : `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.9)} 0%, ${alpha(theme.palette.primary.main, 0.9)} 100%)`,
+  color: 'white',
+  width: 36,
+  height: 36,
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    background: theme.palette.mode === 'light'
+      ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`
+      : `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${alpha(theme.palette.primary.main, 0.9)} 100%)`,
+    transform: `translate(-50%, 0) rotate(${isVisible ? 180 : 0}deg) scale(1.1)`,
+  },
+  boxShadow: theme.shadows[3],
+  [theme.breakpoints.down('sm')]: {
+    width: 32,
+    height: 32,
+    top: -16
+  }
+}));
+
 // ----------------------
 // Sample Meditation Data
 // ----------------------
@@ -113,60 +193,60 @@ const meditationsData = [
   {
     id: 1,
     title: 'Morning Calm Meditation',
-    description: 'Start your day with a peaceful meditation to center yourself.',
+    description: 'Start your day with a peaceful meditation to center yourself and cultivate inner peace.',
     duration: '10:00',
     audioSrc: '/audio/morning-calm.mp3',
-    image: '/images/meditation-1.jpg',
+    image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
     category: 'Morning',
     keywords: ['calm', 'morning', 'focus', 'positive'],
   },
   {
     id: 2,
     title: 'Deep Sleep Relaxation',
-    description: 'Guided meditation for deep relaxation and restful sleep.',
+    description: 'Drift into a peaceful slumber with this calming guided meditation for deep, restorative sleep.',
     duration: '15:00',
     audioSrc: '/audio/deep-sleep.mp3',
-    image: '/images/meditation-2.jpg',
+    image: 'https://images.unsplash.com/photo-1511295742362-92c96b1cf484?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
     category: 'Sleep',
     keywords: ['sleep', 'relax', 'night', 'restful'],
   },
   {
     id: 3,
     title: 'Stress Relief Breathwork',
-    description: 'Quick breathwork exercise to relieve stress and anxiety.',
+    description: 'Release tension and find calm through guided breathing exercises designed to reduce anxiety.',
     duration: '05:00',
     audioSrc: '/audio/stress-relief.mp3',
-    image: '/images/meditation-3.jpg',
+    image: 'https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
     category: 'Stress Relief',
     keywords: ['stress', 'anxiety', 'breath', 'relief'],
   },
   {
     id: 4,
     title: 'Gratitude Meditation',
-    description: 'Cultivate gratitude and enhance positivity and well-being.',
+    description: 'Open your heart and mind to abundance through this uplifting gratitude practice.',
     duration: '08:00',
     audioSrc: '/audio/gratitude.mp3',
-    image: '/images/meditation-4.jpg',
+    image: 'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
     category: 'Gratitude',
     keywords: ['gratitude', 'positive', 'well-being', 'thankful'],
   },
   {
     id: 5,
     title: 'Focus and Concentration',
-    description: 'Improve your focus and concentration with this guided session.',
+    description: 'Sharpen your mind and enhance your focus with this mindfulness-based concentration practice.',
     duration: '12:00',
     audioSrc: '/audio/focus-concentration.mp3',
-    image: '/images/meditation-5.jpg',
+    image: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
     category: 'Focus',
     keywords: ['focus', 'concentration', 'attention', 'mindfulness'],
   },
   {
     id: 6,
     title: 'Body Scan Meditation',
-    description: 'A gentle body scan to increase body awareness and relaxation.',
+    description: 'Journey through your body with this deeply relaxing guided meditation for complete relaxation.',
     duration: '20:00',
     audioSrc: '/audio/body-scan.mp3',
-    image: '/images/meditation-6.jpg',
+    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
     category: 'Relaxation',
     keywords: ['body scan', 'relaxation', 'awareness', 'mind-body'],
   },
@@ -193,9 +273,28 @@ const Meditations = () => {
     const hasSeenTutorial = localStorage.getItem('meditationsTutorialSeen');
     return !hasSeenTutorial;
   });
+  const [isPlayerVisible, setIsPlayerVisible] = useState(true);
 
   const audioRef = useRef(null);
   const playerRef = useRef(null);
+
+  // Define handleTimeUpdate before it's used
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  // Time update effect for smoother updates
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+    };
+  }, []);
 
   // Preload audio metadata for each meditation to get actual durations
   useEffect(() => {
@@ -210,15 +309,32 @@ const Meditations = () => {
     });
   }, [allMeditations]);
 
-  // Audio playback effect
+  // Update audio playback effect to be more stable
   useEffect(() => {
-    if (audioRef.current) {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const playAudio = async () => {
       if (isPlaying) {
-        audioRef.current.play().catch((error) => console.error("Playback failed:", error));
+        try {
+          await audio.play();
+        } catch (error) {
+          console.error("Playback failed:", error);
+          setIsPlaying(false);
+        }
       } else {
-        audioRef.current.pause();
+        audio.pause();
       }
-    }
+    };
+
+    playAudio();
+
+    // Cleanup function
+    return () => {
+      if (audio) {
+        audio.pause();
+      }
+    };
   }, [isPlaying]);
 
   // Audio volume/mute effect
@@ -279,22 +395,28 @@ const Meditations = () => {
     setCurrentMeditation(null);
   };
 
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration);
     }
   };
 
+  // Update handleSeek to be more stable
   const handleSeek = (event, newValue) => {
+    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    
+    // Pause updates while seeking
+    const wasPlaying = !audio.paused;
+    if (wasPlaying) {
+      audio.pause();
+    }
+    
+    audio.currentTime = newValue;
     setCurrentTime(newValue);
-    if (audioRef.current) {
-      audioRef.current.currentTime = newValue;
+    
+    if (wasPlaying) {
+      audio.play().catch(error => console.error("Playback failed:", error));
     }
   };
 
@@ -399,411 +521,403 @@ const Meditations = () => {
     setShowSplash(true);
   };
 
+  const togglePlayer = () => {
+    setIsPlayerVisible(prev => !prev);
+  };
+
+  // Add Player component
+  const Player = ({ meditation, isPlaying, onPlayPause, onStop, currentTime, duration, onSeek, volume, onVolumeChange, onMuteToggle, isMuted }) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+    return (
+      <PlayerContainer show={!!meditation} ref={playerRef}>
+        <Box>
+          <Grid container spacing={2} alignItems="center">
+            {/* Title and Controls */}
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar
+                  src={meditation?.image}
+                  variant="rounded"
+                  sx={{
+                    width: isMobile ? 40 : 50,
+                    height: isMobile ? 40 : 50,
+                    borderRadius: '12px',
+                    boxShadow: theme.shadows[4]
+                  }}
+                />
+                <Box>
+                  <Typography variant={isMobile ? "body1" : "h6"} sx={{ fontWeight: 600 }}>
+                    {meditation?.title}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {meditation?.duration}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            {/* Playback Controls */}
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                <IconButton onClick={onStop} size={isMobile ? "small" : "medium"}>
+                  <StopIcon />
+                </IconButton>
+                <IconButton 
+                  onClick={onPlayPause}
+                  sx={{
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                    width: isMobile ? 40 : 48,
+                    height: isMobile ? 40 : 48,
+                  }}
+                >
+                  {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                </IconButton>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 120 }}>
+                  <IconButton onClick={onMuteToggle} size={isMobile ? "small" : "medium"}>
+                    {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+                  </IconButton>
+                  <Slider
+                    size="small"
+                    value={volume}
+                    onChange={onVolumeChange}
+                    min={0}
+                    max={1}
+                    step={0.1}
+                    sx={{ width: 80 }}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+
+            {/* Progress Bar */}
+            <Grid item xs={12}>
+              <Box sx={{ px: isMobile ? 1 : 2 }}>
+                <ProgressSlider
+                  value={currentTime}
+                  onChange={onSeek}
+                  min={0}
+                  max={duration}
+                  step={1}
+                />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatTime(currentTime)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatTime(duration)}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      </PlayerContainer>
+    );
+  };
+
   return (
     <PageLayout>
       {showSplash && <MeditationSplash onComplete={handleTutorialComplete} />}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.8 }}
-        style={{
-          minHeight: '100vh',
-          background: theme.palette.background.gradient || theme.palette.background.default,
-          paddingTop: theme.spacing(8),
-          paddingBottom: theme.spacing(14),
-          color: theme.palette.text.primary,
+      <Box 
+        sx={{ 
+          maxWidth: '1200px', 
+          margin: '0 auto',
+          width: '100%',
+          paddingX: { xs: 1, sm: 2, md: 3 },
+          paddingBottom: { xs: 10, sm: 12 },
+          overflow: 'hidden', // Add this to prevent horizontal scroll
+          position: 'relative'
         }}
       >
-        <Container maxWidth="lg">
-          {/* Hero Section */}
-          <Box mb={6} textAlign="center">
-            <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-            >
-              <Typography
-                variant={isMobile ? 'h3' : 'h2'}
-                component="h1"
-                gutterBottom
-                sx={{
-                  fontWeight: 900,
-                  color: theme.palette.text.primary,
-                  textShadow: `2px 2px 3px ${theme.palette.grey[300]}`,
-                  lineHeight: 1.2,
-                }}
-              >
-                Find Your Moment of Calm
-              </Typography>
-              <Typography
-                variant="h6"
-                color="textSecondary"
-                paragraph
-                sx={{
-                  maxWidth: 750,
-                  margin: '0 auto',
-                  fontSize: '1.1rem',
-                  fontWeight: 400,
-                }}
-              >
-                Explore our diverse collection of guided meditations designed to bring peace and balance to your day.
-              </Typography>
-            </motion.div>
-
-            {/* Search and Filter Section */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-            >
-              <Box
-                mt={4}
-                display="flex"
-                justifyContent="center"
-                gap={2}
-                flexDirection={isMobile ? 'column' : 'row'}
-                alignItems="center"
-              >
-                <TextField
-                  label="Search Meditations"
-                  variant="outlined"
-                  size="small"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon color="action" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: searchQuery && (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setSearchQuery('')} edge="end" aria-label="clear search">
-                          <ClearIcon color="action" />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    flex: '1 1 200px',
-                    maxWidth: isMobile ? '100%' : '300px',
-                    mb: isMobile ? 2 : 0,
-                  }}
-                />
-
-                <FormControl variant="outlined" size="small" sx={{ flex: '0 0 auto', minWidth: 120 }}>
-                  <InputLabel id="category-filter-label">Category</InputLabel>
-                  <Select
-                    labelId="category-filter-label"
-                    id="category-filter"
-                    value={selectedCategory}
-                    label="Category"
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                  >
-                    {availableCategories.map((category) => (
-                      <MenuItem key={category} value={category}>
-                        {category}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-            </motion.div>
-          </Box>
-
-          {/* Meditation Player Section */}
-          {currentMeditation && (
-            <Box ref={playerRef} mb={8}>
-              <motion.div
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <Card sx={{ p: 3, borderRadius: '24px', boxShadow: theme.shadows[4], backgroundColor: theme.palette.background.paper }}>
-                  <CardContent>
-                    <Box display="flex" flexDirection="column" alignItems="center" textAlign="center">
-                      <Avatar
-                        alt={currentMeditation.title}
-                        src={currentMeditation.image}
-                        sx={{
-                          width: isMobile ? 100 : 120,
-                          height: isMobile ? 100 : 120,
-                          mb: 3,
-                          boxShadow: theme.shadows[2],
-                          borderRadius: '16px',
-                        }}
-                      />
-                      <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 700 }}>
-                        {currentMeditation.title}
-                      </Typography>
-                      <Typography variant="subtitle1" color="textSecondary" paragraph>
-                        {currentMeditation.description}
-                      </Typography>
-
-                      {/* Audio Controls */}
-                      {isMobile ? (
-                        // Mobile layout: stack controls vertically with spacing
-                        <Box display="flex" flexDirection="column" alignItems="center" width="100%" gap={2}>
-                          <Box display="flex" gap={2}>
-                            <IconButton onClick={() => handlePlayPauseToggle(currentMeditation)} aria-label={isPlaying ? 'Pause meditation' : 'Play meditation'}>
-                              {isPlaying ? (
-                                <PauseIcon color="primary" fontSize="large" />
-                              ) : (
-                                <PlayArrowIcon color="action" fontSize="large" />
-                              )}
-                            </IconButton>
-                            <IconButton onClick={handleStop} aria-label="Stop meditation">
-                              <StopIcon color="action" fontSize="large" />
-                            </IconButton>
-                          </Box>
-                          <Box display="flex" alignItems="center" width="100%">
-                            <Typography variant="body2" color="textSecondary" mr={1}>
-                              {formatTime(currentTime)}
-                            </Typography>
-                            <Slider
-                              value={currentTime}
-                              min={0}
-                              max={duration}
-                              onChange={handleSeek}
-                              aria-labelledby="media-seek-bar"
-                              sx={wavySliderSx}
-                              style={{ flexGrow: 1, margin: '0 8px' }}
-                            />
-                            <Typography variant="body2" color="textSecondary" ml={1}>
-                              {formatTime(duration)}
-                            </Typography>
-                          </Box>
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <IconButton onClick={handleMuteToggle} aria-label={isMuted ? 'Unmute' : 'Mute'}>
-                              {isMuted ? <VolumeOffIcon color="action" /> : <VolumeUpIcon color="action" />}
-                            </IconButton>
-                            <Slider
-                              value={isMuted ? 0 : volume}
-                              min={0}
-                              max={1}
-                              step={0.01}
-                              onChange={handleVolumeChange}
-                              aria-labelledby="media-volume-slider"
-                              sx={{
-                                width: 100,
-                                color: theme.palette.primary.main,
-                                '& .MuiSlider-thumb': {
-                                  '&:hover, &.Mui-focusVisible': {
-                                    boxShadow: `0 0 0 10px ${theme.palette.primary.light}40`,
-                                  },
-                                },
-                              }}
-                              disabled={isMuted}
-                            />
-                          </Box>
-                        </Box>
-                      ) : (
-                        // Desktop layout: controls in a single row
-                        <Box display="flex" alignItems="center" justifyContent="space-between" width="100%" flexDirection="row">
-                          <Box display="flex" alignItems="center" justifyContent="center" mr={3}>
-                            <IconButton onClick={() => handlePlayPauseToggle(currentMeditation)} aria-label={isPlaying ? 'Pause meditation' : 'Play meditation'}>
-                              {isPlaying ? (
-                                <PauseIcon color="primary" fontSize="large" />
-                              ) : (
-                                <PlayArrowIcon color="action" fontSize="large" />
-                              )}
-                            </IconButton>
-                            <IconButton onClick={handleStop} aria-label="Stop meditation">
-                              <StopIcon color="action" fontSize="large" />
-                            </IconButton>
-                          </Box>
-                          <Box flexGrow={1} mx={2} display="flex" alignItems="center">
-                            <Typography variant="body2" color="textSecondary" mr={1}>
-                              {formatTime(currentTime)}
-                            </Typography>
-                            <Slider value={currentTime} min={0} max={duration} onChange={handleSeek} aria-labelledby="media-seek-bar" sx={wavySliderSx} />
-                            <Typography variant="body2" color="textSecondary" ml={1}>
-                              {formatTime(duration)}
-                            </Typography>
-                          </Box>
-                          <Box display="flex" alignItems="center" ml={3}>
-                            <IconButton onClick={handleMuteToggle} aria-label={isMuted ? 'Unmute' : 'Mute'}>
-                              {isMuted ? <VolumeOffIcon color="action" /> : <VolumeUpIcon color="action" />}
-                            </IconButton>
-                            <Slider
-                              value={isMuted ? 0 : volume}
-                              min={0}
-                              max={1}
-                              step={0.01}
-                              onChange={handleVolumeChange}
-                              aria-labelledby="media-volume-slider"
-                              sx={{
-                                width: 100,
-                                ml: 1,
-                                color: theme.palette.primary.main,
-                                '& .MuiSlider-thumb': {
-                                  '&:hover, &.Mui-focusVisible': {
-                                    boxShadow: `0 0 0 10px ${theme.palette.primary.light}40`,
-                                  },
-                                },
-                              }}
-                              disabled={isMuted}
-                            />
-                          </Box>
-                        </Box>
-                      )}
-                    </Box>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </Box>
-          )}
-
-          {/* Meditation List Section */}
-          <Box mt={8} mb={isMobile ? 8 : 5}>
+        {/* Hero Section */}
+        <Box 
+          sx={{
+            textAlign: 'center',
+            position: 'relative',
+            mb: { xs: 4, md: 6 },
+            mt: { xs: 2, md: 4 },
+            width: '100%', // Add this to ensure proper width
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '100%', // Change from 200% to 100%
+              height: '100%', // Change from 200% to 100%
+              background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.1)} 0%, transparent 70%)`,
+              zIndex: 0,
+              pointerEvents: 'none' // Add this to prevent interaction issues
+            }
+          }}
+        >
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.7 }}
+          >
             <Typography
-              variant={isMobile ? 'h4' : 'h3'}
-              align="center"
-              gutterBottom
+              variant={isMobile ? 'h3' : 'h2'}
+              component="h1"
               sx={{
                 fontWeight: 800,
                 color: theme.palette.text.primary,
-                px: isMobile ? theme.spacing(2) : 0,
-                textShadow: `1px 1px 1px ${theme.palette.grey[300]}`,
-                lineHeight: 1.3,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                mb: 2,
+                position: 'relative',
+                zIndex: 1,
+                textShadow: `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
+                background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.primary.main, 0.8)} 100%)`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}
             >
-              <LibraryMusicIcon sx={{ mr: 1, fontSize: '1.2em', color: theme.palette.primary.main }} />
-              Explore Meditations
+              Find Your Inner Peace
             </Typography>
             <Typography
-              variant="h6"
-              align="center"
-              color="textSecondary"
-              gutterBottom
+              variant="h5"
               sx={{
-                px: isMobile ? theme.spacing(3) : 0,
-                maxWidth: 750,
+                color: theme.palette.text.secondary,
+                maxWidth: 800,
                 mx: 'auto',
-                fontSize: '1.05rem',
+                mb: 4,
+                position: 'relative',
+                zIndex: 1,
                 fontWeight: 400,
+                px: 2,
               }}
             >
-              Browse our collection of guided meditations. Use search and categories to find exactly what you need.
+              Discover a collection of guided meditations designed to bring balance and tranquility to your daily life
             </Typography>
+          </motion.div>
 
-            <Grid container spacing={isMobile ? 3 : 4} mt={5} justifyContent="center">
-              {filteredMeditations.map((meditation) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={meditation.id}>
-                  <motion.div
-                    initial={{ scale: 0.96, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: meditation.id * 0.05 }}
-                    whileHover={{ scale: 1.03 }}
-                    onClick={() => handleCardClick(meditation)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <MeditationCard isPlaying={currentMeditation?.id === meditation.id && isPlaying}>
-                      <Box sx={{ textAlign: 'center', pt: 3 }}>
-                        <Avatar
-                          alt={meditation.title}
-                          src={meditation.image}
-                          sx={{
-                            width: isMobile ? 70 : 90,
-                            height: isMobile ? 70 : 90,
-                            mx: 'auto',
-                            boxShadow: theme.shadows[3],
-                            borderRadius: '16px',
-                          }}
-                        />
-                      </Box>
-                      <CardContent sx={{ py: 3 }}>
-                        <Typography
-                          variant={isMobile ? 'h6' : 'h5'}
-                          sx={{
-                            fontWeight: 700,
-                            color: theme.palette.text.primary,
-                            textAlign: 'center',
-                            mt: 3,
-                            mb: 1,
-                            textShadow: `1px 1px 1px ${theme.palette.grey[200]}`,
-                            minHeight: '50px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                          gutterBottom
-                        >
-                          {meditation.title}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="textSecondary"
-                          sx={{ textAlign: 'center', fontSize: '1rem', lineHeight: 1.5, minHeight: '60px' }}
-                        >
-                          {meditation.description}
-                        </Typography>
-                        <Box mt={2} display="flex" justifyContent="center">
-                          <Chip label={meditation.category} size="small" color="primary" sx={{ borderRadius: '8px' }} />
-                        </Box>
-                      </CardContent>
-                      <CardActions sx={{ justifyContent: 'center', p: 3 }}>
-                        <Tooltip title={`Play ${meditation.title}`}>
-                          <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePlayPauseToggle(meditation);
-                            }}
-                          >
-                            <GradientButton
-                              variant="contained"
-                              fullWidth
-                              disabled={
-                                currentMeditation?.id === meditation.id &&
-                                isPlaying === false &&
-                                audioRef.current &&
-                                !audioRef.current.paused
-                              }
-                              sx={{
-                                py: isMobile ? 1.2 : 1.6,
-                                fontSize: '1rem',
-                                borderRadius: '14px',
-                              }}
-                            >
-                              {currentMeditation?.id === meditation.id && isPlaying ? 'Pause' : 'Play'} -{' '}
-                              {currentMeditation?.id === meditation.id
-                                ? formatTime(duration)
-                                : actualDurations[meditation.id]
-                                ? formatTime(actualDurations[meditation.id])
-                                : meditation.duration}
-                            </GradientButton>
-                          </motion.div>
-                        </Tooltip>
-                      </CardActions>
-                    </MeditationCard>
-                  </motion.div>
-                </Grid>
-              ))}
-            </Grid>
-            {filteredMeditations.length === 0 && (
-              <Typography variant="subtitle1" color="textSecondary" align="center" mt={4}>
-                No meditations found matching your criteria. Please adjust your search or filters.
-              </Typography>
-            )}
+          {/* Search and Filter Section */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 2,
+              justifyContent: 'center',
+              alignItems: 'center',
+              maxWidth: 800,
+              mx: 'auto',
+              p: 3,
+              borderRadius: '20px',
+              background: alpha(theme.palette.background.paper, 0.8),
+              backdropFilter: 'blur(10px)',
+              boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.1)}`,
+              position: 'relative',
+              zIndex: 1,
+              px: { xs: 2, sm: 3 },
+            }}
+          >
+            <TextField
+              fullWidth
+              placeholder="Search meditations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              variant="outlined"
+              InputProps={{
+                startAdornment: <SearchIcon color="action" sx={{ mr: 1 }} />,
+                endAdornment: searchQuery && (
+                  <IconButton size="small" onClick={() => setSearchQuery('')}>
+                    <ClearIcon />
+                  </IconButton>
+                ),
+                sx: {
+                  borderRadius: '15px',
+                  backgroundColor: theme.palette.background.paper,
+                  '&:hover': {
+                    backgroundColor: theme.palette.background.paper,
+                  },
+                },
+              }}
+              sx={{ flex: 2 }}
+            />
+            <FormControl sx={{ minWidth: { xs: '100%', sm: 200 }, flex: { sm: 1 } }}>
+              <Select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                displayEmpty
+                sx={{
+                  borderRadius: '15px',
+                  backgroundColor: theme.palette.background.paper,
+                }}
+              >
+                <MenuItem value="All">All Categories</MenuItem>
+                {availableCategories.filter(cat => cat !== 'All').map((category) => (
+                  <MenuItem key={category} value={category}>{category}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
+        </Box>
 
-          {/* Hidden audio element */}
-          <audio
-            ref={audioRef}
-            src={currentMeditation ? currentMeditation.audioSrc : ''}
-            onTimeUpdate={handleTimeUpdate}
-            onLoadedMetadata={handleLoadedMetadata}
-            onEnded={handleStop}
+        {/* Meditation Cards Grid */}
+        <Grid 
+          container 
+          spacing={{ xs: 2, sm: 3, md: 4 }} 
+          sx={{ 
+            position: 'relative', 
+            zIndex: 1,
+            mt: { xs: 2, sm: 3 }
+          }}
+        >
+          {filteredMeditations.map((meditation) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={meditation.id}>
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, delay: meditation.id * 0.1 }}
+              >
+                <MeditationCard isPlaying={currentMeditation?.id === meditation.id && isPlaying}>
+                  <Box sx={{ position: 'relative', mb: 3 }}>
+                    <Avatar
+                      alt={meditation.title}
+                      src={meditation.image}
+                      variant="rounded"
+                      sx={{
+                        width: '100%',
+                        height: { xs: 160, sm: 200 },
+                        borderRadius: '24px',
+                        boxShadow: `0 8px 20px ${alpha(theme.palette.primary.main, 0.15)}`,
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: '50%',
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.4), transparent)',
+                        borderRadius: '0 0 24px 24px',
+                      }}
+                    />
+                    <Chip
+                      label={meditation.category}
+                      color="primary"
+                      size={isMobile ? "small" : "medium"}
+                      sx={{
+                        position: 'absolute',
+                        top: 16,
+                        right: 16,
+                        borderRadius: '12px',
+                        fontWeight: 600,
+                        backdropFilter: 'blur(4px)',
+                      }}
+                    />
+                    <Chip
+                      label={meditation.duration}
+                      size={isMobile ? "small" : "medium"}
+                      sx={{
+                        position: 'absolute',
+                        bottom: 16,
+                        right: 16,
+                        borderRadius: '12px',
+                        fontWeight: 600,
+                        backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                        backdropFilter: 'blur(4px)',
+                      }}
+                    />
+                  </Box>
+
+                  <Typography
+                    variant={isMobile ? "subtitle1" : "h6"}
+                    sx={{
+                      fontWeight: 700,
+                      mb: 2,
+                      color: theme.palette.text.primary,
+                    }}
+                  >
+                    {meditation.title}
+                  </Typography>
+
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: theme.palette.text.secondary,
+                      mb: 3,
+                      minHeight: { xs: 48, sm: 60 },
+                      fontSize: isMobile ? '0.875rem' : '0.95rem',
+                    }}
+                  >
+                    {meditation.description}
+                  </Typography>
+
+                  <Box sx={{ mt: 'auto' }}>
+                    <GradientButton
+                      fullWidth
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePlayPauseToggle(meditation);
+                      }}
+                      startIcon={currentMeditation?.id === meditation.id && isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                      sx={{
+                        py: { xs: 1.5, sm: 2 },
+                        fontSize: { xs: '0.9rem', sm: '1rem' },
+                      }}
+                    >
+                      {currentMeditation?.id === meditation.id && isPlaying ? 'Pause' : 'Play Now'}
+                    </GradientButton>
+                  </Box>
+                </MeditationCard>
+              </motion.div>
+            </Grid>
+          ))}
+        </Grid>
+
+        {filteredMeditations.length === 0 && (
+          <Box
+            sx={{
+              textAlign: 'center',
+              py: { xs: 6, sm: 8 },
+              px: { xs: 2, sm: 3 },
+              borderRadius: '20px',
+              backgroundColor: alpha(theme.palette.background.paper, 0.6),
+              backdropFilter: 'blur(10px)',
+              mt: 4,
+              mx: 2,
+            }}
+          >
+            <Typography variant="h6" color="text.secondary">
+              No meditations found matching your criteria.
+            </Typography>
+            <Typography variant="body1" color="text.secondary" mt={1}>
+              Please adjust your search or filters to find more meditations.
+            </Typography>
+          </Box>
+        )}
+
+        {/* Audio Player */}
+        <audio
+          ref={audioRef}
+          src={currentMeditation?.audioSrc}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleStop}
+        />
+
+        {/* Persistent Player - Only render when there's a current meditation */}
+        {currentMeditation && (
+          <Player
+            meditation={currentMeditation}
+            isPlaying={isPlaying}
+            onPlayPause={() => setIsPlaying(!isPlaying)}
+            onStop={handleStop}
+            currentTime={currentTime}
+            duration={duration}
+            onSeek={handleSeek}
+            volume={volume}
+            onVolumeChange={handleVolumeChange}
+            onMuteToggle={handleMuteToggle}
+            isMuted={isMuted}
           />
-        </Container>
-      </motion.div>
+        )}
+      </Box>
       <SplashScreenToggle onShowSplash={handleShowSplash} />
     </PageLayout>
   );

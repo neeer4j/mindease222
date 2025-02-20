@@ -99,8 +99,27 @@ const StyledCard = styled(Card)(({ theme }) => ({
 const StatCard = styled(Card)(({ theme, color = 'primary' }) => ({
   backgroundColor: theme.palette[color].main,
   color: theme.palette[color].contrastText,
-  padding: theme.spacing(2),
-  height: '100%'
+  padding: theme.spacing(3),
+  height: '100%',
+  position: 'relative',
+  overflow: 'hidden',
+  borderRadius: 16,
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  boxShadow: `0 4px 20px 0 ${alpha(theme.palette[color].main, 0.2)}`,
+  '&:hover': {
+    transform: 'translateY(-5px)',
+    boxShadow: `0 20px 40px -15px ${alpha(theme.palette[color].main, 0.3)}`,
+  },
+  '&:before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    background: `radial-gradient(circle at 100% 100%, ${alpha('#fff', 0.15)} 0%, transparent 50%)`,
+    opacity: 0.4,
+  }
 }));
 
 const TimelineItem = styled(Box)(({ theme }) => ({
@@ -125,7 +144,96 @@ const DashboardContainer = styled(Box)(({ theme }) => ({
   flexDirection: 'column',
   width: '100%',
   minHeight: '100vh',
-  paddingTop: '60px', // Adjusted to account for removed title and better spacing
+  background: theme.palette.background.gradient,
+  boxSizing: 'border-box',
+  gap: theme.spacing(3)
+}));
+
+// Add these new styled components after the existing styled components
+const SearchContainer = styled(Box)(({ theme }) => ({
+  position: 'sticky',
+  top: 0,
+  zIndex: 10,
+  padding: theme.spacing(3),
+  backgroundColor: theme.palette.background.paper,
+  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  marginBottom: theme.spacing(3),
+  borderRadius: theme.shape.borderRadius * 2,
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(2),
+  }
+}));
+
+const UserCard = styled(StyledCard)(({ theme }) => ({
+  cursor: 'pointer',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  position: 'relative',
+  overflow: 'visible',
+  backgroundColor: theme.palette.background.paper,
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  '&:hover': {
+    transform: 'translateY(-8px)',
+    boxShadow: `0 20px 40px -15px ${alpha(theme.palette.primary.main, 0.2)}`,
+  }
+}));
+
+const UserAvatar = styled(Avatar)(({ theme }) => ({
+  width: 60,
+  height: 60,
+  border: `3px solid ${theme.palette.background.paper}`,
+  boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
+  transition: 'transform 0.3s ease',
+  '&:hover': {
+    transform: 'scale(1.1)',
+  },
+}));
+
+const StatusChip = styled(Chip)(({ theme, status }) => ({
+  borderRadius: '12px',
+  fontWeight: 600,
+  padding: '0 12px',
+  height: '24px',
+  '& .MuiChip-label': {
+    padding: '0 8px',
+  },
+  ...(status === 'active' && {
+    background: alpha(theme.palette.success.main, 0.1),
+    color: theme.palette.success.main,
+    border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`,
+  }),
+  ...(status === 'banned' && {
+    background: alpha(theme.palette.error.main, 0.1),
+    color: theme.palette.error.main,
+    border: `1px solid ${alpha(theme.palette.error.main, 0.3)}`,
+  }),
+}));
+
+// Add new styled components for the dialog
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialog-paper': {
+    borderRadius: 16,
+    backgroundColor: theme.palette.background.paper,
+    overflow: 'hidden',
+  },
+  '& .MuiDialogTitle-root': {
+    padding: theme.spacing(3),
+    backgroundColor: theme.palette.background.default,
+  },
+  '& .MuiDialogContent-root': {
+    padding: theme.spacing(3),
+  }
+}));
+
+const DetailItem = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2),
+  borderRadius: 12,
+  backgroundColor: theme.palette.background.default,
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: `0 8px 16px -6px ${alpha(theme.palette.primary.main, 0.2)}`,
+  }
 }));
 
 // Framer Motion variants
@@ -146,6 +254,44 @@ const itemVariants = {
     opacity: 1
   }
 };
+
+// Add new styled components for tabs
+const StyledTabList = styled(TabList)(({ theme }) => ({
+  borderBottom: 'none',
+  '& .MuiTabs-indicator': {
+    display: 'none',
+  },
+  '& .MuiTab-root': {
+    minHeight: 48,
+    minWidth: 'auto',
+    padding: theme.spacing(1.5, 2),
+    borderRadius: theme.shape.borderRadius,
+    margin: theme.spacing(0.5),
+    color: theme.palette.text.secondary,
+    '&.Mui-selected': {
+      color: theme.palette.primary.main,
+      backgroundColor: alpha(theme.palette.primary.main, 0.1),
+    },
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.05),
+    },
+    transition: 'all 0.2s ease',
+    [theme.breakpoints.down('sm')]: {
+      minWidth: 'auto',
+      padding: theme.spacing(1, 1.5),
+    }
+  },
+}));
+
+const TabPanelContainer = styled(Box)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius * 2,
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: theme.shadows[1],
+  padding: theme.spacing(3),
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(2),
+  }
+}));
 
 const AdminDashboard = () => {
   const theme = useTheme();
@@ -341,130 +487,150 @@ const AdminDashboard = () => {
   };
 
   const UserDetailDialog = () => (
-    <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
+    <StyledDialog 
+      open={dialogOpen} 
+      onClose={() => setDialogOpen(false)} 
+      maxWidth="md" 
+      fullWidth
+      TransitionComponent={motion.div}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+    >
       {selectedUser && (
         <>
           <DialogTitle>
             <Box display="flex" alignItems="center" justifyContent="space-between">
-              <Typography variant="h6">User Details</Typography>
-              <Chip
+              <Box display="flex" alignItems="center" gap={2}>
+                <UserAvatar
+                  src={selectedUser.avatar || selectedUser.photoURL || selectedUser.imageUrl}
+                  alt={selectedUser.displayName}
+                  sx={{ width: 80, height: 80 }}
+                >
+                  {(!selectedUser.avatar && !selectedUser.photoURL && !selectedUser.imageUrl) && (
+                    <PersonIcon sx={{ width: 40, height: 40 }} />
+                  )}
+                </UserAvatar>
+                <Box>
+                  <Typography variant="h5" fontWeight="600">
+                    {selectedUser.displayName || 'Anonymous'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    User Details
+                  </Typography>
+                </Box>
+              </Box>
+              <StatusChip
                 label={selectedUser.isBanned ? 'Banned' : 'Active'}
-                color={selectedUser.isBanned ? 'error' : 'success'}
-                size="small"
+                status={selectedUser.isBanned ? 'banned' : 'active'}
               />
             </Box>
           </DialogTitle>
           <DialogContent dividers>
             <Grid container spacing={3}>
-              {/* User Profile Section */}
               <Grid item xs={12} sm={4}>
-                <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
-                  <Avatar 
-                    src={selectedUser.avatar || selectedUser.photoURL || selectedUser.imageUrl} 
-                    alt={selectedUser.displayName}
-                    sx={{ 
-                      width: 120, 
-                      height: 120,
-                      border: '2px solid',
-                      borderColor: 'primary.main'
-                    }}
-                  >
-                    {(!selectedUser.avatar && !selectedUser.photoURL && !selectedUser.imageUrl) && (
-                      <PersonIcon sx={{ width: 60, height: 60 }} />
-                    )}
-                  </Avatar>
-                  <Typography variant="h6" align="center">
-                    {selectedUser.displayName || 'Anonymous'}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary" align="center">
-                    {selectedUser.email}
-                  </Typography>
+                <Box display="flex" flexDirection="column" gap={2}>
+                  <DetailItem>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Email Address
+                    </Typography>
+                    <Typography variant="body1" fontWeight="500">
+                      {selectedUser.email}
+                    </Typography>
+                  </DetailItem>
+                  <DetailItem>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Account Created
+                    </Typography>
+                    <Typography variant="body1" fontWeight="500">
+                      {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'Unknown'}
+                    </Typography>
+                  </DetailItem>
+                  <DetailItem>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Last Active
+                    </Typography>
+                    <Typography variant="body1" fontWeight="500">
+                      {selectedUser.lastActive ? new Date(selectedUser.lastActive).toLocaleString() : 'Unknown'}
+                    </Typography>
+                  </DetailItem>
                 </Box>
               </Grid>
-
-              {/* Account Information */}
               <Grid item xs={12} sm={8}>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Paper sx={{ p: 2 }}>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        Account Created
+                <Box display="flex" flexDirection="column" gap={3}>
+                  {selectedUser.isBanned && (
+                    <Box
+                      sx={{
+                        p: 3,
+                        borderRadius: 2,
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.error.main, 0.1)}, ${alpha(theme.palette.error.dark, 0.05)})`,
+                        border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+                      }}
+                    >
+                      <Typography variant="subtitle1" color="error" fontWeight="600" gutterBottom>
+                        Account Restrictions
                       </Typography>
-                      <Typography variant="body1">
-                        {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'Unknown'}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Paper sx={{ p: 2 }}>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        Status
-                      </Typography>
-                      <Typography variant="body1" color={selectedUser.isBanned ? 'error' : 'success'}>
-                        {selectedUser.isBanned ? 'Banned' : 'Active'}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
-
-                {/* Ban Information Section */}
-                {selectedUser.isBanned && (
-                  <Grid item xs={12}>
-                    <Paper sx={{ p: 2, mt: 2, bgcolor: 'error.light' }}>
-                      <Typography variant="subtitle1" color="error">
-                        Ban Information
-                      </Typography>
-                      <Typography variant="body2">
-                        Banned on: {new Date(selectedUser.bannedAt).toLocaleString()}
-                      </Typography>
-                      {selectedUser.banReason && (
+                      <Box display="flex" flexDirection="column" gap={1}>
                         <Typography variant="body2">
-                          Reason: {selectedUser.banReason}
+                          <strong>Banned on:</strong> {new Date(selectedUser.bannedAt).toLocaleString()}
                         </Typography>
-                      )}
-                    </Paper>
-                  </Grid>
-                )}
-
-                {/* User Actions */}
-                <Grid item xs={12}>
-                  <Box display="flex" gap={1} mt={2}>
-                    <Tooltip title="View Details">
-                      <span>
-                        <IconButton onClick={() => handleUserClick(selectedUser)}>
-                          <InfoIcon />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip title={selectedUser.isBanned ? "Unban User" : "Ban User"}>
-                      <span>
-                        <IconButton
-                          color={selectedUser.isBanned ? "success" : "error"}
-                          onClick={() => handleBanUser(selectedUser.id, selectedUser.isBanned)}
-                        >
-                          {selectedUser.isBanned ? <CheckIcon /> : <BlockIcon />}
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </Box>
-                </Grid>
+                        {selectedUser.banReason && (
+                          <Typography variant="body2">
+                            <strong>Reason:</strong> {selectedUser.banReason}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+                  <DetailItem sx={{ height: '100%' }}>
+                    <Typography variant="subtitle1" fontWeight="600" gutterBottom>
+                      Account Activity
+                    </Typography>
+                    <Box display="flex" gap={2} mb={2}>
+                      <Chip
+                        icon={<AssessmentIcon />}
+                        label="Reports: 0"
+                        variant="outlined"
+                        size="small"
+                      />
+                      <Chip
+                        icon={<WarningIcon />}
+                        label="Warnings: 0"
+                        variant="outlined"
+                        size="small"
+                      />
+                      <Chip
+                        icon={<TimelineIcon />}
+                        label="Activity Score: 100"
+                        variant="outlined"
+                        size="small"
+                      />
+                    </Box>
+                    <Box sx={{ mt: 2 }}>
+                      <Button
+                        variant="contained"
+                        color={selectedUser.isBanned ? "success" : "error"}
+                        fullWidth
+                        startIcon={selectedUser.isBanned ? <CheckIcon /> : <BlockIcon />}
+                        onClick={() => handleBanUser(selectedUser.id, selectedUser.isBanned)}
+                        sx={{
+                          borderRadius: '12px',
+                          py: 1.5,
+                          textTransform: 'none',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {selectedUser.isBanned ? "Remove Restrictions" : "Restrict Account"}
+                      </Button>
+                    </Box>
+                  </DetailItem>
+                </Box>
               </Grid>
             </Grid>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDialogOpen(false)}>Close</Button>
-            <Button
-              variant="contained"
-              color={selectedUser.isBanned ? "success" : "error"}
-              onClick={() => handleBanUser(selectedUser.id, selectedUser.isBanned)}
-              startIcon={selectedUser.isBanned ? <CheckIcon /> : <BlockIcon />}
-            >
-              {selectedUser.isBanned ? "Unban User" : "Ban User"}
-            </Button>
-          </DialogActions>
         </>
       )}
-    </Dialog>
+    </StyledDialog>
   );
 
   const SystemStats = () => (
@@ -879,209 +1045,423 @@ const AdminDashboard = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        sx={{ p: 3 }}
       >
         <LoadingOverlay>
-          {/* Top Cards */}
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={3}>
-              <StatCard 
-                component={motion.div} 
-                variants={itemVariants} 
-                initial={false} 
-                animate="visible"
-              >
-                <Box display="flex" alignItems="center" gap={2}>
-                  <GroupIcon fontSize="large" />
-                  <Box>
-                    <Typography variant="h4">{users.length}</Typography>
-                    <Typography>Total Users</Typography>
+          {/* Top Stats Section */}
+          <Box sx={{ mb: 6 }}>
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h4" fontWeight="600" gutterBottom>
+                Admin Dashboard
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Monitor and manage your platform's users and activities
+              </Typography>
+            </Box>
+            
+            <Grid container spacing={4}>
+              {/* Stat Cards */}
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard 
+                  component={motion.div} 
+                  variants={itemVariants} 
+                  initial={false} 
+                  animate="visible"
+                >
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRadius: '12px',
+                        backgroundColor: alpha('#fff', 0.2),
+                      }}
+                    >
+                      <GroupIcon fontSize="large" />
+                    </Box>
+                    <Box>
+                      <Typography variant="h4" fontWeight="600">
+                        {users.length}
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                        Total Users
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              </StatCard>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <StatCard 
-                component={motion.div} 
-                variants={itemVariants} 
-                initial={false} 
-                animate="visible" 
-                color="success"
-              >
-                <Box display="flex" alignItems="center" gap={2}>
-                  <CheckCircleIcon fontSize="large" />
-                  <Box>
-                    <Typography variant="h4">
-                      {users.filter(user => !user.isBanned).length}
-                    </Typography>
-                    <Typography>Active Users</Typography>
-                  </Box>
-                </Box>
-              </StatCard>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <StatCard 
-                component={motion.div} 
-                variants={itemVariants} 
-                initial={false} 
-                animate="visible" 
-                color="error"
-              >
-                <Box display="flex" alignItems="center" gap={2}>
-                  <BlockIcon fontSize="large" />
-                  <Box>
-                    <Typography variant="h4">
-                      {users.filter(user => user.isBanned).length}
-                    </Typography>
-                    <Typography>Banned Users</Typography>
-                  </Box>
-                </Box>
-              </StatCard>
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <StatCard 
-                component={motion.div} 
-                variants={itemVariants} 
-                initial={false} 
-                animate="visible" 
-                color="warning"
-              >
-                <Box display="flex" alignItems="center" gap={2}>
-                  <FlagIcon fontSize="large" />
-                  <Box>
-                    <Typography variant="h4">{reports.length}</Typography>
-                    <Typography>Active Reports</Typography>
-                  </Box>
-                </Box>
-              </StatCard>
-            </Grid>
-          </Grid>
+                </StatCard>
+              </Grid>
 
-          <Box sx={{ width: '100%', mt: 4 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard 
+                  component={motion.div} 
+                  variants={itemVariants} 
+                  initial={false} 
+                  animate="visible" 
+                  color="success"
+                >
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRadius: '12px',
+                        backgroundColor: alpha('#fff', 0.2),
+                      }}
+                    >
+                      <CheckCircleIcon fontSize="large" />
+                    </Box>
+                    <Box>
+                      <Typography variant="h4" fontWeight="600">
+                        {users.filter(user => !user.isBanned).length}
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                        Active Users
+                      </Typography>
+                    </Box>
+                  </Box>
+                </StatCard>
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard 
+                  component={motion.div} 
+                  variants={itemVariants} 
+                  initial={false} 
+                  animate="visible" 
+                  color="error"
+                >
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRadius: '12px',
+                        backgroundColor: alpha('#fff', 0.2),
+                      }}
+                    >
+                      <BlockIcon fontSize="large" />
+                    </Box>
+                    <Box>
+                      <Typography variant="h4" fontWeight="600">
+                        {users.filter(user => user.isBanned).length}
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                        Banned Users
+                      </Typography>
+                    </Box>
+                  </Box>
+                </StatCard>
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={3}>
+                <StatCard 
+                  component={motion.div} 
+                  variants={itemVariants} 
+                  initial={false} 
+                  animate="visible" 
+                  color="warning"
+                >
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRadius: '12px',
+                        backgroundColor: alpha('#fff', 0.2),
+                      }}
+                    >
+                      <FlagIcon fontSize="large" />
+                    </Box>
+                    <Box>
+                      <Typography variant="h4" fontWeight="600">
+                        {reports.length}
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                        Active Reports
+                      </Typography>
+                    </Box>
+                  </Box>
+                </StatCard>
+              </Grid>
+            </Grid>
+          </Box>
+
+          {/* Main Content Section */}
+          <Box sx={{ mt: 2 }}>
             <TabContext value={activeTab}>
-              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <TabList onChange={(e, newValue) => setActiveTab(newValue)}>
-                  <Tab label="Users" value="1" />
-                  <Tab label="Reports" value="2" />
-                  <Tab label="Activity" value="3" />
+              <Box>
+                <StyledTabList 
+                  onChange={(e, newValue) => setActiveTab(newValue)}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  sx={{
+                    backgroundColor: 'background.paper',
+                    borderRadius: 2,
+                    px: 2,
+                    mb: 3,
+                  }}
+                >
                   <Tab 
                     label={
-                      <Badge 
-                        badgeContent={notifications.newTickets + notifications.highPriorityTickets} 
-                        color="error"
-                        max={99}
-                      >
-                        Support Tickets
-                      </Badge>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <GroupIcon fontSize="small" />
+                        <span>Users</span>
+                      </Box>
+                    } 
+                    value="1" 
+                  />
+                  <Tab 
+                    label={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <FlagIcon fontSize="small" />
+                        <span>Reports</span>
+                      </Box>
+                    } 
+                    value="2" 
+                  />
+                  <Tab 
+                    label={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <TimelineIcon fontSize="small" />
+                        <span>Activity</span>
+                      </Box>
+                    } 
+                    value="3" 
+                  />
+                  <Tab 
+                    label={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Badge 
+                          badgeContent={notifications.newTickets + notifications.highPriorityTickets} 
+                          color="error"
+                          max={99}
+                        >
+                          <SupervisorAccountIcon fontSize="small" />
+                        </Badge>
+                        <span>Support</span>
+                      </Box>
                     } 
                     value="4" 
                   />
                   <Tab 
                     label={
-                      <Badge 
-                        badgeContent={notifications.abuseReports} 
-                        color="error"
-                        max={99}
-                      >
-                        Chat Abuse
-                      </Badge>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Badge 
+                          badgeContent={notifications.abuseReports} 
+                          color="error"
+                          max={99}
+                        >
+                          <WarningIcon fontSize="small" />
+                        </Badge>
+                        <span>Abuse</span>
+                      </Box>
                     } 
                     value="5" 
                   />
-                  <Tab label="Analytics" value="6" />
-                  <Tab label="System Stats" value="7" />
-                </TabList>
+                  <Tab 
+                    label={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <AssessmentIcon fontSize="small" />
+                        <span>Analytics</span>
+                      </Box>
+                    } 
+                    value="6" 
+                  />
+                  <Tab 
+                    label={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <InfoIcon fontSize="small" />
+                        <span>System</span>
+                      </Box>
+                    } 
+                    value="7" 
+                  />
+                </StyledTabList>
               </Box>
 
-              <TabPanel value="1">
-                <Box sx={{ mb: 3 }}>
-                  <TextField
-                    fullWidth
-                    variant="outlined"
-                    placeholder="Search users by name or email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Box>
-                {dataLoading ? (
-                  <LoadingState />
-                ) : (
-                  <Grid container spacing={2}>
-                    {filteredUsers.map((user) => (
-                      <Grid item xs={12} md={6} lg={4} key={user.id || user.uid}>
-                        <StyledCard onClick={() => handleUserClick(user)}>
-                          <CardContent>
-                            <Box display="flex" alignItems="center" gap={2}>
-                              <Box position="relative">
-                                <Avatar
-                                  src={user.avatar || user.photoURL || user.imageUrl}
-                                  alt={user.displayName || 'User Avatar'}
-                                  sx={{ 
-                                    width: 56, 
-                                    height: 56,
-                                    border: '2px solid',
-                                    borderColor: theme.palette.primary.main,
-                                    bgcolor: theme.palette.primary.light,
-                                    fontSize: '1.5rem'
-                                  }}
-                                >
-                                  {!user.avatar && !user.photoURL && !user.imageUrl && (
-                                    user.displayName ? user.displayName[0].toUpperCase() : <PersonIcon sx={{ width: 32, height: 32 }} />
-                                  )}
-                                </Avatar>
-                              </Box>
-                              <Box flex={1}>
-                                <Typography variant="h6">
-                                  {user.displayName || 'Anonymous'}
-                                </Typography>
-                                <Typography color="textSecondary" variant="body2">
-                                  {user.email}
-                                </Typography>
-                              </Box>
-                              <Chip
-                                label={user.isBanned ? 'Banned' : 'Active'}
-                                color={user.isBanned ? 'error' : 'success'}
-                                size="small"
-                              />
+              <TabPanelContainer>
+                <TabPanel value="1" sx={{ p: 0 }}>
+                  <SearchContainer>
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      placeholder="Search users by name or email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                        sx: {
+                          borderRadius: '12px',
+                          backgroundColor: theme.palette.background.paper,
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: alpha(theme.palette.divider, 0.2),
+                          }
+                        }
+                      }}
+                    />
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
+                      <Typography variant="body2" color="textSecondary">
+                        {filteredUsers.length} users found
+                      </Typography>
+                      <Box display="flex" gap={1}>
+                        <Chip
+                          icon={<CheckCircleIcon />}
+                          label={`${users.filter(u => !u.isBanned).length} Active`}
+                          color="success"
+                          variant="outlined"
+                          size="small"
+                        />
+                        <Chip
+                          icon={<BlockIcon />}
+                          label={`${users.filter(u => u.isBanned).length} Banned`}
+                          color="error"
+                          variant="outlined"
+                          size="small"
+                        />
+                      </Box>
+                    </Box>
+                  </SearchContainer>
+                  
+                  {dataLoading ? (
+                    <LoadingState />
+                  ) : (
+                    <Box sx={{ px: 3 }}>
+                      <Grid container spacing={2}>
+                        {filteredUsers.map((user) => (
+                          <Grid item xs={12} md={6} lg={4} key={user.id || user.uid}>
+                            <UserCard onClick={() => handleUserClick(user)}>
+                              <CardContent>
+                                <Box display="flex" flexDirection="column" gap={2}>
+                                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                                    <Box display="flex" gap={2}>
+                                      <UserAvatar
+                                        src={user.avatar || user.photoURL || user.imageUrl}
+                                        alt={user.displayName || 'User Avatar'}
+                                      >
+                                        {!user.avatar && !user.photoURL && !user.imageUrl && (
+                                          user.displayName ? user.displayName[0].toUpperCase() : <PersonIcon />
+                                        )}
+                                      </UserAvatar>
+                                      <Box>
+                                        <Typography variant="h6" sx={{ mb: 0.5 }}>
+                                          {user.displayName || 'Anonymous'}
+                                        </Typography>
+                                        <Typography 
+                                          variant="body2" 
+                                          color="textSecondary"
+                                          sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.5
+                                          }}
+                                        >
+                                          <PersonIcon fontSize="small" />
+                                          {user.email}
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                    <StatusChip
+                                      label={user.isBanned ? 'Banned' : 'Active'}
+                                      status={user.isBanned ? 'banned' : 'active'}
+                                      size="small"
+                                    />
+                                  </Box>
+                                  <Box 
+                                    sx={{ 
+                                      display: 'flex', 
+                                      gap: 1, 
+                                      mt: 1,
+                                      opacity: 0.7,
+                                      transition: 'opacity 0.3s ease',
+                                      '&:hover': { opacity: 1 }
+                                    }}
+                                  >
+                                    <Tooltip title="View Details">
+                                      <IconButton 
+                                        size="small" 
+                                        sx={{ 
+                                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                          '&:hover': {
+                                            bgcolor: alpha(theme.palette.primary.main, 0.2),
+                                          }
+                                        }}
+                                      >
+                                        <InfoIcon fontSize="small" />
+                                      </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={user.isBanned ? "Unban User" : "Ban User"}>
+                                      <IconButton 
+                                        size="small"
+                                        sx={{ 
+                                          bgcolor: alpha(user.isBanned ? theme.palette.success.main : theme.palette.error.main, 0.1),
+                                          '&:hover': {
+                                            bgcolor: alpha(user.isBanned ? theme.palette.success.main : theme.palette.error.main, 0.2),
+                                          }
+                                        }}
+                                      >
+                                        {user.isBanned ? <CheckIcon fontSize="small" /> : <BlockIcon fontSize="small" />}
+                                      </IconButton>
+                                    </Tooltip>
+                                  </Box>
+                                </Box>
+                              </CardContent>
+                            </UserCard>
+                          </Grid>
+                        ))}
+                        {filteredUsers.length === 0 && (
+                          <Grid item xs={12}>
+                            <Box 
+                              display="flex" 
+                              flexDirection="column" 
+                              alignItems="center" 
+                              justifyContent="center" 
+                              py={8}
+                              sx={{ 
+                                bgcolor: alpha(theme.palette.primary.main, 0.02),
+                                borderRadius: 2
+                              }}
+                            >
+                              <SearchIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                              <Typography variant="h6" color="text.secondary">
+                                No users found
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                Try adjusting your search criteria
+                              </Typography>
                             </Box>
-                          </CardContent>
-                        </StyledCard>
+                          </Grid>
+                        )}
                       </Grid>
-                    ))}
-                  </Grid>
-                )}
-              </TabPanel>
+                    </Box>
+                  )}
+                </TabPanel>
 
-              <TabPanel value="2">
-                {reportsLoading ? <LoadingState /> : <ReportsSection />}
-              </TabPanel>
+                <TabPanel value="2" sx={{ p: 0 }}>
+                  {reportsLoading ? <LoadingState /> : <ReportsSection />}
+                </TabPanel>
 
-              <TabPanel value="3">
-                {statsLoading ? <LoadingState /> : <ActivityTimeline />}
-              </TabPanel>
+                <TabPanel value="3" sx={{ p: 0 }}>
+                  {statsLoading ? <LoadingState /> : <ActivityTimeline />}
+                </TabPanel>
 
-              <TabPanel value="4">
-                <SupportTickets />
-              </TabPanel>
+                <TabPanel value="4" sx={{ p: 0 }}>
+                  <SupportTickets />
+                </TabPanel>
 
-              <TabPanel value="5">
-                <ChatAbuseAnalysis />
-              </TabPanel>
+                <TabPanel value="5" sx={{ p: 0 }}>
+                  <ChatAbuseAnalysis />
+                </TabPanel>
 
-              <TabPanel value="6">
-                <AdminAnalytics />
-              </TabPanel>
+                <TabPanel value="6" sx={{ p: 0 }}>
+                  <AdminAnalytics />
+                </TabPanel>
 
-              <TabPanel value="7">
-                {systemStatsLoading ? <LoadingState /> : <SystemStats />}
-              </TabPanel>
+                <TabPanel value="7" sx={{ p: 0 }}>
+                  {systemStatsLoading ? <LoadingState /> : <SystemStats />}
+                </TabPanel>
+              </TabPanelContainer>
             </TabContext>
           </Box>
 

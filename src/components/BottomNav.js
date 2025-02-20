@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { alpha } from '@mui/material/styles';
 
 // Import icons for full navigation
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -78,8 +79,13 @@ const BottomNav = () => {
   // Update the drop-up menu background based on the current mode.
   const menuBg =
     currentMode === 'light'
-      ? 'rgba(255, 255, 255, 0.95)' // Light background for light mode.
-      : 'rgba(0, 0, 0, 0.85)'; // Dark background for dark mode.
+      ? 'rgba(236, 246, 255, 0.85)' // Light frosted blue for light mode
+      : 'rgba(13, 71, 161, 0.1)'; // Dark frosted blue for dark mode
+
+  const menuItemHoverBg =
+    currentMode === 'light'
+      ? 'rgba(33, 150, 243, 0.08)' // Light blue tint for hover in light mode
+      : 'rgba(33, 150, 243, 0.15)'; // Slightly lighter blue for hover in dark mode
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -313,14 +319,21 @@ const BottomNav = () => {
           bottom: 0,
           left: 0,
           right: 0,
-          zIndex: 1100, // Higher z-index to stay above all content
-          borderTopLeftRadius: '20px',
-          borderTopRightRadius: '20px',
-          boxShadow: '0px -2px 10px rgba(0, 0, 0, 0.1)',
-          // When on the chat page on mobile, remove the fade and use a solid background with minimal borders.
-          background: isChatPage ? bottomNavTheme.palette.background.paper : navBgGradient,
+          zIndex: 1100,
+          borderTopLeftRadius: isChatPage ? 0 : '20px',
+          borderTopRightRadius: isChatPage ? 0 : '20px',
+          background: isChatPage 
+            ? globalTheme.palette.mode === 'light'
+              ? 'rgba(255, 255, 255, 0.8)'
+              : 'rgba(18, 18, 18, 0.8)'
+            : navBgGradient,
+          backdropFilter: 'blur(10px)',
+          borderTop: isChatPage 
+            ? `1px solid ${alpha(globalTheme.palette.divider, 0.1)}`
+            : 'none',
           boxShadow: 'none',
-          border: isChatPage ? 'none' : undefined,
+          transition: 'all 0.3s ease',
+          height: isChatPage ? 56 : 'auto',
         }}
         elevation={0}
       >
@@ -336,19 +349,43 @@ const BottomNav = () => {
           sx={{
             backgroundColor: 'transparent',
             border: 'none',
-            p: { xs: 0.5, sm: 1 },
+            height: isChatPage ? '56px' : 'auto',
+            p: isChatPage ? 0 : { xs: 0.5, sm: 1 },
             '& .MuiBottomNavigationAction-root': {
-              // Use the updated text colour for unselected items in light mode.
-              color: currentMode === 'light'
-                ? bottomNavTheme.palette.text.primary
-                : 'text.secondary',
+              color: isChatPage
+                ? globalTheme.palette.mode === 'light'
+                  ? alpha(globalTheme.palette.text.primary, 0.7)
+                  : alpha(globalTheme.palette.text.primary, 0.6)
+                : globalTheme.palette.mode === 'light'
+                  ? bottomNavTheme.palette.text.primary
+                  : 'text.secondary',
               minWidth: '50px',
+              transition: 'all 0.2s ease',
+              py: isChatPage ? 1 : 0.5,
+              '& .MuiSvgIcon-root': {
+                transition: 'transform 0.2s ease',
+                fontSize: { xs: 24, sm: 28 },
+              },
+              '&:hover': {
+                color: isChatPage
+                  ? globalTheme.palette.primary.main
+                  : bottomNavTheme.palette.primary.main,
+                '& .MuiSvgIcon-root': {
+                  transform: 'scale(1.1)',
+                },
+              },
             },
             '& .Mui-selected': {
-              color: bottomNavTheme.palette.primary.main,
+              color: isChatPage
+                ? globalTheme.palette.primary.main
+                : bottomNavTheme.palette.primary.main,
+              '& .MuiSvgIcon-root': {
+                transform: 'scale(1.1)',
+              },
             },
             '& .MuiBottomNavigationAction-label': {
               fontSize: { xs: '0.65rem', sm: '0.75rem' },
+              transition: 'font-size 0.2s ease',
             },
           }}
         >
@@ -400,20 +437,48 @@ const BottomNav = () => {
           '& .MuiPaper-root': {
             backgroundColor: menuBg,
             borderRadius: '12px',
-            boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.15)',
+            boxShadow: currentMode === 'light' 
+              ? '0px 4px 20px rgba(33, 150, 243, 0.15)'
+              : '0px 4px 20px rgba(0, 0, 0, 0.4)',
             backdropFilter: 'blur(10px)',
             border: currentMode === 'light'
-              ? '1px solid rgba(0, 0, 0, 0.1)'
-              : '1px solid rgba(255, 255, 255, 0.1)',
+              ? '1px solid rgba(33, 150, 243, 0.1)'
+              : '1px solid rgba(33, 150, 243, 0.05)',
             maxHeight: 'none',
             display: 'flex',
-            width: '400px',
-            height: '400px',
-            overflow: 'hidden'
+            width: { xs: '300px', sm: '400px' },
+            height: { xs: '400px', sm: '500px' },
+            overflow: 'hidden',
+            '& .MuiList-root': {
+              padding: 0,
+              backgroundColor: 'transparent',
+              maxHeight: '100%'
+            },
+            background: currentMode === 'light'
+              ? 'linear-gradient(135deg, rgba(236, 246, 255, 0.85) 0%, rgba(230, 244, 255, 0.95) 100%)'
+              : 'linear-gradient(135deg, rgba(13, 71, 161, 0.1) 0%, rgba(25, 118, 210, 0.15) 100%)',
           }
         }}
       >
-        <Box sx={{ width: '60%', p: 2 }}>
+        <Box sx={{ 
+          width: { xs: '100%', sm: '60%' }, 
+          p: { xs: 1.5, sm: 2 },
+          overflowY: 'auto',
+          backgroundColor: 'transparent',
+          height: '100%',
+          '&::-webkit-scrollbar': {
+            width: '4px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: currentMode === 'light'
+              ? 'rgba(33, 150, 243, 0.3)'
+              : 'rgba(33, 150, 243, 0.2)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+          }
+        }}>
           {features.map((feature) => (
             <MenuItem 
               key={feature.path}
@@ -421,21 +486,35 @@ const BottomNav = () => {
               onMouseEnter={() => setActivePhoto(feature.photoUrl)}
               sx={{
                 borderRadius: '8px',
-                mb: 1,
-                py: 1.5,
+                mb: 1.5,
+                py: 2,
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                color: currentMode === 'light' ? 'rgba(0, 0, 0, 0.87)' : '#fff',
+                backdropFilter: 'blur(5px)',
                 '&:last-child': { mb: 0 },
                 '&:hover': {
-                  backgroundColor: 'action.hover'
+                  backgroundColor: menuItemHoverBg,
+                  transition: 'all 0.2s ease',
+                  transform: 'translateX(4px)'
                 }
               }}
             >
-              {React.cloneElement(feature.icon, { sx: { mr: 2, fontSize: { xs: 20, sm: 24 } } })}
+              {React.cloneElement(feature.icon, { 
+                sx: { 
+                  mr: 2, 
+                  fontSize: { xs: 18, sm: 24 },
+                  color: currentMode === 'light' 
+                    ? bottomNavTheme.palette.primary.main
+                    : bottomNavTheme.palette.primary.light
+                } 
+              })}
               {feature.title}
             </MenuItem>
           ))}
         </Box>
         <Box 
           sx={{ 
+            display: { xs: 'none', sm: 'block' },
             width: '40%',
             position: 'relative',
             bgcolor: 'background.default'
@@ -471,38 +550,81 @@ const BottomNav = () => {
           vertical: 'bottom',
           horizontal: 'center',
         }}
-        PaperProps={{
-          sx: {
+        sx={{
+          '& .MuiPaper-root': {
             backgroundColor: menuBg,
             borderRadius: '12px',
-            boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.15)',
+            boxShadow: currentMode === 'light' 
+              ? '0px 4px 20px rgba(33, 150, 243, 0.15)'
+              : '0px 4px 20px rgba(0, 0, 0, 0.4)',
             backdropFilter: 'blur(10px)',
             border: currentMode === 'light'
-              ? '1px solid rgba(0, 0, 0, 0.1)'
-              : '1px solid rgba(255, 255, 255, 0.1)',
+              ? '1px solid rgba(33, 150, 243, 0.1)'
+              : '1px solid rgba(33, 150, 243, 0.05)',
             mt: 1,
-            minWidth: '180px',
-            maxWidth: '200px'
+            minWidth: '200px',
+            maxWidth: '250px',
+            overflow: 'hidden',
+            '& .MuiList-root': {
+              padding: 0,
+              backgroundColor: 'transparent',
+              maxHeight: '100%'
+            },
+            background: currentMode === 'light'
+              ? 'linear-gradient(135deg, rgba(236, 246, 255, 0.85) 0%, rgba(230, 244, 255, 0.95) 100%)'
+              : 'linear-gradient(135deg, rgba(13, 71, 161, 0.1) 0%, rgba(25, 118, 210, 0.15) 100%)',
           }
         }}
       >
-        {menuItems.map((item) => (
-          <MenuItem
-            key={item.path}
-            onClick={() => handleCloseMenu(item.path)}
-            sx={{
-              borderRadius: '8px',
-              m: 1,
-              py: 1.5,
-              '&:hover': {
-                backgroundColor: 'action.hover'
-              }
-            }}
-          >
-            {React.cloneElement(item.icon, { sx: { mr: 2, fontSize: { xs: 20, sm: 24 } } })}
-            {item.title}
-          </MenuItem>
-        ))}
+        <Box sx={{ 
+          p: { xs: 1.5, sm: 2 },
+          overflowY: 'auto',
+          backgroundColor: 'transparent',
+          '&::-webkit-scrollbar': {
+            width: '4px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: currentMode === 'light'
+              ? 'rgba(33, 150, 243, 0.3)'
+              : 'rgba(33, 150, 243, 0.2)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'transparent',
+          }
+        }}>
+          {menuItems.map((item) => (
+            <MenuItem
+              key={item.path}
+              onClick={() => handleCloseMenu(item.path)}
+              sx={{
+                borderRadius: '8px',
+                mb: 1.5,
+                py: 2,
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                color: currentMode === 'light' ? 'rgba(0, 0, 0, 0.87)' : '#fff',
+                backdropFilter: 'blur(5px)',
+                '&:last-child': { mb: 0 },
+                '&:hover': {
+                  backgroundColor: menuItemHoverBg,
+                  transition: 'all 0.2s ease',
+                  transform: 'translateX(4px)'
+                }
+              }}
+            >
+              {React.cloneElement(item.icon, { 
+                sx: { 
+                  mr: 2, 
+                  fontSize: { xs: 18, sm: 24 },
+                  color: currentMode === 'light' 
+                    ? bottomNavTheme.palette.primary.main
+                    : bottomNavTheme.palette.primary.light
+                } 
+              })}
+              {item.title}
+            </MenuItem>
+          ))}
+        </Box>
       </Menu>
     </ThemeProvider>
   );

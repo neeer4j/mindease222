@@ -33,7 +33,8 @@ import {
   Visibility as VisibilityIcon,
   Flag as FlagIcon,
   Timer as TimerIcon,
-  Check as CheckIcon
+  Check as CheckIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import {
   collection,
@@ -54,6 +55,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import { styled } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
+import GroupIcon from '@mui/icons-material/Group';
 
 const formatTimestamp = (timestamp) => {
   if (!timestamp) return 'Unknown';
@@ -62,6 +66,75 @@ const formatTimestamp = (timestamp) => {
   }
   return new Date(timestamp).toLocaleDateString();
 };
+
+// Add new styled components
+const StyledStatCard = styled(Card)(({ theme, color = 'primary' }) => ({
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: 16,
+  height: '100%',
+  position: 'relative',
+  overflow: 'hidden',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: `0 20px 40px -15px ${alpha(theme.palette[color].main, 0.2)}`,
+  },
+  '& .MuiCardContent-root': {
+    padding: theme.spacing(3),
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(1),
+  }
+}));
+
+const StatValue = styled(Typography)(({ theme }) => ({
+  fontSize: '2.5rem',
+  fontWeight: 700,
+  color: theme.palette.text.primary,
+  marginBottom: theme.spacing(1),
+}));
+
+const StatLabel = styled(Typography)(({ theme }) => ({
+  fontSize: '1rem',
+  color: theme.palette.text.secondary,
+  fontWeight: 500,
+}));
+
+const ChartContainer = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  borderRadius: 16,
+  backgroundColor: theme.palette.background.paper,
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    boxShadow: `0 8px 24px -4px ${alpha(theme.palette.primary.main, 0.1)}`,
+  }
+}));
+
+const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
+  borderRadius: 16,
+  backgroundColor: theme.palette.background.paper,
+  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  overflow: 'hidden',
+  '& .MuiTableHead-root': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+    '& .MuiTableCell-root': {
+      color: theme.palette.text.secondary,
+      fontWeight: 600,
+      borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+    }
+  },
+  '& .MuiTableBody-root .MuiTableRow-root': {
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.02),
+    }
+  },
+  '& .MuiTableCell-root': {
+    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  }
+}));
 
 const ChatAbuseAnalysis = () => {
   const [abusiveUsers, setAbusiveUsers] = useState([]);
@@ -309,51 +382,110 @@ const ChatAbuseAnalysis = () => {
 
   return (
     <Box component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }} sx={{ p: 3 }}>
-      {/* Header with Reset Data Button */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4" gutterBottom>
-          Chat Abuse Analysis
-        </Typography>
-        <Button variant="outlined" color="error" onClick={handleResetData}>
-          Reset Analysis Data
-        </Button>
+      {/* Header Section */}
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Box>
+            <Typography variant="h4" fontWeight="600" gutterBottom>
+              Chat Abuse Analysis
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Monitor and analyze chat behavior patterns and abuse incidents
+            </Typography>
+          </Box>
+          <Button 
+            variant="outlined" 
+            color="error" 
+            onClick={handleResetData}
+            startIcon={<DeleteIcon />}
+            sx={{
+              borderRadius: '12px',
+              textTransform: 'none',
+              fontWeight: 500
+            }}
+          >
+            Reset Analysis Data
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
-        {/* Aggregated Abuse Stats */}
+        {/* Stat Cards */}
         <Grid item xs={12} md={4}>
-          <Card>
+          <StyledStatCard>
             <CardContent>
-              <Typography variant="h6">Total Flagged Users</Typography>
-              <Typography variant="h3">{abusiveUsers.length}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: '12px',
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    color: theme.palette.primary.main
+                  }}
+                >
+                  <GroupIcon fontSize="large" />
+                </Box>
+                <Box>
+                  <StatValue>{abusiveUsers.length}</StatValue>
+                  <StatLabel>Total Flagged Users</StatLabel>
+                </Box>
+              </Box>
             </CardContent>
-          </Card>
+          </StyledStatCard>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Card>
+          <StyledStatCard color="warning">
             <CardContent>
-              <Typography variant="h6">Total Spam Incidents</Typography>
-              <Typography variant="h3">
-                {abusiveUsers.reduce((total, user) => total + user.spamCount, 0)}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: '12px',
+                    backgroundColor: alpha(theme.palette.warning.main, 0.1),
+                    color: theme.palette.warning.main
+                  }}
+                >
+                  <TimerIcon fontSize="large" />
+                </Box>
+                <Box>
+                  <StatValue>
+                    {abusiveUsers.reduce((total, user) => total + user.spamCount, 0)}
+                  </StatValue>
+                  <StatLabel>Total Spam Incidents</StatLabel>
+                </Box>
+              </Box>
             </CardContent>
-          </Card>
+          </StyledStatCard>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Card>
+          <StyledStatCard color="error">
             <CardContent>
-              <Typography variant="h6">Total Abuse Incidents</Typography>
-              <Typography variant="h3">
-                {abusiveUsers.reduce((total, user) => total + user.abuseCount, 0)}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: '12px',
+                    backgroundColor: alpha(theme.palette.error.main, 0.1),
+                    color: theme.palette.error.main
+                  }}
+                >
+                  <FlagIcon fontSize="large" />
+                </Box>
+                <Box>
+                  <StatValue>
+                    {abusiveUsers.reduce((total, user) => total + user.abuseCount, 0)}
+                  </StatValue>
+                  <StatLabel>Total Abuse Incidents</StatLabel>
+                </Box>
+              </Box>
             </CardContent>
-          </Card>
+          </StyledStatCard>
         </Grid>
 
-        {/* Abuse Timeline Chart */}
+        {/* Chart Section */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
+          <ChartContainer>
+            <Typography variant="h6" fontWeight="600" gutterBottom>
               Abuse Incidents Timeline
             </Typography>
             <Box sx={{ height: 400, p: 2 }}>
@@ -450,26 +582,33 @@ const ChatAbuseAnalysis = () => {
                 </LineChart>
               </ResponsiveContainer>
             </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 2 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              gap: 3, 
+              mt: 2,
+              p: 2,
+              borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+            }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box sx={{ width: 12, height: 12, backgroundColor: theme.palette.warning.main, borderRadius: '50%' }} />
-                <Typography variant="body2">Spam</Typography>
+                <Typography variant="body2" fontWeight="500">Spam</Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box sx={{ width: 12, height: 12, backgroundColor: theme.palette.error.main, borderRadius: '50%' }} />
-                <Typography variant="body2">Abuse</Typography>
+                <Typography variant="body2" fontWeight="500">Abuse</Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Box sx={{ width: 12, height: 12, backgroundColor: theme.palette.info.main, borderRadius: '50%' }} />
-                <Typography variant="body2">Distress</Typography>
+                <Typography variant="body2" fontWeight="500">Distress</Typography>
               </Box>
             </Box>
-          </Paper>
+          </ChartContainer>
         </Grid>
 
-        {/* Detailed Aggregated User Table */}
+        {/* Users Table Section */}
         <Grid item xs={12}>
-          <TableContainer component={Paper}>
+          <StyledTableContainer>
             <Table>
               <TableHead>
                 <TableRow>
@@ -479,7 +618,7 @@ const ChatAbuseAnalysis = () => {
                   <TableCell>Abuse Count</TableCell>
                   <TableCell>Last Violation</TableCell>
                   <TableCell>Risk Level</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -537,79 +676,86 @@ const ChatAbuseAnalysis = () => {
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </StyledTableContainer>
+        </Grid>
+
+        {/* Distress Alerts Section */}
+        <Grid item xs={12}>
+          <Box sx={{ mt: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+              <WarningIcon color="error" />
+              <Box>
+                <Typography variant="h5" fontWeight="600">
+                  Distress Message Detection
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Messages that have been flagged as potentially concerning
+                </Typography>
+              </Box>
+            </Box>
+            <StyledTableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>User Name</TableCell>
+                    <TableCell>User ID</TableCell>
+                    <TableCell>Message</TableCell>
+                    <TableCell>Timestamp</TableCell>
+                    <TableCell>Severity</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {distressAlerts.map((alert, idx) => (
+                    <TableRow key={`${alert.id}-${idx}`}>
+                      <TableCell>{alert.userName || 'N/A'}</TableCell>
+                      <TableCell>{alert.userId}</TableCell>
+                      <TableCell>{alert.text}</TableCell>
+                      <TableCell>
+                        {alert.createdAt
+                          ? new Date(alert.createdAt.seconds * 1000).toLocaleString()
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={<WarningIcon />}
+                          label={alert.severity || 'N/A'}
+                          color={alert.severity === 'critical' ? 'error' : alert.severity === 'high' ? 'warning' : 'default'}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title="View User Details">
+                          <IconButton onClick={() => handleViewUser(alert.userId)}>
+                            <VisibilityIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={alert.isBanned ? "Unban User" : "Ban User"}>
+                          <IconButton
+                            color={alert.isBanned ? "success" : "error"}
+                            onClick={() => handleBanUserDialog(alert.userId)}
+                          >
+                            <Box component="div" sx={{ display: 'flex', alignItems: 'center' }}>
+                              {alert.isBanned ? <CheckIcon /> : <BlockIcon />}
+                            </Box>
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {distressAlerts.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">
+                        No distress alerts found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </StyledTableContainer>
+          </Box>
         </Grid>
       </Grid>
-
-      {/* --- Distress Alerts Section --- */}
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Distress Message Detection
-        </Typography>
-        <Typography variant="body2" color="textSecondary" gutterBottom>
-          The following messages have been flagged as distress-related.
-        </Typography>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>User Name</TableCell>
-                <TableCell>User ID</TableCell>
-                <TableCell>Message</TableCell>
-                <TableCell>Timestamp</TableCell>
-                <TableCell>Severity</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {distressAlerts.map((alert, idx) => (
-                <TableRow key={`${alert.id}-${idx}`}>
-                  <TableCell>{alert.userName || 'N/A'}</TableCell>
-                  <TableCell>{alert.userId}</TableCell>
-                  <TableCell>{alert.text}</TableCell>
-                  <TableCell>
-                    {alert.createdAt
-                      ? new Date(alert.createdAt.seconds * 1000).toLocaleString()
-                      : 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={<WarningIcon />}
-                      label={alert.severity || 'N/A'}
-                      color={alert.severity === 'critical' ? 'error' : alert.severity === 'high' ? 'warning' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip title="View User Details">
-                      <IconButton onClick={() => handleViewUser(alert.userId)}>
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={alert.isBanned ? "Unban User" : "Ban User"}>
-                      <IconButton
-                        color={alert.isBanned ? "success" : "error"}
-                        onClick={() => handleBanUserDialog(alert.userId)}
-                      >
-                        <Box component="div" sx={{ display: 'flex', alignItems: 'center' }}>
-                          {alert.isBanned ? <CheckIcon /> : <BlockIcon />}
-                        </Box>
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {distressAlerts.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    No distress alerts found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
 
       {/* User Details Dialog */}
       <Dialog open={userDetailsDialog} onClose={() => setUserDetailsDialog(false)} maxWidth="md" fullWidth>

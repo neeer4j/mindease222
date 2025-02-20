@@ -5,7 +5,9 @@ import {
     Card,
     CardContent,
     Button,
-    Chip
+    Chip,
+    CircularProgress,
+    Alert
 } from '@mui/material';
 import Timeline from '@mui/lab/Timeline';
 import TimelineItem from '@mui/lab/TimelineItem';
@@ -13,22 +15,40 @@ import TimelineContent from '@mui/lab/TimelineContent';
 import TimelineSeparator from '@mui/lab/TimelineSeparator';
 import TimelineDot from '@mui/lab/TimelineDot';
 import TimelineConnector from '@mui/lab/TimelineConnector';
-import { useReportManagement } from '../../hooks/useReportManagement';
+import useReportManagement from '../../hooks/useReportManagement';
 
 const ReportsTab = () => {
     const { reports, loading, error, resolveReport } = useReportManagement();
 
     if (loading) {
-        return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>Loading...</Box>;
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 3 }}>
+                <CircularProgress />
+            </Box>
+        );
     }
 
     if (error) {
-        return <Box sx={{ color: 'error.main', p: 3 }}>{error}</Box>;
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert severity="error" variant="filled">
+                    {error}
+                </Alert>
+            </Box>
+        );
     }
+
+    const handleResolveReport = async (reportId, action) => {
+        try {
+            await resolveReport(reportId, action);
+        } catch (err) {
+            // Error handling is done in the hook
+        }
+    };
 
     return (
         <Box>
-            <Typography variant="h6" gutterBottom>Recent Reports</Typography>
+            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>Recent Reports</Typography>
             <Timeline>
                 {reports.map((report) => (
                     <TimelineItem key={report.id}>
@@ -41,7 +61,7 @@ const ReportsTab = () => {
                                 <CardContent>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                         <Typography variant="subtitle2" color="textSecondary">
-                                            {new Date(report.timestamp).toLocaleString()}
+                                            {new Date(report.timestamp?.toDate()).toLocaleString()}
                                         </Typography>
                                         <Chip 
                                             label={report.status} 
@@ -65,28 +85,35 @@ const ReportsTab = () => {
                                                 Reported Content:
                                             </Typography>
                                             <Typography variant="body2">
-                                                {report.message.content}
+                                                {report.message.content || report.message.text}
                                             </Typography>
+                                            {report.message.error && (
+                                                <Typography color="error" variant="caption">
+                                                    {report.message.error}
+                                                </Typography>
+                                            )}
                                         </Box>
                                     )}
-                                    <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                                        <Button
-                                            size="small"
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={() => resolveReport(report.id, 'reviewed')}
-                                        >
-                                            Mark as Reviewed
-                                        </Button>
-                                        <Button
-                                            size="small"
-                                            variant="outlined"
-                                            color="error"
-                                            onClick={() => resolveReport(report.id, 'deleted')}
-                                        >
-                                            Delete Content
-                                        </Button>
-                                    </Box>
+                                    {report.status === 'pending' && (
+                                        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                color="primary"
+                                                onClick={() => handleResolveReport(report.id, 'reviewed')}
+                                            >
+                                                Mark as Reviewed
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                color="error"
+                                                onClick={() => handleResolveReport(report.id, 'deleted')}
+                                            >
+                                                Delete Content
+                                            </Button>
+                                        </Box>
+                                    )}
                                 </CardContent>
                             </Card>
                         </TimelineContent>

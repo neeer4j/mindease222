@@ -84,6 +84,175 @@ const MOOD_PROMPT_INTERVAL = 15 * 60 * 1000; // 15 minutes
 
 const GradientButton = motion(Button);
 
+const StyledChatContainer = styled(Box)(({ theme }) => ({
+  background: theme.palette.mode === 'light' 
+    ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, ${alpha(theme.palette.primary.main, 0.08)} 100%)`
+    : `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.05)} 0%, ${alpha(theme.palette.primary.dark, 0.15)} 100%)`,
+  borderRadius: '28px',
+  boxShadow: theme.palette.mode === 'light'
+    ? '0 10px 40px -10px rgba(0,0,0,0.1)'
+    : '0 10px 40px -10px rgba(0,0,0,0.3)',
+  backdropFilter: 'blur(12px)',
+  border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'light' ? 0.1 : 0.2)}`,
+  overflow: 'hidden',
+}));
+
+const MessageContainer = styled(Box)(({ theme, isBot }) => ({
+  display: 'flex',
+  justifyContent: isBot ? 'flex-start' : 'flex-end',
+  marginBottom: theme.spacing(1.5),
+  paddingLeft: theme.spacing(1),
+  paddingRight: theme.spacing(1),
+  position: 'relative',
+  [theme.breakpoints.down('sm')]: {
+    paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(1),
+    marginBottom: theme.spacing(1),
+  },
+  '&:hover': {
+    '& .message-actions': {
+      opacity: 1,
+      transform: 'translateX(0)',
+    }
+  }
+}));
+
+const MessageBubble = styled(Box)(({ theme, isBot }) => ({
+  background: isBot
+    ? theme.palette.mode === 'light'
+      ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.primary.main, 0.12)} 100%)`
+      : `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(theme.palette.primary.main, 0.2)} 100%)`
+    : theme.palette.mode === 'light'
+      ? `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.08)} 0%, ${alpha(theme.palette.secondary.main, 0.12)} 100%)`
+      : `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.15)} 0%, ${alpha(theme.palette.secondary.main, 0.2)} 100%)`,
+  borderRadius: '24px',
+  padding: '12px 20px',
+  maxWidth: '85%',
+  wordWrap: 'break-word',
+  boxShadow: `0 2px 12px ${alpha(theme.palette.common.black, 0.08)}`,
+  border: `1px solid ${alpha(
+    isBot ? theme.palette.primary.main : theme.palette.secondary.main,
+    0.15
+  )}`,
+  position: 'relative',
+  transition: 'all 0.2s ease',
+  [theme.breakpoints.down('sm')]: {
+    padding: '10px 16px',
+    maxWidth: '80%',
+    borderRadius: isBot ? '20px 20px 20px 8px' : '20px 20px 8px 20px',
+    marginLeft: isBot ? 0 : 'auto',
+    marginRight: isBot ? 'auto' : 0,
+  },
+  '&:hover': {
+    transform: 'translateY(-1px)',
+    boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, 0.12)}`,
+  }
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '24px',
+    backgroundColor: alpha(theme.palette.background.paper, 0.8),
+    backdropFilter: 'blur(12px)',
+    transition: 'all 0.3s ease',
+    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.background.paper, 0.95),
+      border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+    },
+    '&.Mui-focused': {
+      backgroundColor: theme.palette.background.paper,
+      border: `1px solid ${theme.palette.primary.main}`,
+      boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`,
+    },
+    '& fieldset': {
+      border: 'none',
+    }
+  },
+  '& .MuiInputBase-input': {
+    padding: '16px 24px',
+    fontSize: '1rem',
+    lineHeight: '1.5',
+  }
+}));
+
+const AnimatedButton = styled(motion(IconButton))(({ theme }) => ({
+  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+  color: theme.palette.primary.contrastText,
+  borderRadius: '50%',
+  width: 52,
+  height: 52,
+  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+  border: `1px solid ${alpha(theme.palette.primary.light, 0.2)}`,
+  '&:hover': {
+    background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+    boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.4)}`,
+  },
+  '&:disabled': {
+    background: theme.palette.action.disabledBackground,
+    boxShadow: 'none',
+  }
+}));
+
+// Add these styled components after the existing styled components
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialog-paper': {
+    borderRadius: '20px',
+    background: theme.palette.mode === 'light'
+      ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.95)} 0%, ${alpha(theme.palette.background.paper, 0.98)} 100%)`
+      : `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.92)} 0%, ${alpha(theme.palette.background.paper, 0.95)} 100%)`,
+    backdropFilter: 'blur(10px)',
+    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+    boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.15)}`,
+  },
+}));
+
+const StyledMenuItem = styled(MenuItem)(({ theme }) => ({
+  fontSize: '1.5rem',
+  padding: theme.spacing(1, 3),
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    background: alpha(theme.palette.primary.main, 0.1),
+  },
+}));
+
+// Add after the existing styled components
+const TypingIndicator = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '12px 24px',
+  maxWidth: 'fit-content',
+  background: theme.palette.mode === 'light'
+    ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.primary.main, 0.12)} 100%)`
+    : `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha(theme.palette.primary.main, 0.2)} 100%)`,
+  borderRadius: '24px',
+  marginLeft: theme.spacing(1),
+  marginBottom: theme.spacing(2),
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+  boxShadow: `0 2px 12px ${alpha(theme.palette.common.black, 0.08)}`,
+}));
+
+const TypingDot = styled(motion.div)(({ theme }) => ({
+  width: '10px',
+  height: '10px',
+  backgroundColor: theme.palette.primary.main,
+  borderRadius: '50%',
+  opacity: 0.7,
+}));
+
+// Add a new component for message timestamps
+const TimeStamp = styled(Typography)(({ theme }) => ({
+  fontSize: '0.75rem',
+  color: alpha(theme.palette.text.secondary, 0.7),
+  padding: '4px 12px',
+  borderRadius: '12px',
+  background: alpha(theme.palette.background.paper, 0.6),
+  backdropFilter: 'blur(8px)',
+  marginBottom: theme.spacing(2),
+  textAlign: 'center',
+}));
+
 const Chat = ({ toggleTheme }) => {
   // Contexts
   const { user } = useContext(AuthContext);
@@ -134,7 +303,14 @@ const Chat = ({ toggleTheme }) => {
     []
   );
   const model = useMemo(
-    () => genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }),
+    () => genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash-lite-preview-02-05',
+      generationConfig: {
+        temperature: 0.7, // Makes responses more natural while maintaining coherence
+        topP: 0.8, // Allows for some creative variation in responses
+        topK: 40 // Helps maintain consistent therapeutic persona
+      }
+    }),
     [genAI]
   );
 
@@ -170,7 +346,19 @@ const Chat = ({ toggleTheme }) => {
 
   // System instructions for the AI
   const systemInstructionContent = useMemo(() => {
-    let instructions = `You are MindEase, a warm, empathetic, and supportive AI therapist. The user's name is ${userName}. You have full access to the user's mood and sleep history. Use this information subtly to offer personalized, gentle, and practical guidance—just like a caring human therapist would. Avoid explicitly mentioning the raw data unless the user specifically asks for insights.`;
+    let instructions = `You are MindEase, a warm, empathetic, and supportive AI therapist with expertise in cognitive behavioral therapy, mindfulness, and positive psychology. When responding:
+- Use a warm, conversational tone like a caring human therapist
+- Show genuine empathy and understanding
+- Validate the user's feelings before offering guidance
+- Ask thoughtful follow-up questions to better understand their situation
+- Offer practical, actionable suggestions when appropriate
+- Use therapeutic techniques like reframing, active listening, and gentle challenging
+- Be patient and non-judgmental
+- Mirror the user's language style while maintaining professionalism
+- Avoid clinical or overly formal language
+- Remember past context to provide continuity of care
+
+The user's name is ${userName}. You have access to their mood and sleep history. Use this information subtly to personalize your responses and track their progress over time.`;
     if (customInstructions && customInstructions.trim() !== '') {
       instructions += ` ${customInstructions}`;
     }
@@ -180,20 +368,19 @@ const Chat = ({ toggleTheme }) => {
   // Send greeting message if none has been sent.
   useEffect(() => {
     if (chatLoading || !user) return;
-    const hasGreeting = messages.some(
-      (msg) =>
-        msg.isBot &&
-        msg.isWelcome &&
-        msg.text.includes(`Hello ${userName}`)
-    );
-    if (!hasGreeting) {
+    
+    const sessionKey = `mindease_welcomed_${user.uid}`;
+    const hasBeenWelcomedThisSession = sessionStorage.getItem(sessionKey);
+  
+    if (!hasBeenWelcomedThisSession) {
       const greetingMessage = `Hello ${userName}! I'm MindEase, your AI therapist. How can I assist you today?`;
       addMessage(greetingMessage, true, {
         isWelcome: true,
         timestamp: new Date().toISOString(),
       });
+      sessionStorage.setItem(sessionKey, 'true');
     }
-  }, [user, messages, addMessage, userName, chatLoading]);
+  }, [user, addMessage, userName, chatLoading]);
 
   // Fetch custom instructions from Firestore.
   useEffect(() => {
@@ -490,14 +677,19 @@ const Chat = ({ toggleTheme }) => {
     try {
       setIsFetchingQuickReplies(true);
       const prompt = `
-Based on the following conversation, provide 3-5 concise and relevant quick reply options for the user to choose from.
-Only list the replies without any extra text or formatting.
+Based on this therapeutic conversation, suggest 3-4 natural, empathetic responses the user might want to say next. These should feel like organic continuations of the conversation, not generic options.
 
 User: ${userMessage}
-AI: ${botResponse}
+Therapist: ${botResponse}
 
-Quick Replies:
-`;
+Provide brief, conversational replies that could help the user:
+- Express their feelings more deeply
+- Explore the topic further
+- Respond to your therapeutic suggestions
+- Share more about their experience
+
+Format as simple reply options without bullets or numbers.`;
+
       const quickReplyChat = model.startChat({
         history: [
           {
@@ -719,15 +911,16 @@ Quick Replies:
             overflowY: 'auto',
             px: 2,
             pt: 2,
-            pb: `${BOTTOM_NAV_HEIGHT + CHAT_INPUT_HEIGHT - 32}px`,
+            pb: `${BOTTOM_NAV_HEIGHT + CHAT_INPUT_HEIGHT + 16}px`,
             scrollBehavior: 'smooth',
             '::-webkit-scrollbar': {
-              width: '6px',
+              width: '4px',
             },
             '::-webkit-scrollbar-thumb': {
               background: 'rgba(128, 128, 128, 0.3)',
-              borderRadius: '3px',
+              borderRadius: '2px',
             },
+            WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
           }}
           role="log"
           aria-live="polite"
@@ -738,25 +931,48 @@ Quick Replies:
               return (
                 <React.Fragment key={msg.id || index}>
                   {showTimestamp && !msg.isWelcome && (
-                    <Box textAlign="center" my={1}>
-                      <Typography variant="caption" color="textSecondary">
+                    <Box display="flex" justifyContent="center" my={1}>
+                      <TimeStamp variant="caption">
                         {formatTime(msg.timestamp)}
-                      </Typography>
+                      </TimeStamp>
                     </Box>
                   )}
                   <motion.div
                     initial={{ opacity: 0, translateY: 10 }}
                     animate={{ opacity: 1, translateY: 0 }}
                     transition={{ duration: 0.2, delay: index * 0.02 }}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      handleReactionClick(e, msg.id);
-                    }}
                   >
-                    <Message msg={msg} />
+                    <MessageContainer isBot={msg.isBot}>
+                      <MessageBubble isBot={msg.isBot}>
+                        <Typography 
+                          variant="body1" 
+                          sx={{ 
+                            fontSize: '0.95rem',
+                            lineHeight: 1.5,
+                            color: theme.palette.text.primary,
+                          }}
+                        >
+                          {msg.text}
+                        </Typography>
+                      </MessageBubble>
+                    </MessageContainer>
                   </motion.div>
                   {msg.isBot && msg.quickReplies && (
-                    <Box display="flex" flexWrap="wrap" gap={1} mt={1} mb={1}>
+                    <Box 
+                      display="flex" 
+                      flexWrap="wrap" 
+                      gap={1} 
+                      mt={1} 
+                      mb={2}
+                      sx={{
+                        justifyContent: 'flex-start',
+                        paddingLeft: theme.spacing(1),
+                        paddingRight: theme.spacing(1),
+                        [theme.breakpoints.down('sm')]: {
+                          maxWidth: '80%',
+                        }
+                      }}
+                    >
                       {msg.quickReplies.map((reply, idx) => (
                         <Button
                           key={idx}
@@ -764,10 +980,17 @@ Quick Replies:
                           size="small"
                           onClick={() => handleQuickReply(reply)}
                           sx={{
-                            borderRadius: '20px',
+                            borderRadius: '16px',
                             textTransform: 'none',
                             fontSize: '0.875rem',
                             padding: '4px 10px',
+                            minHeight: '32px',
+                            borderColor: alpha(theme.palette.primary.main, 0.3),
+                            color: theme.palette.primary.main,
+                            '&:hover': {
+                              borderColor: theme.palette.primary.main,
+                              backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                            },
                           }}
                         >
                           {reply}
@@ -779,46 +1002,37 @@ Quick Replies:
               );
             })}
             {isTyping && (
-              <Box display="flex" alignItems="center" mb={1}>
+              <Box display="flex" alignItems="center" mb={1} pl={4}>
                 <Box
                   component={motion.div}
-                  animate={{ scale: [1, 1.3, 1], opacity: [1, 0.7, 1] }}
-                  transition={{ duration: 0.6, repeat: Infinity }}
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
                   sx={{
-                    width: 10,
-                    height: 10,
-                    bgcolor: 'primary.main',
-                    borderRadius: '50%',
-                    mr: 1,
+                    display: 'flex',
+                    gap: 0.5,
+                    alignItems: 'center',
+                    background: alpha(theme.palette.primary.main, 0.1),
+                    borderRadius: '16px',
+                    padding: '8px 12px',
                   }}
-                />
-                <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
-                  MindEase is typing...
-                </Typography>
+                >
+                  <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
+                    MindEase is typing
+                  </Typography>
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-block',
+                      width: '4px',
+                      height: '4px',
+                      borderRadius: '50%',
+                      backgroundColor: theme.palette.primary.main,
+                      animation: 'pulse 1s infinite',
+                    }}
+                  />
+                </Box>
               </Box>
             )}
-            {isFetchingQuickReplies && (
-              <Box mb={1}>
-                <Typography variant="body2" color="textSecondary">
-                  Loading quick replies...
-                </Typography>
-              </Box>
-            )}
-            {chatLoading && !isTyping && (
-              <Box mb={1}>
-                <Typography variant="body2" color="textSecondary">
-                  Loading messages...
-                </Typography>
-              </Box>
-            )}
-            {chatError && (
-              <Box mb={1}>
-                <Typography variant="body2" color="error">
-                  Error: {chatError}
-                </Typography>
-              </Box>
-            )}
-            <Box sx={{ height: CHAT_INPUT_HEIGHT + 8 }} />
           </ErrorBoundary>
         </Box>
 
@@ -937,111 +1151,156 @@ Quick Replies:
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleReactionClose}
-          anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          PaperProps={{
+            sx: {
+              mt: 1,
+              borderRadius: '12px',
+              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+              boxShadow: (theme) => `0 4px 20px ${alpha(theme.palette.common.black, 0.1)}`,
+            },
+          }}
         >
           {['👍', '❤️', '😂', '😮', '😢', '👏'].map((emoji) => (
-            <MenuItem
-              key={emoji}
-              onClick={() => handleAddReaction(emoji)}
-              sx={{ fontSize: '1.25rem', padding: '0.4rem' }}
-            >
+            <StyledMenuItem key={emoji} onClick={() => handleAddReaction(emoji)}>
               {emoji}
-            </MenuItem>
+            </StyledMenuItem>
           ))}
         </Menu>
-        <Dialog
-          open={clearConfirmationOpen}
-          onClose={cancelClearChat}
-          aria-labelledby="alert-dialog-title"
-          aria-describedby="alert-dialog-description"
-        >
-          <DialogTitle id="alert-dialog-title" sx={{ fontSize: '1.25rem' }}>
-            {"Clear Chat History?"}
+        <StyledDialog open={clearConfirmationOpen} onClose={cancelClearChat}>
+          <DialogTitle sx={{ fontSize: '1.5rem', pb: 1 }}>
+            Clear Chat History?
           </DialogTitle>
           <DialogContent>
-            <DialogContentText id="alert-dialog-description" sx={{ fontSize: '1rem' }}>
+            <DialogContentText sx={{ fontSize: '1rem', opacity: 0.8 }}>
               Are you sure you want to clear the chat history? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={cancelClearChat} color="primary" size="small">
+          <DialogActions sx={{ padding: '16px 24px' }}>
+            <Button 
+              onClick={cancelClearChat} 
+              variant="outlined" 
+              sx={{ borderRadius: '12px' }}
+            >
               Cancel
             </Button>
-            <Button onClick={confirmClearChat} color="primary" autoFocus size="small">
+            <Button 
+              onClick={confirmClearChat} 
+              variant="contained" 
+              sx={{ 
+                borderRadius: '12px',
+                background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+              }}
+            >
               Clear Chat
             </Button>
           </DialogActions>
-        </Dialog>
-        <Dialog
-          open={customInstructionsDialogOpen}
+        </StyledDialog>
+        <StyledDialog 
+          open={customInstructionsDialogOpen} 
           onClose={closeCustomInstructionsDialog}
-          aria-labelledby="custom-instructions-dialog-title"
+          maxWidth="sm"
+          fullWidth
         >
-          <DialogTitle id="custom-instructions-dialog-title" sx={{ fontSize: '1.25rem' }}>
+          <DialogTitle sx={{ fontSize: '1.5rem', pb: 1 }}>
             Set Custom Instructions
           </DialogTitle>
           <DialogContent>
-            <DialogContentText sx={{ fontSize: '1rem' }}>
-              You can add custom instructions to tailor the AI's responses to better suit your needs. These instructions will be appended to the existing system instructions.
+            <DialogContentText sx={{ fontSize: '1rem', opacity: 0.8, mb: 2 }}>
+              Add custom instructions to tailor the AI's responses to better suit your needs.
             </DialogContentText>
-            <TextField
+            <StyledTextField
               autoFocus
-              margin="dense"
-              id="custom-instructions"
-              label="Custom Instructions"
-              type="text"
               fullWidth
               multiline
               minRows={3}
               maxRows={6}
               value={customInstructionsInput}
               onChange={(e) => setCustomInstructionsInput(e.target.value)}
-              variant="outlined"
-              placeholder="e.g., Please focus more on cognitive behavioral techniques."
+              placeholder="e.g., Focus more on cognitive behavioral techniques..."
             />
           </DialogContent>
-          <DialogActions>
-            <Button onClick={closeCustomInstructionsDialog} color="primary">
+          <DialogActions sx={{ padding: '16px 24px' }}>
+            <Button 
+              onClick={closeCustomInstructionsDialog} 
+              variant="outlined"
+              sx={{ borderRadius: '12px' }}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCustomInstructionsSave} color="primary">
-              Save
+            <Button 
+              onClick={handleCustomInstructionsSave} 
+              variant="contained"
+              sx={{ 
+                borderRadius: '12px',
+                background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+              }}
+            >
+              Save Changes
             </Button>
           </DialogActions>
-        </Dialog>
-        <Dialog open={moodDialogOpen} onClose={closeMoodDialog} aria-labelledby="mood-dialog-title">
-          <DialogTitle id="mood-dialog-title">How Are You Feeling?</DialogTitle>
+        </StyledDialog>
+        <StyledDialog open={moodDialogOpen} onClose={closeMoodDialog} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ fontSize: '1.5rem', pb: 1 }}>
+            How Are You Feeling?
+          </DialogTitle>
           <DialogContent>
-            <Grid container spacing={2}>
+            <Grid container spacing={2} sx={{ pt: 1 }}>
               {MOOD_OPTIONS.map((mood) => (
                 <Grid item xs={6} sm={4} key={mood.value}>
                   <Button
                     variant="outlined"
                     fullWidth
-                    startIcon={<EmojiEmotionsIcon />}
                     onClick={() => handleMoodSelect(mood.value)}
-                    sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+                    sx={{
+                      borderRadius: '12px',
+                      textTransform: 'none',
+                      height: '60px',
+                      fontSize: '1rem',
+                      border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                      '&:hover': {
+                        background: (theme) => alpha(theme.palette.primary.main, 0.1),
+                        borderColor: 'primary.main',
+                      },
+                    }}
                   >
-                    {mood.label}
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="h6" component="div" sx={{ mb: 0.5 }}>
+                        {mood.label.split(' ')[0]}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {mood.label.split(' ')[1]}
+                      </Typography>
+                    </Box>
                   </Button>
                 </Grid>
               ))}
             </Grid>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={closeMoodDialog} color="primary">
+          <DialogActions sx={{ padding: '16px 24px' }}>
+            <Button 
+              onClick={closeMoodDialog} 
+              variant="outlined"
+              sx={{ borderRadius: '12px' }}
+            >
               Cancel
             </Button>
           </DialogActions>
-        </Dialog>
+        </StyledDialog>
         <Snackbar
           open={snackbar.open}
           autoHideDuration={4000}
           onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          <Alert severity={snackbar.severity} variant="filled" sx={{ width: '100%', fontSize: '0.9rem' }}>
+          <Alert 
+            severity={snackbar.severity} 
+            variant="filled" 
+            sx={{ 
+              width: '100%',
+              borderRadius: '12px',
+              boxShadow: (theme) => `0 4px 20px ${alpha(theme.palette.common.black, 0.15)}`,
+            }}
+          >
             {snackbar.message}
           </Alert>
         </Snackbar>
@@ -1060,44 +1319,45 @@ Quick Replies:
       transition={{ duration: 0.6 }}
       style={{
         minHeight: '100vh',
-        // Keep your page background the same (gradient or default):
         background: theme.palette.background.gradient,
-        paddingTop: theme.spacing(5.5),
+        paddingTop: theme.spacing(12),
         paddingBottom: theme.spacing(4),
+        paddingLeft: theme.spacing(3),
+        paddingRight: theme.spacing(3),
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
+        alignItems: 'flex-start',
+        position: 'relative',
       }}
     >
-      <Toolbar />
-      <Box
+      <Toolbar 
+        sx={{ 
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1100,
+        }} 
+      />
+      <StyledChatContainer
         maxWidth="md"
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
-          // Keep the same radius, shadows, etc.:
-          borderRadius: '24px',
-          boxShadow: '0px 10px 30px rgba(0,0,0,0.1)',
-          overflow: 'hidden',
-          height: '90vh',
+          height: '82vh',
           width: '100%',
-          maxWidth: '800px',
-          marginTop: theme.spacing(4),
-
-          // **Just change the container color** to match Mood Summary:
-          background: `linear-gradient(135deg, ${alpha(
-            theme.palette.primary.main,
-            0.05
-          )} 0%, ${alpha(theme.palette.primary.main, 0.1)} 100%)`,
-          border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+          maxWidth: '900px',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
         {/* Desktop Header */}
         <Box
           sx={{
             padding: '24px',
-            borderBottom: `1px solid ${theme.palette.divider}`,
+            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            background: alpha(theme.palette.background.paper, 0.5),
+            backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1151,41 +1411,68 @@ Quick Replies:
               flexGrow: 1,
               overflowY: 'auto',
               padding: '24px',
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: alpha(theme.palette.primary.main, 0.2),
+                borderRadius: '4px',
+                '&:hover': {
+                  background: alpha(theme.palette.primary.main, 0.3),
+                },
+              },
             }}
-            role="log"
-            aria-live="polite"
           >
             {messages.map((msg, index) => {
               const showTimestamp = !isSameTimeGroup(messages[index - 1], msg);
               return (
                 <React.Fragment key={msg.id || index}>
                   {showTimestamp && !msg.isWelcome && (
-                    <Box textAlign="center" my={2}>
-                      <Typography variant="caption" color="textSecondary">
+                    <Box display="flex" justifyContent="center" my={2}>
+                      <TimeStamp variant="caption">
                         {formatTime(msg.timestamp)}
-                      </Typography>
+                      </TimeStamp>
                     </Box>
                   )}
                   <motion.div
                     initial={{ opacity: 0, translateY: 10 }}
                     animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ duration: 0.2, delay: index * 0.02 }}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      handleReactionClick(e, msg.id);
-                    }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
                   >
-                    <Message msg={msg} />
+                    <MessageContainer isBot={msg.isBot}>
+                      <MessageBubble isBot={msg.isBot}>
+                        <Typography variant="body1">
+                          {msg.text}
+                        </Typography>
+                      </MessageBubble>
+                    </MessageContainer>
                   </motion.div>
                   {msg.isBot && msg.quickReplies && (
-                    <Box display="flex" flexWrap="wrap" gap={1} mt={1} mb={2} ml={8}>
+                    <Box 
+                      display="flex" 
+                      flexWrap="wrap" 
+                      gap={1} 
+                      mt={1} 
+                      mb={2}
+                      sx={{
+                        justifyContent: 'flex-start',
+                        paddingLeft: theme.spacing(1),
+                        paddingRight: theme.spacing(1),
+                        [theme.breakpoints.down('sm')]: {
+                          maxWidth: '80%',
+                        }
+                      }}
+                    >
                       {msg.quickReplies.map((reply, idx) => (
                         <Button
                           key={idx}
                           variant="outlined"
                           size="small"
                           onClick={() => handleQuickReply(reply)}
-                          sx={{ borderRadius: '24px', textTransform: 'none', padding: '6px 16px' }}
+                          sx={{ borderRadius: '16px', textTransform: 'none', padding: '4px 10px' }}
                         >
                           {reply}
                         </Button>
@@ -1195,13 +1482,44 @@ Quick Replies:
                 </React.Fragment>
               );
             })}
+            
+            {isTyping && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <TypingIndicator>
+                  <TypingDot
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2 }}
+                  />
+                  <TypingDot
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2, delay: 0.2 }}
+                  />
+                  <TypingDot
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2, delay: 0.4 }}
+                  />
+                </TypingIndicator>
+              </motion.div>
+            )}
           </Box>
         </ErrorBoundary>
 
         {/* Desktop Chat Input */}
-        <Box sx={{ padding: '24px', borderTop: `1px solid ${theme.palette.divider}` }}>
-          <Box display="flex" alignItems="center" gap={1.5}>
-            <TextField
+        <Box
+          sx={{
+            padding: '24px',
+            borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            background: alpha(theme.palette.background.paper, 0.5),
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <Box display="flex" alignItems="center" gap={2}>
+            <StyledTextField
               inputRef={inputRef}
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
@@ -1212,74 +1530,30 @@ Quick Replies:
               maxRows={4}
               fullWidth
               onKeyDown={handleKeyDown}
-              aria-label="User input"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '30px',
-                  backgroundColor: theme.palette.background.paper,
-                  '& fieldset': { borderColor: 'grey.400', borderRadius: '30px' },
-                  '&:hover fieldset': { borderColor: theme.palette.primary.main },
-                  '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main },
-                },
-              }}
             />
-            <Tooltip title={isListening ? 'Stop Listening' : 'Start Listening'}>
-              <GradientButton
-                variant="contained"
-                onClick={handleVoiceInput}
-                aria-label="Voice Input"
-                sx={{
-                  borderRadius: '50%',
-                  padding: 1,
-                  minWidth: 'auto',
-                  width: 48,
-                  height: 48,
-                  boxShadow: 3,
-                  background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
-                  '&:hover': {
-                    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                  },
-                }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+            <AnimatedButton
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleVoiceInput}
+            >
+              {isListening ? <MicOffIcon /> : <MicIcon />}
+            </AnimatedButton>
+            <AnimatedButton
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSend}
+              disabled={isTyping || !userInput.trim()}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                width={24}
+                height={24}
               >
-                {isListening ? <MicOffIcon /> : <MicIcon />}
-              </GradientButton>
-            </Tooltip>
-            <Tooltip title="Send Message">
-              <GradientButton
-                variant="contained"
-                onClick={handleSend}
-                disabled={isTyping || !userInput.trim()}
-                aria-label="Send message"
-                sx={{
-                  borderRadius: '50%',
-                  padding: 1,
-                  minWidth: 'auto',
-                  width: 48,
-                  height: 48,
-                  boxShadow: 3,
-                  background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
-                  '&:hover': {
-                    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                  },
-                }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                  focusable="false"
-                  width={24}
-                  height={24}
-                >
-                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
-                </svg>
-              </GradientButton>
-            </Tooltip>
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
+              </svg>
+            </AnimatedButton>
           </Box>
           <Box mt={2} textAlign="center">
             <Typography variant="body2" color="textSecondary" fontStyle="italic">
@@ -1287,99 +1561,167 @@ Quick Replies:
             </Typography>
           </Box>
         </Box>
-      </Box>
-
-      {/* Desktop Menus & Dialogs */}
+      </StyledChatContainer>
+      
+      {/* Menus and Dialogs */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleReactionClose}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            borderRadius: '12px',
+            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+            boxShadow: (theme) => `0 4px 20px ${alpha(theme.palette.common.black, 0.1)}`,
+          },
+        }}
       >
         {['👍', '❤️', '😂', '😮', '😢', '👏'].map((emoji) => (
-          <MenuItem
-            key={emoji}
-            onClick={() => handleAddReaction(emoji)}
-            sx={{ fontSize: '1.5rem' }}
-          >
+          <StyledMenuItem key={emoji} onClick={() => handleAddReaction(emoji)}>
             {emoji}
-          </MenuItem>
+          </StyledMenuItem>
         ))}
       </Menu>
-      <Dialog open={clearConfirmationOpen} onClose={cancelClearChat}>
-        <DialogTitle>Clear Chat History?</DialogTitle>
+
+      <StyledDialog open={clearConfirmationOpen} onClose={cancelClearChat}>
+        <DialogTitle sx={{ fontSize: '1.5rem', pb: 1 }}>
+          Clear Chat History?
+        </DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText sx={{ fontSize: '1rem', opacity: 0.8 }}>
             Are you sure you want to clear the chat history? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={cancelClearChat} color="primary">
+        <DialogActions sx={{ padding: '16px 24px' }}>
+          <Button 
+            onClick={cancelClearChat} 
+            variant="outlined" 
+            sx={{ borderRadius: '12px' }}
+          >
             Cancel
           </Button>
-          <Button onClick={confirmClearChat} color="primary" autoFocus>
+          <Button 
+            onClick={confirmClearChat} 
+            variant="contained" 
+            sx={{ 
+              borderRadius: '12px',
+              background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+            }}
+          >
             Clear Chat
           </Button>
         </DialogActions>
-      </Dialog>
-      <Dialog open={customInstructionsDialogOpen} onClose={closeCustomInstructionsDialog}>
-        <DialogTitle>Set Custom Instructions</DialogTitle>
+      </StyledDialog>
+
+      <StyledDialog 
+        open={customInstructionsDialogOpen} 
+        onClose={closeCustomInstructionsDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontSize: '1.5rem', pb: 1 }}>
+          Set Custom Instructions
+        </DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Add custom instructions to tailor the AI's responses.
+          <DialogContentText sx={{ fontSize: '1rem', opacity: 0.8, mb: 2 }}>
+            Add custom instructions to tailor the AI's responses to better suit your needs.
           </DialogContentText>
-          <TextField
+          <StyledTextField
             autoFocus
-            margin="dense"
             fullWidth
             multiline
             minRows={3}
             maxRows={6}
             value={customInstructionsInput}
             onChange={(e) => setCustomInstructionsInput(e.target.value)}
-            variant="outlined"
-            label="Custom Instructions"
+            placeholder="e.g., Focus more on cognitive behavioral techniques..."
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeCustomInstructionsDialog} color="primary">
+        <DialogActions sx={{ padding: '16px 24px' }}>
+          <Button 
+            onClick={closeCustomInstructionsDialog} 
+            variant="outlined"
+            sx={{ borderRadius: '12px' }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleCustomInstructionsSave} color="primary">
-            Save
+          <Button 
+            onClick={handleCustomInstructionsSave} 
+            variant="contained"
+            sx={{ 
+              borderRadius: '12px',
+              background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+            }}
+          >
+            Save Changes
           </Button>
         </DialogActions>
-      </Dialog>
-      <Dialog open={moodDialogOpen} onClose={closeMoodDialog}>
-        <DialogTitle>How Are You Feeling?</DialogTitle>
+      </StyledDialog>
+
+      <StyledDialog open={moodDialogOpen} onClose={closeMoodDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontSize: '1.5rem', pb: 1 }}>
+          How Are You Feeling?
+        </DialogTitle>
         <DialogContent>
-          <Grid container spacing={2}>
-            {MOOD_OPTIONS.map((m) => (
-              <Grid item xs={6} sm={4} key={m.value}>
+          <Grid container spacing={2} sx={{ pt: 1 }}>
+            {MOOD_OPTIONS.map((mood) => (
+              <Grid item xs={6} sm={4} key={mood.value}>
                 <Button
                   variant="outlined"
                   fullWidth
-                  startIcon={<EmojiEmotionsIcon />}
-                  onClick={() => handleMoodSelect(m.value)}
+                  onClick={() => handleMoodSelect(mood.value)}
+                  sx={{
+                    borderRadius: '12px',
+                    textTransform: 'none',
+                    height: '60px',
+                    fontSize: '1rem',
+                    border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                    '&:hover': {
+                      background: (theme) => alpha(theme.palette.primary.main, 0.1),
+                      borderColor: 'primary.main',
+                    },
+                  }}
                 >
-                  {m.label}
+                  <Box sx={{ textAlign: 'center' }}>
+                    <Typography variant="h6" component="div" sx={{ mb: 0.5 }}>
+                      {mood.label.split(' ')[0]}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {mood.label.split(' ')[1]}
+                    </Typography>
+                  </Box>
                 </Button>
               </Grid>
             ))}
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeMoodDialog} color="primary">
+        <DialogActions sx={{ padding: '16px 24px' }}>
+          <Button 
+            onClick={closeMoodDialog} 
+            variant="outlined"
+            sx={{ borderRadius: '12px' }}
+          >
             Cancel
           </Button>
         </DialogActions>
-      </Dialog>
+      </StyledDialog>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={snackbar.severity} variant="filled" sx={{ width: '100%' }}>
+        <Alert 
+          severity={snackbar.severity} 
+          variant="filled" 
+          sx={{ 
+            width: '100%',
+            borderRadius: '12px',
+            boxShadow: (theme) => `0 4px 20px ${alpha(theme.palette.common.black, 0.15)}`,
+          }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
