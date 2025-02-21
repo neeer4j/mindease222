@@ -20,6 +20,8 @@ import { v4 as uuidv4 } from "uuid";
 
 import LoadingSpinner from "../components/LoadingSpinner"; // Your LoadingSpinner component
 import ErrorAlert from "../components/ErrorAlert"; // Your ErrorAlert component
+import { useTheme } from "@mui/material/styles";
+import { useMediaQuery } from "@mui/material";
 
 export const AuthContext = createContext();
 
@@ -39,7 +41,9 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showSplash, setShowSplash] = useState(false); // Initialize to false
-  const [isInAdminMode, setIsInAdminMode] = useState(true);
+  const [isInAdminMode, setIsInAdminMode] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const googleProvider = new GoogleAuthProvider();
 
@@ -58,6 +62,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     setSuccess(null);
     setShowSplash(false);
+    setIsInAdminMode(false);
   };
 
   // Fetch user profile from Firestore
@@ -176,6 +181,8 @@ export const AuthProvider = ({ children }) => {
               ...userProfile,
             });
             setIsAdmin(isUserAdmin);
+            // Set admin mode to true by default for admin users on desktop
+            setIsInAdminMode(isUserAdmin && !isMobile);
             console.log("[onAuthStateChanged] User profile loaded and state updated.");
           }
         } catch (err) {
@@ -208,11 +215,12 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       setSuccess(null);
       setShowSplash(false);
+      setIsInAdminMode(false);
     };
 
     const unsubscribe = setupAuthListener();
     return () => cleanup(unsubscribe);
-  }, []);
+  }, [isMobile]);
 
   // Reset splash screen when user logs out
   useEffect(() => {
@@ -223,16 +231,17 @@ export const AuthProvider = ({ children }) => {
 
   // Login function
   const login = async (email, password) => {
-    console.log("Attempting to log in with:", email);
     setLoading(true);
     setError(null);
     setSuccess(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      console.log("Login successful for:", email);
-      setShowSplash(true);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const isUserAdmin = await checkUserRole(result.user);
+      setIsAdmin(isUserAdmin);
+      // Set admin mode to true by default for admin users on desktop
+      setIsInAdminMode(isUserAdmin && !isMobile);
+      setSuccess("Logged in successfully.");
     } catch (err) {
-      console.error("Login error:", err);
       handleFirebaseError(err);
     } finally {
       setLoading(false);
@@ -303,12 +312,16 @@ export const AuthProvider = ({ children }) => {
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
       const userProfile = await fetchUserProfile(firebaseUser.uid);
+      const isUserAdmin = await checkUserRole(firebaseUser);
       setUser({
         uid: firebaseUser.uid,
         email: firebaseUser.email,
         displayName: firebaseUser.displayName,
         ...userProfile,
       });
+      setIsAdmin(isUserAdmin);
+      // Set admin mode to true by default for admin users on desktop
+      setIsInAdminMode(isUserAdmin && !isMobile);
       setSuccess("Signed in with Google successfully.");
     } catch (err) {
       console.error("Google Sign-In error:", err);

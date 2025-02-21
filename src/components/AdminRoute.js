@@ -18,12 +18,13 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Then check admin status and mode
-  if (!isAdmin || !isInAdminMode) {
-    return <Navigate to="/dashboard" replace />;
+  // For non-mobile admin users, always go to admin dashboard
+  if (isAdmin && !isMobile) {
+    return children;
   }
 
-  return children;
+  // Non-admin users go to dashboard
+  return <Navigate to="/dashboard" replace />;
 };
 
 export default AdminRoute;

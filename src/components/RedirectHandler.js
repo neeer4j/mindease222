@@ -7,11 +7,14 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { AuthContext } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme, useMediaQuery } from '@mui/material';
 
 const RedirectHandler = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { setUserInternal, setSuccess, setError } = useContext(AuthContext);
-  const { isAuthenticated, isAdmin, isInAdminMode } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
 
   // A helper to fetch the user profile from Firestore.
   const fetchUserProfile = async (uid) => {
@@ -58,7 +61,8 @@ const RedirectHandler = () => {
       } finally {
         // Whether successful or not, navigate away from the redirect page.
         if (isAuthenticated) {
-          if (isAdmin && isInAdminMode) {
+          // If admin and not on mobile, go to admin dashboard
+          if (isAdmin && !isMobile) {
             navigate('/admin');
           } else {
             navigate('/dashboard');
@@ -68,18 +72,20 @@ const RedirectHandler = () => {
     };
 
     processRedirect();
-  }, [navigate, setError, setSuccess, setUserInternal, isAuthenticated, isAdmin, isInAdminMode]);
+  }, [navigate, setError, setSuccess, setUserInternal, isAuthenticated, isAdmin, isMobile]);
 
-  // Redirect to appropriate page when admin mode is toggled
+  // Redirect to appropriate page when auth state changes
   useEffect(() => {
     if (isAuthenticated && isAdmin) {
-      if (isInAdminMode) {
-        navigate('/admin');
-      } else {
+      // If on mobile, always redirect to dashboard
+      if (isMobile) {
         navigate('/dashboard');
+      } else {
+        // On desktop, always go to admin dashboard
+        navigate('/admin');
       }
     }
-  }, [isInAdminMode, isAdmin, isAuthenticated, navigate]);
+  }, [isAdmin, isAuthenticated, navigate, isMobile]);
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>

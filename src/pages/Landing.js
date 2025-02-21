@@ -264,24 +264,52 @@ const Landing = () => {
 
   // Testimonials components
   const TestimonialScroll = () => {
-    const duplicatedTestimonials = [...testimonials, ...testimonials, ...testimonials];
+    // Create more duplicates to ensure seamless scrolling
+    const duplicatedTestimonials = [...testimonials, ...testimonials, ...testimonials, ...testimonials, ...testimonials];
     const containerRef = useRef(null);
-    const [isHovered, setIsHovered] = useState(false);
-    const [resetKey, setResetKey] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
+    const [scrollPosition, setScrollPosition] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+
     useEffect(() => {
-      const handleAnimationComplete = () => {
-        setResetKey(prev => prev + 1);
+      let animationFrameId;
+      let lastTimestamp = 0;
+      const speed = 0.001; // Keep the slow speed
+
+      const animate = (timestamp) => {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const deltaTime = timestamp - lastTimestamp;
+        
+        if (!isPaused && !isDragging) {
+          setScrollPosition(prev => {
+            const newPosition = prev - speed * deltaTime;
+            // Reset position when scrolled past one third of content
+            if (newPosition <= -33.33) {
+              return newPosition + 33.33;
+            }
+            return newPosition;
+          });
+        }
+        
+        lastTimestamp = timestamp;
+        animationFrameId = requestAnimationFrame(animate);
       };
+
+      animationFrameId = requestAnimationFrame(animate);
+
       return () => {
-        if (containerRef.current) {
-          containerRef.current.removeEventListener('animationend', handleAnimationComplete);
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
         }
       };
-    }, []);
+    }, [isPaused, isDragging]);
+
     return (
       <Box 
         sx={{ 
           position: 'relative',
+          width: '100%',
+          overflow: 'hidden',
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -303,16 +331,36 @@ const Landing = () => {
             zIndex: 3
           }
         }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
       >
         <motion.div
-          key={resetKey}
           ref={containerRef}
-          style={{ display: 'flex', gap: '2rem', padding: '2rem', width: 'fit-content' }}
-          animate={{ x: isHovered ? 0 : -1500 }}
+          style={{ 
+            display: 'flex', 
+            gap: '2rem', 
+            padding: '2rem', 
+            width: 'fit-content',
+            willChange: 'transform',
+            x: `${scrollPosition}%`,
+            transform: 'translate3d(0,0,0)' // Force GPU acceleration
+          }}
+          onHoverStart={() => setIsPaused(true)}
+          onHoverEnd={() => setIsPaused(false)}
+          drag="x"
+          dragConstraints={containerRef}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={(_, info) => {
+            setIsDragging(false);
+            // Adjust scroll position after drag to prevent jumping
+            if (info.offset.x !== 0) {
+              setScrollPosition(prev => prev + (info.offset.x / containerRef.current.offsetWidth) * 100);
+            }
+          }}
+          dragElastic={0.2}
+          dragTransition={{ bounceStiffness: 600, bounceDamping: 20 }}
           transition={{
-            x: { duration: 40, ease: "linear", repeat: Infinity, repeatType: "loop", repeatDelay: 0 }
+            type: 'tween',
+            ease: 'linear',
+            duration: 0.1
           }}
         >
           {duplicatedTestimonials.map((testimonial, index) => (
@@ -329,7 +377,7 @@ const Landing = () => {
                   borderRadius: '24px',
                   boxShadow: `0 8px 32px -8px ${alpha(theme.palette.primary.main, 0.2)}`,
                   padding: theme.spacing(3),
-                  width: { xs: '280px', sm: '320px' },
+                  width: { xs: '280px', sm: '300px', md: '320px' },
                   minHeight: '400px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -826,7 +874,7 @@ const Landing = () => {
                       </Typography>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 4 }}>
                         {isAuthenticated ? (
-                          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ width: '100%' }}>
                             <GradientButton 
                               variant="contained" 
                               onClick={() => navigate('/dashboard')} 
@@ -836,6 +884,7 @@ const Landing = () => {
                                 borderRadius: '16px', 
                                 fontSize: '1.1rem',
                                 boxShadow: `0 8px 16px -4px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                mb: 2, // Add margin bottom for spacing
                               }}
                             >
                               Go to Dashboard
@@ -934,11 +983,25 @@ const Landing = () => {
                         </motion.div>
                         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 1 }}>
                           {isAuthenticated ? (
-                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                              <GradientButton variant="contained" size="large" onClick={() => navigate('/dashboard')} sx={{ paddingX: 4, paddingY: 1.8, borderRadius: '14px', boxShadow: theme.shadows[5], fontSize: '1.1rem' }}>
-                                Go to Dashboard
-                              </GradientButton>
-                            </motion.div>
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-start', width: '100%', mt: 2 }}>
+                              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                <GradientButton 
+                                  variant="contained" 
+                                  size="large" 
+                                  onClick={() => navigate('/dashboard')} 
+                                  sx={{ 
+                                    paddingX: 4, 
+                                    paddingY: 1.8, 
+                                    borderRadius: '14px', 
+                                    boxShadow: theme.shadows[5], 
+                                    fontSize: '1.1rem',
+                                    minWidth: '200px' 
+                                  }}
+                                >
+                                  Go to Dashboard
+                                </GradientButton>
+                              </motion.div>
+                            </Box>
                           ) : (
                             <>
                               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

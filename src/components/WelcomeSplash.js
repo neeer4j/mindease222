@@ -3,10 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Box,
   Typography,
-  CircularProgress,
   useMediaQuery,
 } from '@mui/material';
-import { styled, useTheme } from '@mui/material/styles';
+import { styled, useTheme, alpha } from '@mui/material/styles';
 import { AuthContext } from '../contexts/AuthContext';
 
 const StyledBox = styled(Box)(({ theme }) => ({
@@ -19,50 +18,52 @@ const StyledBox = styled(Box)(({ theme }) => ({
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  background:
-    theme.palette.mode === 'dark'
-      ? 'linear-gradient(135deg, #141E30, #243B55)'
-      : 'linear-gradient(135deg, #89f7fe, #66a6ff)',
-  backdropFilter: 'blur(10px)',
+  background: theme.palette.mode === 'dark'
+    ? `linear-gradient(135deg, ${alpha('#0A1929', 0.97)}, ${alpha('#1A3B66', 0.97)})`
+    : `linear-gradient(135deg, ${alpha('#E3F2FD', 0.97)}, ${alpha('#90CAF9', 0.97)})`,
+  backdropFilter: 'blur(20px)',
   zIndex: 9999,
   overflow: 'hidden',
 }));
 
-// Container animations (using spring for a fluid feel)
 const containerVariants = {
-  hidden: { opacity: 0, scale: 0.97 },
+  hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    scale: 1,
-    transition: { type: 'spring', stiffness: 120, damping: 20 },
+    transition: { 
+      duration: 0.5,
+      ease: 'easeOut',
+      when: 'beforeChildren',
+      staggerChildren: 0.15
+    },
   },
   exit: {
     opacity: 0,
-    scale: 0.97,
-    transition: { type: 'spring', stiffness: 120, damping: 20 },
+    transition: { 
+      duration: 0.3,
+      ease: 'easeIn',
+      when: 'afterChildren',
+      staggerChildren: 0.1
+    },
   },
 };
 
-// Variants for the welcome text group
-const welcomeVariants = {
+const textVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { type: 'spring', stiffness: 100, damping: 20, delay: 0.3 },
+    transition: { 
+      type: 'spring',
+      stiffness: 150,
+      damping: 15
+    },
   },
   exit: {
     opacity: 0,
     y: -20,
-    transition: { type: 'spring', stiffness: 100, damping: 20 },
+    transition: { duration: 0.2 }
   },
-};
-
-// Variants for the loading spinner
-const spinnerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.3 } },
-  exit: { opacity: 0, transition: { duration: 0.3 } },
 };
 
 const WelcomeSplash = ({ onComplete }) => {
@@ -71,22 +72,14 @@ const WelcomeSplash = ({ onComplete }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [displayName, setDisplayName] = useState('');
 
-  // When the username is available, update local state.
   useEffect(() => {
     if (user?.displayName) {
       setDisplayName(user.displayName);
-    }
-  }, [user?.displayName]);
-
-  // Once the displayName is set, start a timer to dismiss the splash.
-  useEffect(() => {
-    if (displayName) {
-      const timer = setTimeout(() => {
-        onComplete();
-      }, 2500);
+      // Reduced timeout for a snappier experience
+      const timer = setTimeout(onComplete, 2000);
       return () => clearTimeout(timer);
     }
-  }, [displayName, onComplete]);
+  }, [user?.displayName, onComplete]);
 
   return (
     <AnimatePresence>
@@ -98,41 +91,29 @@ const WelcomeSplash = ({ onComplete }) => {
         exit="exit"
         variants={containerVariants}
       >
-        {/* Fluid animated background shape 1 */}
+        {/* Premium animated background elements */}
         <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          style={{
-            position: 'absolute',
-            width: isMobile ? 200 : 350,
-            height: isMobile ? 200 : 350,
-            borderRadius: '50%',
-            background:
-              theme.palette.mode === 'dark'
-                ? 'rgba(255, 255, 255, 0.05)'
-                : 'rgba(0, 0, 0, 0.05)',
-            top: '10%',
-            left: '20%',
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ 
+            scale: [0.8, 1.2, 0.8],
+            opacity: [0.1, 0.3, 0.1],
           }}
-        />
-
-        {/* Fluid animated background shape 2 */}
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ 
+            duration: 4,
+            repeat: Infinity,
+            ease: 'easeInOut'
+          }}
           style={{
             position: 'absolute',
-            width: isMobile ? 180 : 300,
-            height: isMobile ? 180 : 300,
+            width: isMobile ? 300 : 600,
+            height: isMobile ? 300 : 600,
             borderRadius: '50%',
-            background:
+            background: `radial-gradient(circle at center, ${
               theme.palette.mode === 'dark'
-                ? 'rgba(255, 255, 255, 0.03)'
-                : 'rgba(0, 0, 0, 0.03)',
-            bottom: '15%',
-            right: '10%',
+                ? alpha(theme.palette.primary.main, 0.15)
+                : alpha(theme.palette.primary.light, 0.2)
+            }, transparent)`,
+            filter: 'blur(40px)',
           }}
         />
 
@@ -140,62 +121,71 @@ const WelcomeSplash = ({ onComplete }) => {
           sx={{
             position: 'relative',
             zIndex: 1,
-            padding: theme.spacing(2),
+            padding: theme.spacing(4),
             textAlign: 'center',
+            maxWidth: '800px'
           }}
         >
-          <AnimatePresence mode="wait">
-            {/* Show the spinner while displayName is empty */}
-            {!displayName ? (
-              <motion.div
-                key="spinner"
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                variants={spinnerVariants}
+          <motion.div variants={textVariants}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme.palette.mode === 'dark' 
+                  ? alpha(theme.palette.common.white, 0.9)
+                  : alpha(theme.palette.common.black, 0.7),
+                fontWeight: 500,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                marginBottom: 1,
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+              }}
+            >
+              Welcome back to MindEase
+            </Typography>
+            <Typography
+              variant="h1"
+              sx={{
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2,
+                fontSize: { xs: '2.5rem', sm: '4rem', md: '5rem' },
+                background: `linear-gradient(135deg, 
+                  ${theme.palette.mode === 'dark' 
+                    ? `${alpha(theme.palette.primary.light, 0.9)}, ${alpha(theme.palette.primary.main, 1)}` 
+                    : `${theme.palette.primary.main}, ${theme.palette.primary.dark}`
+                  })`,
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: theme.palette.mode === 'dark'
+                  ? '0 0 40px rgba(255,255,255,0.2)'
+                  : '0 0 40px rgba(0,0,0,0.1)',
+                filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.15))',
+                marginBottom: 1
+              }}
+            >
+              {displayName}
+            </Typography>
+            <motion.div
+              variants={textVariants}
+              style={{ overflow: 'hidden' }}
+            >
+              <Typography
+                variant="body1"
+                sx={{
+                  color: theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.common.white, 0.7)
+                    : alpha(theme.palette.common.black, 0.6),
+                  fontSize: { xs: '1rem', sm: '1.25rem' },
+                  fontWeight: 400,
+                  letterSpacing: '0.05em',
+                  opacity: 0.9
+                }}
               >
-                <CircularProgress
-                  color="inherit"
-                  size={isMobile ? 40 : 50}
-                />
-              </motion.div>
-            ) : (
-              // Once displayName is available, animate in the welcome text.
-              <motion.div
-                key="welcomeText"
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                variants={welcomeVariants}
-              >
-                <Typography
-                  variant="h5"
-                  sx={{
-                    color: theme.palette.common.white,
-                    mb: 1,
-                    fontWeight: 500,
-                    letterSpacing: '0.5px',
-                    textShadow: '1px 1px 4px rgba(0,0,0,0.4)',
-                    fontSize: { xs: '1.2rem', sm: '1.5rem' },
-                  }}
-                >
-                  Welcome back,
-                </Typography>
-                <Typography
-                  variant="h2"
-                  sx={{
-                    color: theme.palette.common.white,
-                    fontWeight: 700,
-                    letterSpacing: '1px',
-                    textShadow: '2px 2px 8px rgba(0,0,0,0.5)',
-                    fontSize: { xs: '2rem', sm: '3rem', md: '4rem' },
-                  }}
-                >
-                  {displayName}!
-                </Typography>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                Your journey to wellness continues
+              </Typography>
+            </motion.div>
+          </motion.div>
         </Box>
       </StyledBox>
     </AnimatePresence>
