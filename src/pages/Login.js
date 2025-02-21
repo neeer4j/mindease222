@@ -28,6 +28,7 @@ import { AuthContext } from '../contexts/AuthContext';
 import ForgotPassword from './ForgotPassword';
 import AppTheme from '../shared-theme/AppTheme';
 import { useTheme } from '@mui/material/styles';
+import { useMediaQuery } from '@mui/material';
 
 // Styled Components
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -143,8 +144,10 @@ const GoogleButton = styled(Button)(({ theme }) => ({
 export default function EnhancedLogin(props) {
   const navigate = useNavigate();
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { 
     isAuthenticated, 
+    isAdmin,
     login, 
     signInWithGoogle, 
     loading: authLoading, 
@@ -165,10 +168,15 @@ export default function EnhancedLogin(props) {
   useEffect(() => {
     if (isAuthenticated) {
       if (!showSplash) {
-        navigate('/dashboard');
+        // If admin and not on mobile, go to admin dashboard
+        if (isAdmin && !isMobile) {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       }
     }
-  }, [isAuthenticated, navigate, showSplash]);
+  }, [isAuthenticated, navigate, showSplash, isAdmin, isMobile]);
 
   const handleClickOpen = () => {
     setOpen(true);
