@@ -209,10 +209,10 @@ const Landing = () => {
     return () => clearInterval(timer);
   }, [slideCount]);
 
-  // Touch handling logic
+  // Touch handling logic for features
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
-  const [featureStartX, setFeatureStartX] = useState(0);
-  const [featureEndX, setFeatureEndX] = useState(0);
+  const [featureTouchStart, setFeatureTouchStart] = useState(0);
+  const [featureTouchEnd, setFeatureTouchEnd] = useState(0);
   const [isFeatureDragging, setIsFeatureDragging] = useState(false);
   const [featureDragDistance, setFeatureDragDistance] = useState(0);
 
@@ -221,34 +221,33 @@ const Landing = () => {
   };
 
   const handleFeatureTouchStart = (e) => {
-    setFeatureStartX(e.touches[0].clientX);
+    setFeatureTouchStart(e.touches[0].clientX);
     setIsFeatureDragging(true);
     setFeatureDragDistance(0);
   };
 
   const handleFeatureTouchMove = (e) => {
     if (isFeatureDragging) {
-      const currentX = e.touches[0].clientX;
-      const distance = currentX - featureStartX;
+      const currentTouch = e.touches[0].clientX;
+      const distance = currentTouch - featureTouchStart;
       setFeatureDragDistance(distance);
-      setFeatureEndX(currentX);
+      setFeatureTouchEnd(currentTouch);
     }
   };
 
-  const handleFeatureTouchEnd = (e) => {
-    const endX = e.changedTouches[0].clientX;
-    const diff = featureStartX - endX;
-
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        // Swipe left
+  const handleFeatureTouchEnd = () => {
+    setIsFeatureDragging(false);
+    const minSwipeDistance = 50;
+    
+    if (Math.abs(featureTouchStart - featureTouchEnd) >= minSwipeDistance) {
+      if (featureTouchStart - featureTouchEnd > 0) {
+        // Swiped left
         setCurrentFeatureIndex((prev) => (prev + 1) % features.length);
       } else {
-        // Swipe right
+        // Swiped right
         setCurrentFeatureIndex((prev) => (prev - 1 + features.length) % features.length);
       }
     }
-    setIsFeatureDragging(false);
     setFeatureDragDistance(0);
   };
 
@@ -1352,16 +1351,13 @@ const Landing = () => {
                     boxShadow: `0 20px 40px -20px ${alpha(theme.palette.primary.main, 0.25)}`,
                   }
                 }}
-                onTouchStart={handleFeatureTouchStart}
-                onTouchMove={handleFeatureTouchMove}
-                onTouchEnd={handleFeatureTouchEnd}
               >
                 <AnimatePresence initial={false} mode="wait">
                   <motion.div
                     key={currentFeatureIndex}
-                    initial={{ opacity: 0, x: featureDragDistance }}
+                    initial={{ opacity: 0, x: featureTouchStart - featureTouchEnd > 0 ? 100 : -100 }}
                     animate={{ opacity: 1, x: featureDragDistance }}
-                    exit={{ opacity: 0 }}
+                    exit={{ opacity: 0, x: featureTouchStart - featureTouchEnd > 0 ? -100 : 100 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     style={{
                       width: '100%',
