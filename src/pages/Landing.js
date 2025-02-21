@@ -1059,19 +1059,28 @@ const Landing = () => {
                       >
                         Your personalized mental wellness companion. Track your mood, chat with AI, and discover tools to cultivate a balanced and joyful life.
                       </Typography>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 4 }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: { xs: 'column', sm: 'row' }, 
+                        gap: 2, 
+                        mb: 4,
+                        ml: { xs: 0, sm: '22px' },
+                        justifyContent: 'flex-start',
+                        alignItems: { xs: 'stretch', sm: 'flex-start' },
+                        width: { xs: '100%', sm: 'auto' }
+                      }}>
                         {isAuthenticated ? (
-                          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ width: '100%' }}>
+                          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                             <GradientButton 
                               variant="contained" 
                               onClick={() => navigate('/dashboard')} 
-                              fullWidth
                               sx={{ 
-                                py: 2, 
-                                borderRadius: '16px', 
-                                fontSize: '1.1rem',
+                                py: 1.5,
+                                px: 3,
+                                minWidth: '160px',
+                                borderRadius: '12px', 
+                                fontSize: '1rem',
                                 boxShadow: `0 8px 16px -4px ${alpha(theme.palette.primary.main, 0.3)}`,
-                                mb: 2, // Add margin bottom for spacing
                               }}
                             >
                               Go to Dashboard
@@ -1083,12 +1092,14 @@ const Landing = () => {
                               <GradientButton 
                                 variant="contained" 
                                 onClick={() => navigate('/signup')} 
-                                fullWidth
                                 sx={{ 
-                                  py: 2, 
-                                  borderRadius: '16px', 
-                                  fontSize: '1.1rem',
+                                  py: 1.5,
+                                  px: 3,
+                                  minWidth: '160px',
+                                  borderRadius: '12px', 
+                                  fontSize: '1rem',
                                   boxShadow: `0 8px 16px -4px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                  width: { xs: '100%', sm: 'auto' }
                                 }}
                               >
                                 Get Started
@@ -1099,14 +1110,16 @@ const Landing = () => {
                                 variant="outlined"
                                 color="primary"
                                 onClick={() => navigate('/login')}
-                                fullWidth
                                 sx={{
-                                  py: 2,
-                                  borderRadius: '16px',
-                                  fontSize: '1.1rem',
+                                  py: 1.5,
+                                  px: 3,
+                                  minWidth: '160px',
+                                  borderRadius: '12px',
+                                  fontSize: '1rem',
                                   borderWidth: 2,
                                   borderColor: alpha(theme.palette.primary.main, 0.5),
                                   color: theme.palette.primary.main,
+                                  width: { xs: '100%', sm: 'auto' },
                                   '&:hover': {
                                     borderWidth: 2,
                                     backgroundColor: alpha(theme.palette.primary.main, 0.05),
@@ -1168,52 +1181,70 @@ const Landing = () => {
                             Your personalized mental wellness companion. Track your mood, chat with AI, and discover tools to cultivate a balanced and joyful life.
                           </Typography>
                         </motion.div>
-                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 1 }}>
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexDirection: { xs: 'column', sm: 'row' }, 
+                          gap: 2, 
+                          mb: 4,
+                          ml: { xs: 0, sm: '22px' },
+                          justifyContent: 'flex-start',
+                          alignItems: { xs: 'stretch', sm: 'flex-start' },
+                          width: { xs: '100%', sm: 'auto' }
+                        }}>
                           {isAuthenticated ? (
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-start', width: '100%', mt: 2 }}>
-                              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                <GradientButton 
-                                  variant="contained" 
-                                  size="large" 
-                                  onClick={() => navigate('/dashboard')} 
-                                  sx={{ 
-                                    paddingX: 4, 
-                                    paddingY: 1.8, 
-                                    borderRadius: '14px', 
-                                    boxShadow: theme.shadows[5], 
-                                    fontSize: '1.1rem',
-                                    minWidth: '200px' 
-                                  }}
-                                >
-                                  Go to Dashboard
-                                </GradientButton>
-                              </motion.div>
-                            </Box>
+                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                              <GradientButton 
+                                variant="contained" 
+                                onClick={() => navigate('/dashboard')} 
+                                sx={{ 
+                                  py: 1.5,
+                                  px: 3,
+                                  minWidth: '160px',
+                                  borderRadius: '12px', 
+                                  fontSize: '1rem',
+                                  boxShadow: `0 8px 16px -4px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                }}
+                              >
+                                Go to Dashboard
+                              </GradientButton>
+                            </motion.div>
                           ) : (
                             <>
-                              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                <GradientButton variant="contained" size="large" onClick={() => navigate('/signup')} sx={{ paddingX: 4, paddingY: 1.8, borderRadius: '14px', boxShadow: theme.shadows[5], fontSize: '1.1rem' }}>
+                              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                <GradientButton 
+                                  variant="contained" 
+                                  onClick={() => navigate('/signup')} 
+                                  sx={{ 
+                                    py: 1.5,
+                                    px: 3,
+                                    minWidth: '160px',
+                                    borderRadius: '12px', 
+                                    fontSize: '1rem',
+                                    boxShadow: `0 8px 16px -4px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                    width: { xs: '100%', sm: 'auto' }
+                                  }}
+                                >
                                   Get Started
                                 </GradientButton>
                               </motion.div>
-                              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                                 <Button
                                   variant="outlined"
                                   color="primary"
-                                  size="large"
                                   onClick={() => navigate('/login')}
                                   sx={{
-                                    paddingX: 4,
-                                    paddingY: 1.8,
-                                    borderRadius: '14px',
-                                    borderColor: theme.palette.primary.main,
+                                    py: 1.5,
+                                    px: 3,
+                                    minWidth: '160px',
+                                    borderRadius: '12px',
+                                    fontSize: '1rem',
+                                    borderWidth: 2,
+                                    borderColor: alpha(theme.palette.primary.main, 0.5),
                                     color: theme.palette.primary.main,
-                                    fontSize: '1.1rem',
-                                    transition: 'all 0.3s ease',
+                                    width: { xs: '100%', sm: 'auto' },
                                     '&:hover': {
-                                      backgroundColor: theme.palette.primary.main,
-                                      color: theme.palette.primary.contrastText,
-                                      borderColor: theme.palette.primary.dark,
+                                      borderWidth: 2,
+                                      backgroundColor: alpha(theme.palette.primary.main, 0.05),
                                     },
                                   }}
                                 >
