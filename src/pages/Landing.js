@@ -14,6 +14,7 @@ import {
   Avatar,
   Tooltip,
   Fade,
+  Container,
 } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -211,8 +212,9 @@ const Landing = () => {
   // Touch handling logic
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const [featureStartX, setFeatureStartX] = useState(0);
+  const [featureEndX, setFeatureEndX] = useState(0);
   const [isFeatureDragging, setIsFeatureDragging] = useState(false);
-  const [featureDragX, setFeatureDragX] = useState(0);
+  const [featureDragDistance, setFeatureDragDistance] = useState(0);
 
   const handleFeatureCardClick = (action) => {
     action();
@@ -221,14 +223,15 @@ const Landing = () => {
   const handleFeatureTouchStart = (e) => {
     setFeatureStartX(e.touches[0].clientX);
     setIsFeatureDragging(true);
-    setFeatureDragX(0);
+    setFeatureDragDistance(0);
   };
 
   const handleFeatureTouchMove = (e) => {
     if (isFeatureDragging) {
       const currentX = e.touches[0].clientX;
-      const diff = currentX - featureStartX;
-      setFeatureDragX(diff);
+      const distance = currentX - featureStartX;
+      setFeatureDragDistance(distance);
+      setFeatureEndX(currentX);
     }
   };
 
@@ -240,15 +243,13 @@ const Landing = () => {
       if (diff > 0) {
         // Swipe left
         setCurrentFeatureIndex((prev) => (prev + 1) % features.length);
-        setSwipeDirection('left');
       } else {
         // Swipe right
         setCurrentFeatureIndex((prev) => (prev - 1 + features.length) % features.length);
-        setSwipeDirection('right');
       }
     }
     setIsFeatureDragging(false);
-    setFeatureDragX(0);
+    setFeatureDragDistance(0);
   };
 
   const handleDesktopFeatureClick = (action) => {
@@ -259,7 +260,7 @@ const Landing = () => {
 
   const optimizeImageLoading = (index) => ({
     loading: index === currentFeatureIndex ? 'eager' : 'lazy',
-    fetchPriority: index === currentFeatureIndex ? 'high' : 'low',
+    fetchpriority: index === currentFeatureIndex ? 'high' : 'low',
   });
 
   // Testimonials components
@@ -440,253 +441,439 @@ const Landing = () => {
   };
 
   const MobileTestimonialSection = () => {
-    const [startX, setStartX] = useState(0);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [touchStart, setTouchStart] = useState(0);
+    const [touchEnd, setTouchEnd] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
-    const [dragX, setDragX] = useState(0);
+    const [dragDistance, setDragDistance] = useState(0);
 
     const handleTouchStart = (e) => {
-      setStartX(e.touches[0].clientX);
+      setTouchStart(e.touches[0].clientX);
       setIsDragging(true);
-      setDragX(0);
+      setDragDistance(0);
     };
 
     const handleTouchMove = (e) => {
       if (isDragging) {
-        const currentX = e.touches[0].clientX;
-        const diff = currentX - startX;
-        setDragX(diff);
+        const currentTouch = e.touches[0].clientX;
+        const distance = currentTouch - touchStart;
+        setDragDistance(distance);
+        setTouchEnd(currentTouch);
       }
     };
 
-    const handleTouchEnd = (e) => {
-      const endX = e.changedTouches[0].clientX;
-      const diff = startX - endX;
-
-      // Simple swipe detection
-      if (Math.abs(diff) > 50) { // Threshold of 50px
-        if (diff > 0) {
-          // Swipe left
-          setCurrentSlide((prev) => (prev + 1) % testimonials.length);
-          setSwipeDirection('left');
+    const handleTouchEnd = () => {
+      setIsDragging(false);
+      const minSwipeDistance = 50;
+      
+      if (Math.abs(touchStart - touchEnd) >= minSwipeDistance) {
+        if (touchStart - touchEnd > 0) {
+          // Swiped left
+          setCurrentIndex((prev) => (prev + 1) % testimonials.length);
         } else {
-          // Swipe right
-          setCurrentSlide((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-          setSwipeDirection('right');
+          // Swiped right
+          setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
         }
       }
-      setIsDragging(false);
-      setDragX(0);
+      setDragDistance(0);
     };
 
     return (
-      <Box 
-        sx={{ 
-          position: 'relative', 
-          padding: theme.spacing(2), 
-          overflow: 'hidden',
-          touchAction: 'pan-y pinch-zoom',
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <AnimatePresence initial={false} mode="wait" custom={swipeDirection}>
+      <Box sx={{ position: 'relative', overflow: 'hidden', px: 2 }}>
+        <AnimatePresence initial={false} mode="wait">
           <motion.div
-            key={currentSlide}
-            custom={swipeDirection}
-            style={{ 
-              x: dragX,
-              cursor: isDragging ? 'grabbing' : 'grab'
+            key={currentIndex}
+            initial={{ opacity: 0, x: dragDistance }}
+            animate={{ opacity: 1, x: dragDistance }}
+            exit={{ opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            style={{
+              width: '100%',
+              touchAction: 'pan-y pinch-zoom',
             }}
-            variants={{
-              enterFromLeft: { x: '-100%', opacity: 0 },
-              enterFromRight: { x: '100%', opacity: 0 },
-              center: { x: 0, opacity: 1 },
-              exitToLeft: { x: '-100%', opacity: 0 },
-              exitToRight: { x: '100%', opacity: 0 },
-            }}
-            initial={swipeDirection === 'left' ? 'enterFromRight' : 'enterFromLeft'}
-            animate="center"
-            exit={swipeDirection === 'left' ? 'exitToLeft' : 'exitToRight'}
-            transition={{ 
-              x: { type: 'spring', stiffness: 300, damping: 30 }, 
-              opacity: { duration: 0.2 }
-            }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.2}
-            onDragEnd={(e, info) => {
-              if (Math.abs(info.offset.x) > 50) {
-                if (info.offset.x < 0) {
-                  setCurrentSlide((prev) => (prev + 1) % testimonials.length);
-                  setSwipeDirection('left');
-                } else {
-                  setCurrentSlide((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-                  setSwipeDirection('right');
-                }
-              }
-            }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
             <Card
               sx={{
-                background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.95)} 0%, ${alpha(theme.palette.background.paper, 0.85)} 100%)`,
-                backdropFilter: 'blur(10px)',
+                background: theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.background.paper, 0.8)
+                  : '#fff',
                 borderRadius: '24px',
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                p: 4,
                 boxShadow: `0 8px 32px -8px ${alpha(theme.palette.primary.main, 0.2)}`,
-                padding: theme.spacing(3),
-                position: 'relative',
-                overflow: 'hidden',
-                minHeight: '300px',
                 transform: isDragging ? 'scale(0.98)' : 'scale(1)',
-                transition: 'transform 0.2s ease-out',
+                transition: 'transform 0.3s ease',
               }}
             >
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: '100%',
-                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.primary.light, 0.05)} 100%)`,
-                  zIndex: 0,
-                }}
-              />
-              <Box
-                sx={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}
-              >
-                <Avatar
-                  src={testimonials[currentSlide].avatarUrl}
-                  alt={testimonials[currentSlide].author}
-                  sx={{ width: 100, height: 100, border: `4px solid ${theme.palette.background.paper}`, boxShadow: theme.shadows[3] }}
-                />
-                <Typography
-                  variant="h2"
-                  sx={{ fontSize: '4rem', color: theme.palette.primary.main, opacity: 0.3, position: 'absolute', top: -20, left: -10 }}
-                >
-                  "
-                </Typography>
+              <Box sx={{ position: 'relative' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                  <Avatar
+                    src={testimonials[currentIndex].avatarUrl}
+                    alt={testimonials[currentIndex].author}
+                    sx={{
+                      width: 64,
+                      height: 64,
+                      border: `3px solid ${theme.palette.background.paper}`,
+                      boxShadow: theme.shadows[2],
+                    }}
+                  />
+                  <Box>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: 700,
+                        color: theme.palette.text.primary,
+                      }}
+                    >
+                      {testimonials[currentIndex].author}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: theme.palette.primary.main,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Verified User
+                    </Typography>
+                  </Box>
+                </Box>
+
                 <Typography
                   variant="body1"
-                  sx={{ fontSize: '1.1rem', lineHeight: 1.7, fontStyle: 'italic', textAlign: 'center', color: theme.palette.text.primary }}
+                  sx={{
+                    fontSize: '1.1rem',
+                    lineHeight: 1.7,
+                    mb: 3,
+                    color: alpha(theme.palette.text.primary, 0.87),
+                    position: 'relative',
+                    pl: 3,
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: 4,
+                      borderRadius: '4px',
+                      background: `linear-gradient(to bottom, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.main, 0.3)})`,
+                    }
+                  }}
                 >
-                  {testimonials[currentSlide].quote}
+                  "{testimonials[currentIndex].quote}"
                 </Typography>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                    {testimonials[currentSlide].author}
-                  </Typography>
-                  <Typography variant="subtitle2" sx={{ color: theme.palette.text.secondary, mt: 0.5 }}>
-                    MindEase User
-                  </Typography>
+
+                <Box sx={{ display: 'flex', gap: 0.5, color: theme.palette.warning.main }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Box key={star} sx={{ fontSize: '1.25rem' }}>★</Box>
+                  ))}
                 </Box>
               </Box>
             </Card>
           </motion.div>
         </AnimatePresence>
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 3 }}>
+
+        {/* Navigation Dots */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 1,
+            mt: 3,
+          }}
+        >
           {testimonials.map((_, index) => (
             <Box
               key={index}
-              onClick={() => {
-                setSwipeDirection(index > currentSlide ? 'left' : 'right');
-                setCurrentSlide(index);
-              }}
+              onClick={() => setCurrentIndex(index)}
               sx={{
                 width: 8,
                 height: 8,
                 borderRadius: '50%',
-                backgroundColor: currentSlide === index ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.3),
-                cursor: 'pointer',
+                backgroundColor: currentIndex === index 
+                  ? theme.palette.primary.main 
+                  : alpha(theme.palette.primary.main, 0.3),
                 transition: 'all 0.3s ease',
-                '&:hover': { transform: 'scale(1.2)', backgroundColor: theme.palette.primary.main },
+                cursor: 'pointer',
+                '&:hover': {
+                  transform: 'scale(1.2)',
+                  backgroundColor: theme.palette.primary.main,
+                },
               }}
             />
           ))}
         </Box>
+
+        {/* Swipe Hint */}
+        <Typography
+          variant="body2"
+          sx={{
+            textAlign: 'center',
+            mt: 2,
+            color: alpha(theme.palette.text.secondary, 0.7),
+            fontSize: '0.875rem',
+          }}
+        >
+          Swipe to see more testimonials
+        </Typography>
       </Box>
     );
   };
 
   const ContinuousTestimonialsSection = () => (
     <motion.section
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
       transition={{ duration: 0.8 }}
     >
-      <Box
-        mt={14}
-        mb={isMobile ? 10 : 14}
-        sx={{
-          backgroundColor: theme.palette.background.default,
-          paddingY: 8,
-          borderRadius: '32px',
-          border: `1px solid ${alpha(theme.palette.grey[400], 0.2)}`,
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: `0 20px 40px -20px ${alpha(theme.palette.primary.main, 0.15)}`,
-        }}
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage: `radial-gradient(circle at 50% 50%, ${alpha(theme.palette.primary.main, 0.1)} 0%, transparent 70%)`,
-            opacity: 0.5,
-            zIndex: 1,
-          }}
-        />
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          <Typography
-            variant={isMobile ? 'h4' : 'h3'}
-            align="center"
-            sx={{
-              fontWeight: 800,
-              color: theme.palette.text.primary,
-              paddingX: isMobile ? theme.spacing(2) : 0,
-              position: 'relative',
-              zIndex: 2,
-            }}
+      <Container maxWidth="lg" sx={{ py: { xs: 6, md: 8 } }}>
+        {/* Section Header */}
+        <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 12 } }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            Hear From Our <span style={{ color: theme.palette.primary.main }}>Community</span>
-          </Typography>
-          <Typography
-            variant="h6"
-            align="center"
-            sx={{
-              color: theme.palette.text.secondary,
-              maxWidth: 750,
-              margin: '1rem auto 3rem',
-              fontSize: '1.05rem',
-              fontWeight: 400,
-              position: 'relative',
-              zIndex: 2,
-              paddingX: isMobile ? theme.spacing(3) : 0,
-            }}
-          >
-            Real stories from real users who have found peace and growth with MindEase
-          </Typography>
-        </motion.div>
-        <Box
-          sx={{
-            position: 'relative',
-            zIndex: 2,
-            ...(isMobile && { px: 2, py: 1 }),
-          }}
-        >
-          {isMobile ? <MobileTestimonialSection /> : <TestimonialScroll />}
+            <Typography
+              component="span"
+              sx={{
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                mb: 2,
+                display: 'inline-block',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                padding: '6px 14px',
+                borderRadius: '100px',
+                background: alpha(theme.palette.primary.main, 0.08),
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+              }}
+            >
+              Testimonials
+            </Typography>
+            <Typography
+              variant={isMobile ? 'h3' : 'h2'}
+              sx={{
+                fontWeight: 800,
+                color: theme.palette.text.primary,
+                mt: 2,
+                mb: 3,
+                fontSize: isMobile ? '2.5rem' : '3.5rem',
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2,
+              }}
+            >
+              What Our Users Say
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{
+                color: alpha(theme.palette.text.secondary, 0.8),
+                maxWidth: '600px',
+                mx: 'auto',
+                lineHeight: 1.6,
+                fontWeight: 400,
+                fontSize: '1.1rem'
+              }}
+            >
+              Join thousands of users who have found peace and clarity with MindEase
+            </Typography>
+          </motion.div>
         </Box>
-      </Box>
+
+        {/* Testimonials Section - Conditional Rendering */}
+        {isMobile ? (
+          <MobileTestimonialSection />
+        ) : (
+          <Grid container spacing={3}>
+            {testimonials.map((testimonial, index) => (
+              <Grid 
+                item 
+                xs={12} 
+                md={6} 
+                lg={4} 
+                key={index}
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, delay: index * 0.2 }}
+                >
+                  <Box
+                    sx={{
+                      background: theme.palette.mode === 'dark' 
+                        ? alpha(theme.palette.background.paper, 0.8)
+                        : '#fff',
+                      borderRadius: '24px',
+                      p: { xs: 3.5, md: 4 },
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      position: 'relative',
+                      transition: 'all 0.3s ease',
+                      boxShadow: theme.palette.mode === 'dark'
+                        ? `0 4px 20px ${alpha(theme.palette.common.black, 0.1)}`
+                        : '0 4px 20px rgba(0, 0, 0, 0.05)',
+                      '&:hover': {
+                        transform: 'translateY(-6px)',
+                        boxShadow: theme.palette.mode === 'dark'
+                          ? `0 20px 40px ${alpha(theme.palette.common.black, 0.2)}`
+                          : '0 20px 40px rgba(0, 0, 0, 0.1)',
+                        '& .quote-icon': {
+                          transform: 'scale(1.1) rotate(-4deg)',
+                          opacity: 0.15,
+                        },
+                        '& .avatar-wrapper': {
+                          transform: 'scale(1.05)',
+                          '& .avatar-glow': {
+                            opacity: 0.5,
+                          }
+                        }
+                      }
+                    }}
+                  >
+                    {/* Quote Icon */}
+                    <Box
+                      className="quote-icon"
+                      sx={{
+                        position: 'absolute',
+                        top: 28,
+                        right: 28,
+                        width: '32px',
+                        height: '32px',
+                        opacity: 0.1,
+                        transition: 'all 0.3s ease',
+                        color: theme.palette.primary.main
+                      }}
+                    >
+                      <svg width="32" height="32" viewBox="0 0 32 32" fill="currentColor">
+                        <path d="M9.583 17.321C8.553 16.227 8 15 8 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179zm10 0C18.553 16.227 18 15 18 13.011c0-3.5 2.457-6.637 6.03-8.188l.893 1.378c-3.335 1.804-3.987 4.145-4.247 5.621.537-.278 1.24-.375 1.929-.311 1.804.167 3.226 1.648 3.226 3.489a3.5 3.5 0 01-3.5 3.5c-1.073 0-2.099-.49-2.748-1.179z"/>
+                      </svg>
+                    </Box>
+
+                    {/* Author Info */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                      <Box 
+                        className="avatar-wrapper"
+                        sx={{ 
+                          position: 'relative',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      >
+                        <Box
+                          className="avatar-glow"
+                          sx={{
+                            position: 'absolute',
+                            inset: -3,
+                            borderRadius: '50%',
+                            background: `radial-gradient(circle at center, ${alpha(theme.palette.primary.main, 0.2)}, transparent 70%)`,
+                            opacity: 0,
+                            transition: 'opacity 0.3s ease'
+                          }}
+                        />
+                        <Avatar
+                          alt={testimonial.author}
+                          src={testimonial.avatarUrl}
+                          sx={{
+                            width: 56,
+                            height: 56,
+                            border: `3px solid ${theme.palette.background.paper}`,
+                            boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.1)}`,
+                          }}
+                        />
+                      </Box>
+                      <Box>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            fontWeight: 700,
+                            color: theme.palette.text.primary,
+                            fontSize: '1.1rem',
+                            lineHeight: 1.3,
+                            letterSpacing: '-0.01em'
+                          }}
+                        >
+                          {testimonial.author}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: theme.palette.primary.main,
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.75,
+                            mt: 0.5,
+                            opacity: 0.85
+                          }}
+                        >
+                          Verified User
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Quote Text */}
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontSize: '1.125rem',
+                        lineHeight: 1.7,
+                        color: alpha(theme.palette.text.primary, 0.87),
+                        mb: 3,
+                        flex: 1,
+                        fontWeight: 450,
+                        letterSpacing: '-0.01em',
+                        position: 'relative',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: -16,
+                          left: -20,
+                          width: 3,
+                          height: '90%',
+                          background: `linear-gradient(to bottom, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.main, 0.1)})`,
+                          borderRadius: '4px'
+                        }
+                      }}
+                    >
+                      {testimonial.quote}
+                    </Typography>
+
+                    {/* Rating */}
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center',
+                        gap: 0.5,
+                        color: theme.palette.warning.main
+                      }}
+                    >
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Box 
+                          key={star}
+                          sx={{
+                            color: theme.palette.warning.main,
+                            fontSize: '1.25rem'
+                          }}
+                        >
+                          ★
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                </motion.div>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </Container>
     </motion.section>
   );
 
@@ -1138,100 +1325,240 @@ const Landing = () => {
                 onTouchMove={handleFeatureTouchMove}
                 onTouchEnd={handleFeatureTouchEnd}
               >
-                <AnimatePresence initial={false} mode="wait" custom={swipeDirection}>
+                <AnimatePresence initial={false} mode="wait">
                   <motion.div
                     key={currentFeatureIndex}
-                    custom={swipeDirection}
-                    style={{ 
-                      x: featureDragX,
-                      cursor: isFeatureDragging ? 'grabbing' : 'grab',
+                    initial={{ opacity: 0, x: featureDragDistance }}
+                    animate={{ opacity: 1, x: featureDragDistance }}
+                    exit={{ opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    style={{
                       width: '100%',
-                      display: 'flex',
-                      justifyContent: 'center'
+                      touchAction: 'pan-y pinch-zoom',
                     }}
-                    variants={{
-                      enterFromLeft: { x: '-100%', opacity: 0 },
-                      enterFromRight: { x: '100%', opacity: 0 },
-                      center: { x: 0, opacity: 1 },
-                      exitToLeft: { x: '-100%', opacity: 0 },
-                      exitToRight: { x: '100%', opacity: 0 },
-                    }}
-                    initial={swipeDirection === 'left' ? 'enterFromRight' : 'enterFromLeft'}
-                    animate="center"
-                    exit={swipeDirection === 'left' ? 'exitToLeft' : 'exitToRight'}
-                    transition={{ 
-                      x: { type: 'spring', stiffness: 300, damping: 30 }, 
-                      opacity: { duration: 0.2 }
-                    }}
-                    drag="x"
-                    dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={0.2}
-                    onDragEnd={(e, info) => {
-                      if (Math.abs(info.offset.x) > 50) {
-                        if (info.offset.x < 0) {
-                          setCurrentFeatureIndex((prev) => (prev + 1) % features.length);
-                          setSwipeDirection('left');
-                        } else {
-                          setCurrentFeatureIndex((prev) => (prev - 1 + features.length) % features.length);
-                          setSwipeDirection('right');
-                        }
-                      }
-                    }}
+                    onTouchStart={handleFeatureTouchStart}
+                    onTouchMove={handleFeatureTouchMove}
+                    onTouchEnd={handleFeatureTouchEnd}
                   >
                     <Card
                       sx={{
                         margin: '0 auto',
                         width: '100%',
-                        borderRadius: '16px',
-                        background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
-                          theme.palette.background.paper,
-                          0.9
-                        )} 100%)`,
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                        boxShadow: theme.shadows[3],
-                        overflow: 'hidden',
-                        transition: 'all 0.3s ease-in-out',
+                        maxWidth: '340px',
+                        borderRadius: '20px',
+                        background: theme.palette.mode === 'dark'
+                          ? `linear-gradient(165deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${alpha(theme.palette.background.paper, 0.6)} 100%)`
+                          : `linear-gradient(165deg, ${alpha('#ffffff', 0.95)} 0%, ${alpha('#ffffff', 0.85)} 100%)`,
+                        backdropFilter: 'blur(20px)',
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                        boxShadow: `0 15px 30px -10px ${alpha(theme.palette.primary.main, 0.2)},
+                                  0 0 0 1px ${alpha(theme.palette.primary.main, 0.05)}`,
+                        overflow: 'visible',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        height: '100%',
                         display: 'flex',
                         flexDirection: 'column',
-                        height: 'auto',
-                        minHeight: '400px',
-                        maxHeight: '85vh',
+                        justifyContent: 'space-between',
+                        position: 'relative',
                         transform: isFeatureDragging ? 'scale(0.98)' : 'scale(1)',
                         px: { xs: 2, sm: 3 },
-                        py: { xs: 2, sm: 3 },
+                        py: { xs: 3, sm: 4 },
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: `radial-gradient(circle at 50% 0%, ${alpha(theme.palette.primary.main, 0.1)} 0%, transparent 70%)`,
+                          opacity: 0.5,
+                          borderRadius: 'inherit',
+                          zIndex: 0,
+                        },
                       }}
                     >
-                      <Box sx={{ textAlign: 'center', pt: 2 }}>
-                        <Avatar sx={{ bgcolor: theme.palette.primary.light, width: 56, height: 56, margin: '0 auto', boxShadow: theme.shadows[2] }}>
-                          {features[currentFeatureIndex].icon}
-                        </Avatar>
+                      {/* Card Content */}
+                      <Box sx={{ position: 'relative', zIndex: 2 }}>
+                        <motion.div
+                          whileHover={{ rotate: [0, -10, 10, -5, 5, 0], scale: 1.1 }}
+                          transition={{ duration: 0.6 }}
+                        >
+                          <Avatar
+                            sx={{
+                              bgcolor: 'transparent',
+                              background: `linear-gradient(135deg, ${theme.palette.primary.main} 20%, ${theme.palette.primary.light} 80%)`,
+                              width: 70,
+                              height: 70,
+                              margin: '0 auto',
+                              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                              boxShadow: `0 12px 24px -8px ${alpha(theme.palette.primary.main, 0.4)}`,
+                              border: `3px solid ${alpha(theme.palette.background.paper, 0.9)}`,
+                              '& svg': {
+                                fontSize: '2rem',
+                                color: 'white',
+                                transition: 'transform 0.3s ease',
+                                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+                              },
+                            }}
+                          >
+                            {features[currentFeatureIndex].icon}
+                          </Avatar>
+                        </motion.div>
                       </Box>
-                      <CardContent sx={{ p: 2, flex: 1 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary, textAlign: 'center', mt: 1, mb: 1 }}>
+
+                      <CardContent sx={{ position: 'relative', zIndex: 2, p: 2, flex: 1 }}>
+                        <Typography
+                          variant="h5"
+                          sx={{
+                            fontWeight: 700,
+                            color: theme.palette.text.primary,
+                            textAlign: 'center',
+                            mt: 2,
+                            mb: 2,
+                            fontSize: '1.5rem',
+                            letterSpacing: '-0.02em',
+                            background: `linear-gradient(135deg, ${theme.palette.text.primary} 30%, ${alpha(theme.palette.primary.main, 0.8)} 100%)`,
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                          }}
+                        >
                           {features[currentFeatureIndex].title}
                         </Typography>
-                        <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', fontSize: '0.9rem', lineHeight: 1.5, mb: 2 }}>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            textAlign: 'center',
+                            fontSize: '1rem',
+                            lineHeight: 1.6,
+                            color: alpha(theme.palette.text.secondary, 0.9),
+                            px: 1,
+                            position: 'relative',
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              left: '50%',
+                              top: -8,
+                              width: 40,
+                              height: 2,
+                              borderRadius: '2px',
+                              background: `linear-gradient(to right, ${alpha(theme.palette.primary.main, 0.3)}, ${theme.palette.primary.main}, ${alpha(theme.palette.primary.main, 0.3)})`,
+                              transform: 'translateX(-50%)',
+                            }
+                          }}
+                        >
                           {features[currentFeatureIndex].description}
                         </Typography>
                       </CardContent>
-                      <CardActions sx={{ justifyContent: 'center', p: 2, pb: 3 }}>
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <GradientButton onClick={() => handleFeatureCardClick(features[currentFeatureIndex].action)} variant="contained" sx={{ py: 1, px: 3, fontSize: '0.9rem', borderRadius: '12px' }}>
+
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          width: '100%',
+                          height: '160px',
+                          borderRadius: '16px',
+                          overflow: 'hidden',
+                          mb: 3,
+                          mt: 2,
+                          zIndex: 2,
+                          boxShadow: `0 12px 24px -12px ${alpha(theme.palette.common.black, 0.3)}`,
+                          '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: `linear-gradient(180deg, transparent 0%, ${alpha(theme.palette.background.paper, 0.1)} 100%)`,
+                            opacity: 0.6,
+                          },
+                        }}
+                      >
+                        <motion.img
+                          src={features[currentFeatureIndex].imageUrl}
+                          alt={features[currentFeatureIndex].alt}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                          }}
+                          {...optimizeImageLoading(currentFeatureIndex)}
+                          animate={{ scale: isFeatureDragging ? 1.05 : 1 }}
+                          transition={{ duration: 0.3 }}
+                        />
+                      </Box>
+
+                      <CardActions sx={{ justifyContent: 'center', position: 'relative', zIndex: 2, p: 2, pt: 0 }}>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ width: '100%' }}>
+                          <GradientButton
+                            onClick={() => handleFeatureCardClick(features[currentFeatureIndex].action)}
+                            fullWidth
+                            variant="contained"
+                            sx={{
+                              py: 1.75,
+                              fontSize: '1.1rem',
+                              borderRadius: '14px',
+                              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
+                              transition: 'all 0.3s ease',
+                              boxShadow: `0 10px 20px -8px ${alpha(theme.palette.primary.main, 0.5)}`,
+                              fontWeight: 600,
+                              letterSpacing: '0.5px',
+                              '&:hover': {
+                                boxShadow: `0 12px 24px -10px ${alpha(theme.palette.primary.main, 0.6)}`,
+                              }
+                            }}
+                          >
                             Learn More
                           </GradientButton>
                         </motion.div>
                       </CardActions>
-                      <Box sx={{ position: 'relative', width: '100%', height: '140px', borderRadius: '0 0 16px 16px', overflow: 'hidden' }}>
-                        <img
-                          src={features[currentFeatureIndex].imageUrl}
-                          alt={features[currentFeatureIndex].alt}
-                          {...optimizeImageLoading(currentFeatureIndex)}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: isDarkMode ? 'none' : 'brightness(105%)' }}
-                        />
-                      </Box>
                     </Card>
                   </motion.div>
                 </AnimatePresence>
+
+                {/* Navigation Dots */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: 1,
+                    mt: 3,
+                  }}
+                >
+                  {features.map((_, index) => (
+                    <Box
+                      key={index}
+                      onClick={() => setCurrentFeatureIndex(index)}
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        backgroundColor: currentFeatureIndex === index 
+                          ? theme.palette.primary.main 
+                          : alpha(theme.palette.primary.main, 0.3),
+                        transition: 'all 0.3s ease',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          transform: 'scale(1.2)',
+                          backgroundColor: theme.palette.primary.main,
+                        },
+                      }}
+                    />
+                  ))}
+                </Box>
+
+                {/* Swipe Hint */}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    textAlign: 'center',
+                    mt: 2,
+                    color: alpha(theme.palette.text.secondary, 0.7),
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  Swipe to explore more features
+                </Typography>
               </MobileFeatureCarousel>
             </>
           ) : (
@@ -1287,7 +1614,8 @@ const Landing = () => {
                               zIndex: 0,
                             },
                             '&:hover': {
-                              boxShadow: `0 20px 40px -20px ${alpha(theme.palette.primary.main, 0.4)}, inset 0 0 0 1px ${alpha(theme.palette.primary.light, 0.2)}`,
+                              boxShadow: `0 20px 40px -20px ${alpha(theme.palette.common.black, 0.12)},
+                              0 0 0 1px ${alpha(theme.palette.primary.main, 0.1)}`,
                               '&::before': { opacity: 1 },
                               '& .floating-shapes': { transform: 'translateY(-10px) rotate(10deg)' },
                               '& .floating-shapes-2': { transform: 'translateY(10px) rotate(-5deg)' },
@@ -1323,8 +1651,7 @@ const Landing = () => {
                                 position: 'absolute',
                                 inset: 0,
                                 borderRadius: 'inherit',
-                                background:
-                                  'radial-gradient(circle at center, transparent 0%, rgba(255,255,255,0.2) 100%)',
+                                background: 'radial-gradient(circle at center, transparent 0%, rgba(255,255,255,0.2) 100%)',
                                 opacity: 0.5,
                               },
                             }}
@@ -1347,8 +1674,7 @@ const Landing = () => {
                                 position: 'absolute',
                                 inset: 0,
                                 borderRadius: 'inherit',
-                                background:
-                                  'radial-gradient(circle at 70% 30%, rgba(255,255,255,0.2) 0%, transparent 70%)',
+                                background: 'radial-gradient(circle at 70% 30%, rgba(255,255,255,0.2) 0%, transparent 70%)',
                                 opacity: 0.5,
                               },
                             }}
@@ -1400,20 +1726,59 @@ const Landing = () => {
                               </Typography>
                             </CardContent>
                           </motion.div>
-                          <Box sx={{ position: 'relative', width: '100%', height: '180px', borderRadius: '20px', overflow: 'hidden', mb: 3, zIndex: 2, '&::after': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0)} 0%, ${alpha(theme.palette.background.paper, 0.1)} 100%)`, opacity: 0, transition: 'opacity 0.3s ease' } }}>
+                          <Box
+                            sx={{
+                              position: 'relative',
+                              width: '100%',
+                              height: '180px',
+                              borderRadius: '20px',
+                              overflow: 'hidden',
+                              mb: 3,
+                              zIndex: 2,
+                              '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0)} 0%, ${alpha(theme.palette.background.paper, 0.1)} 100%)`,
+                                opacity: 0,
+                                transition: 'opacity 0.3s ease',
+                              },
+                            }}
+                          >
                             <motion.img
                               className="feature-image"
                               src={feature.imageUrl}
                               alt={feature.alt}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }}
-                              loading="lazy"
-                              whileHover={{ scale: 1.05 }}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                              }}
+                              {...optimizeImageLoading(index)}
+                              animate={{ scale: isFeatureDragging ? 1.05 : 1 }}
+                              transition={{ duration: 0.3 }}
                             />
                           </Box>
                           <CardActions sx={{ justifyContent: 'center', position: 'relative', zIndex: 2, p: 2 }}>
                             <Tooltip title={`Learn more about ${feature.title}`} arrow placement="top" TransitionComponent={Fade} TransitionProps={{ timeout: 600 }}>
                               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} style={{ width: '100%' }}>
-                                <GradientButton onClick={() => handleDesktopFeatureClick(feature.action)} fullWidth variant="contained" sx={{ py: 2, fontSize: '1.1rem', borderRadius: '16px', background: `linear-gradient(45deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`, transition: 'all 0.3s ease', boxShadow: `0 8px 20px -8px ${alpha(theme.palette.primary.main, 0.5)}` }}>
+                                <GradientButton
+                                  onClick={() => handleDesktopFeatureClick(feature.action)}
+                                  fullWidth
+                                  variant="contained"
+                                  sx={{
+                                    py: 2,
+                                    fontSize: '1.1rem',
+                                    borderRadius: '16px',
+                                    background: `linear-gradient(45deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: `0 8px 20px -8px ${alpha(theme.palette.primary.main, 0.5)}`,
+                                  }}
+                                >
                                   Learn More
                                 </GradientButton>
                               </motion.div>
@@ -1433,50 +1798,233 @@ const Landing = () => {
         {ContinuousTestimonialsSection()}
 
         {/* Call to Action Section */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.5 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+        <Box
+          mt={8}
+          sx={{
+            position: 'relative',
+            borderRadius: '32px',
+            overflow: 'hidden',
+            background: theme.palette.mode === 'dark'
+              ? `linear-gradient(135deg, ${alpha(theme.palette.primary.dark, 0.2)} 0%, ${alpha(theme.palette.primary.main, 0.1)} 100%)`
+              : `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.15)} 0%, ${alpha(theme.palette.primary.main, 0.05)} 100%)`,
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+          }}
         >
+          {/* Background Pattern */}
           <Box
-            mt={16}
-            textAlign="center"
-            paddingY={8}
             sx={{
-              background: `url('/images/banner.png') no-repeat center center`,
-              backgroundSize: 'cover',
-              boxShadow: 'none',
-              borderRadius: '25px',
-              border: `1px solid ${theme.palette.grey[400]}`,
-              position: 'relative',
-              overflow: 'hidden',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              opacity: 0.4,
+              background: `radial-gradient(circle at 20% 150%, ${alpha(theme.palette.primary.main, 0.4)} 0%, transparent 50%),
+                          radial-gradient(circle at 80% -50%, ${alpha(theme.palette.secondary.main, 0.3)} 0%, transparent 50%)`,
+              zIndex: 0,
             }}
-          >
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                background: 'rgba(0, 0, 0, 0.4)',
-                zIndex: 1,
-              }}
-            ></Box>
-            <Typography variant={isMobile ? 'h4' : 'h3'} sx={{ fontWeight: 900, color: theme.palette.text.primary, mb: 4, textShadow: `2px 2px 3px ${theme.palette.grey[300]}`, position: 'relative', zIndex: 2 }}>
-              Begin Your Journey to a Calmer Mind
-            </Typography>
-            <Typography variant="h6" color="textSecondary" sx={{ maxWidth: 800, margin: '0 auto', mb: 5, fontSize: '1.1rem', position: 'relative', zIndex: 2 }}>
-              Unlock the power of MindEase and transform your mental well-being today. Sign up for free and explore our comprehensive suite of features designed to guide you towards a happier, healthier you.
-            </Typography>
-            <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.96 }} style={{ position: 'relative', zIndex: 2 }}>
-              <GradientButton variant="contained" size="large" onClick={() => navigate('/signup')} sx={{ paddingX: 5, paddingY: 2, borderRadius: '16px', fontSize: '1.2rem', boxShadow: theme.shadows[6] }}>
-                Start for Free - It's Quick & Easy!
-              </GradientButton>
-            </motion.div>
-          </Box>
-        </motion.section>
+          />
+
+          <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+            <Grid 
+              container 
+              spacing={4} 
+              alignItems="center" 
+              justifyContent="space-between"
+              sx={{ py: { xs: 6, md: 8 }, px: { xs: 2, md: 4 } }}
+            >
+              <Grid item xs={12} md={7}>
+                <Box>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <Typography
+                      component="span"
+                      sx={{
+                        color: theme.palette.primary.main,
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        mb: 2,
+                        display: 'inline-block',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.1em',
+                        padding: '6px 14px',
+                        borderRadius: '100px',
+                        background: alpha(theme.palette.primary.main, 0.08),
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                      }}
+                    >
+                      Start Today
+                    </Typography>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                  >
+                    <Typography
+                      variant={isMobile ? 'h3' : 'h2'}
+                      sx={{
+                        fontWeight: 800,
+                        color: theme.palette.text.primary,
+                        mt: 2,
+                        mb: 3,
+                        fontSize: { xs: '2rem', md: '3rem' },
+                        letterSpacing: '-0.02em',
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      Begin Your Journey to a{' '}
+                      <Box
+                        component="span"
+                        sx={{
+                          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
+                          backgroundClip: 'text',
+                          WebkitBackgroundClip: 'text',
+                          color: 'transparent',
+                          display: 'inline-block',
+                        }}
+                      >
+                        Calmer Mind
+                      </Box>
+                    </Typography>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: alpha(theme.palette.text.secondary, 0.8),
+                        maxWidth: '600px',
+                        lineHeight: 1.6,
+                        fontWeight: 400,
+                        fontSize: '1.1rem',
+                        mb: 4,
+                      }}
+                    >
+                      Transform your mental well-being with MindEase. Join thousands of users who have discovered their path to inner peace and emotional balance.
+                    </Typography>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                  >
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }}>
+                        <GradientButton
+                          variant="contained"
+                          size="large"
+                          onClick={() => navigate('/signup')}
+                          sx={{
+                            py: 2,
+                            px: 4,
+                            borderRadius: '16px',
+                            fontSize: '1.1rem',
+                            boxShadow: `0 8px 20px -6px ${alpha(theme.palette.primary.main, 0.4)}`,
+                            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                          }}
+                        >
+                          Get Started Free
+                        </GradientButton>
+                      </motion.div>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: { xs: 0, sm: 2 } }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            position: 'relative',
+                          }}
+                        >
+                          {[1, 2, 3].map((i) => (
+                            <Avatar
+                              key={i}
+                              src={`images/p${i}.jpg`}
+                              alt={`User ${i}`}
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                border: `2px solid ${theme.palette.background.paper}`,
+                                marginLeft: i === 1 ? 0 : -1.5,
+                                transition: 'transform 0.2s ease',
+                                '&:hover': {
+                                  transform: 'translateY(-2px)',
+                                  zIndex: 2,
+                                },
+                              }}
+                            />
+                          ))}
+                        </Box>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: theme.palette.text.secondary,
+                            fontSize: '0.875rem',
+                          }}
+                        >
+                          Joined by 10K+ users
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </motion.div>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={5}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                >
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        inset: -2,
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.2)}, ${alpha(theme.palette.primary.light, 0.2)})`,
+                        borderRadius: '24px',
+                        zIndex: 0,
+                      },
+                    }}
+                  >
+                    <Box
+                      component="img"
+                      src="/images/banner.png"
+                      alt="Mindfulness Illustration"
+                      sx={{
+                        width: '100%',
+                        height: 'auto',
+                        borderRadius: '20px',
+                        position: 'relative',
+                        zIndex: 1,
+                        transform: 'translateY(-1%)',
+                        transition: 'transform 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2%)',
+                        },
+                      }}
+                    />
+                  </Box>
+                </motion.div>
+              </Grid>
+            </Grid>
+          </Container>
+        </Box>
       </motion.div>
     </PageLayout>
   );
