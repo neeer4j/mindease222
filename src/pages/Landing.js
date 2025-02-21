@@ -1862,10 +1862,10 @@ const Landing = () => {
               container 
               spacing={4} 
               alignItems="center" 
-              justifyContent="space-between"
+              justifyContent="center"
               sx={{ py: { xs: 6, md: 8 }, px: { xs: 2, md: 4 } }}
             >
-              <Grid item xs={12} md={7}>
+              <Grid item xs={12}>
                 <Box>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -2011,47 +2011,6 @@ const Landing = () => {
                     </Box>
                   </motion.div>
                 </Box>
-              </Grid>
-
-              <Grid item xs={12} md={5}>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.3 }}
-                >
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        inset: -2,
-                        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.2)}, ${alpha(theme.palette.primary.light, 0.2)})`,
-                        borderRadius: '24px',
-                        zIndex: 0,
-                      },
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src="/images/banner.png"
-                      alt="Mindfulness Illustration"
-                      sx={{
-                        width: '100%',
-                        height: 'auto',
-                        borderRadius: '20px',
-                        position: 'relative',
-                        zIndex: 1,
-                        transform: 'translateY(-1%)',
-                        transition: 'transform 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateY(-2%)',
-                        },
-                      }}
-                    />
-                  </Box>
-                </motion.div>
               </Grid>
             </Grid>
           </Container>
