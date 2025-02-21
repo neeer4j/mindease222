@@ -365,47 +365,81 @@ The user's name is ${userName}. You have access to their mood and sleep history.
     return instructions;
   }, [userName, customInstructions]);
 
-  // Send greeting message if none has been sent.
+  // Add local storage sync for messages
+  useEffect(() => {
+    if (!user) return;
+    
+    // Save messages to local storage whenever they change
+    if (messages.length > 0) {
+      localStorage.setItem(`mindease_messages_${user.uid}`, JSON.stringify(messages));
+    }
+  }, [messages, user]);
+
+  // Load cached messages on mount
+  useEffect(() => {
+    if (!user) return;
+    
+    const cachedMessages = localStorage.getItem(`mindease_messages_${user.uid}`);
+    if (cachedMessages) {
+      try {
+        const parsedMessages = JSON.parse(cachedMessages);
+        // Only set cached messages if there are no messages yet
+        if (messages.length === 0 && parsedMessages.length > 0) {
+          parsedMessages.forEach(msg => {
+            addMessage(msg.text, msg.isBot, {
+              isWelcome: msg.isWelcome,
+              timestamp: msg.timestamp,
+              quickReplies: msg.quickReplies,
+              isEmergency: msg.isEmergency,
+              isError: msg.isError
+            });
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing cached messages:', error);
+      }
+    }
+  }, [user, addMessage, messages.length]);
+
+  // Modified welcome message logic
   useEffect(() => {
     if (chatLoading || !user) return;
     
     const sessionKey = `mindease_welcomed_${user.uid}`;
-    const hasBeenWelcomedThisSession = sessionStorage.getItem(sessionKey);
-  
-    if (!hasBeenWelcomedThisSession) {
+    const lastWelcomeKey = `mindease_last_welcome_${user.uid}`;
+    
+    // Function to check if we should show welcome message
+    const shouldShowWelcome = () => {
+      // Get the timestamp of the last welcome message
+      const lastWelcomeTime = localStorage.getItem(lastWelcomeKey);
+      const hasRecentWelcome = lastWelcomeTime && 
+        (Date.now() - new Date(lastWelcomeTime).getTime() < 1000 * 60 * 5); // 5 minutes
+      
+      // Check if there are any non-welcome user messages
+      const hasUserMessages = messages.some(msg => !msg.isBot && !msg.isWelcome);
+      
+      // Don't show welcome if:
+      // 1. There's a recent welcome message
+      // 2. There are existing messages but no user replies
+      // 3. There's already a welcome message in the current session
+      return !hasRecentWelcome && 
+             !(messages.length > 0 && !hasUserMessages) &&
+             !messages.some(msg => msg.isWelcome);
+    };
+
+    // Only show welcome message if conditions are met
+    if (shouldShowWelcome()) {
       const greetingMessage = `Hello ${userName}! I'm MindEase, your AI therapist. How can I assist you today?`;
       addMessage(greetingMessage, true, {
         isWelcome: true,
         timestamp: new Date().toISOString(),
       });
+      
+      // Store the welcome message timestamp
+      localStorage.setItem(lastWelcomeKey, new Date().toISOString());
       sessionStorage.setItem(sessionKey, 'true');
     }
-  }, [user, addMessage, userName, chatLoading]);
-
-  // Fetch custom instructions from Firestore.
-  useEffect(() => {
-    const fetchCustomInstructions = async () => {
-      if (!user) return;
-      try {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          if (data.customInstructions) {
-            setCustomInstructions(data.customInstructions);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching custom instructions:', error);
-        setSnackbar({
-          open: true,
-          message: 'Failed to load custom instructions.',
-          severity: 'error',
-        });
-      }
-    };
-    fetchCustomInstructions();
-  }, [user]);
+  }, [user, addMessage, userName, chatLoading, messages]);
 
   // Auto-scroll the chat messages area whenever new messages are added.
   useEffect(() => {
@@ -626,6 +660,11 @@ The user's name is ${userName}. You have access to their mood and sleep history.
   const handleClearChat = () => setClearConfirmationOpen(true);
   const confirmClearChat = async () => {
     await clearChat();
+    if (user) {
+      localStorage.removeItem(`mindease_messages_${user.uid}`);
+      localStorage.removeItem(`mindease_last_welcome_${user.uid}`);
+      sessionStorage.removeItem(`mindease_welcomed_${user.uid}`);
+    }
     setClearConfirmationOpen(false);
     setSnackbar({
       open: true,

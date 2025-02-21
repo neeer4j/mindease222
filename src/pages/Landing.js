@@ -59,20 +59,15 @@ const MobileFeatureCarousel = styled(Box)(({ theme }) => ({
   alignItems: 'center',
   '& .MuiCard-root': {
     width: '100%',
-    maxWidth: 'min(400px, calc(100vw - 32px))',
+    maxWidth: '340px',
     margin: '0 auto',
+    [theme.breakpoints.down('sm')]: {
+      maxWidth: '90%',
+      margin: '0 auto',
+    },
     [theme.breakpoints.down(360)]: {
-      maxWidth: 'calc(100vw - 16px)',
-      margin: '0 8px',
-    },
-  },
-  [theme.breakpoints.down('sm')]: {
-    paddingTop: theme.spacing(2),
-    '& .MuiCardContent-root': {
-      paddingBottom: theme.spacing(1),
-    },
-    '& .MuiCardActions-root': {
-      paddingTop: 0,
+      maxWidth: '95%',
+      margin: '0 auto',
     },
   },
 }));
@@ -613,23 +608,9 @@ const Landing = () => {
               paddingX: isMobile ? theme.spacing(2) : 0,
               position: 'relative',
               zIndex: 2,
-              '& span': {
-                color: theme.palette.primary.main,
-                position: 'relative',
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  bottom: '-4px',
-                  left: 0,
-                  width: '100%',
-                  height: '2px',
-                  background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                  borderRadius: '2px',
-                },
-              },
             }}
           >
-            Hear From Our <span>Community</span>
+            Hear From Our <span style={{ color: theme.palette.primary.main }}>Community</span>
           </Typography>
           <Typography
             variant="h6"
@@ -815,24 +796,9 @@ const Landing = () => {
                           lineHeight: 1.2,
                           mb: 3,
                           fontSize: '2.5rem',
-                          textShadow: `2px 2px 4px ${alpha(theme.palette.primary.main, 0.1)}`,
-                          '& > span': {
-                            color: theme.palette.primary.main,
-                            position: 'relative',
-                            '&::after': {
-                              content: '""',
-                              position: 'absolute',
-                              bottom: '-4px',
-                              left: 0,
-                              width: '100%',
-                              height: '3px',
-                              background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
-                              borderRadius: '2px',
-                            },
-                          },
                         }}
                       >
-                        Find Your <span>Peace</span> with MindEase
+                        Find Your <span style={{ color: theme.palette.primary.main }}>Peace</span> with MindEase
                       </Typography>
                       <Typography
                         variant="h6"
@@ -936,25 +902,9 @@ const Landing = () => {
                             fontSize: { md: '3.5rem', lg: '4rem' },
                             mb: 3,
                             position: 'relative',
-                            textShadow: `2px 2px 4px ${alpha(theme.palette.primary.main, 0.1)}`,
-                            '& > span': {
-                              color: theme.palette.primary.main,
-                              position: 'relative',
-                              display: 'inline-block',
-                              '&::after': {
-                                content: '""',
-                                position: 'absolute',
-                                bottom: '-4px',
-                                left: 0,
-                                width: '100%',
-                                height: '3px',
-                                background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
-                                borderRadius: '2px',
-                              },
-                            },
                           }}
                         >
-                          Find Your <span>Peace</span> with MindEase
+                          Find Your <span style={{ color: theme.palette.primary.main }}>Peace</span> with MindEase
                         </Typography>
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.7, delay: 0.4 }}>
                           <Typography
@@ -1092,16 +1042,6 @@ const Landing = () => {
                     mb: 2,
                     fontSize: '2rem',
                     position: 'relative',
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      bottom: -8,
-                      left: 0,
-                      width: 60,
-                      height: 4,
-                      background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                      borderRadius: '2px',
-                    }
                   }}
                 >
                   Explore Our Key Features
@@ -1124,8 +1064,9 @@ const Landing = () => {
                   py: 1, 
                   mb: 4,
                   touchAction: 'pan-y pinch-zoom',
+                  width: '100%',
                   '& .MuiCard-root': {
-                    mx: 3,
+                    mx: 'auto',
                     borderRadius: '24px',
                     boxShadow: `0 20px 40px -20px ${alpha(theme.palette.primary.main, 0.25)}`,
                   }
@@ -1140,7 +1081,10 @@ const Landing = () => {
                     custom={swipeDirection}
                     style={{ 
                       x: featureDragX,
-                      cursor: isFeatureDragging ? 'grabbing' : 'grab'
+                      cursor: isFeatureDragging ? 'grabbing' : 'grab',
+                      width: '100%',
+                      display: 'flex',
+                      justifyContent: 'center'
                     }}
                     variants={{
                       enterFromLeft: { x: '-100%', opacity: 0 },
@@ -1174,7 +1118,7 @@ const Landing = () => {
                     <Card
                       sx={{
                         margin: '0 auto',
-                        maxWidth: '100%',
+                        width: '100%',
                         borderRadius: '16px',
                         background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
                           theme.palette.background.paper,
@@ -1190,7 +1134,8 @@ const Landing = () => {
                         minHeight: '400px',
                         maxHeight: '85vh',
                         transform: isFeatureDragging ? 'scale(0.98)' : 'scale(1)',
-                        transition: 'transform 0.2s ease-out',
+                        px: { xs: 2, sm: 3 },
+                        py: { xs: 2, sm: 3 },
                       }}
                     >
                       <Box sx={{ textAlign: 'center', pt: 2 }}>
@@ -1383,21 +1328,6 @@ const Landing = () => {
                                   textAlign: 'center',
                                   marginBottom: theme.spacing(2),
                                   position: 'relative',
-                                  '&:after': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    bottom: -8,
-                                    left: '50%',
-                                    transform: 'translateX(-50%)',
-                                    width: '40px',
-                                    height: '3px',
-                                    background: `linear-gradient(90deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
-                                    borderRadius: '2px',
-                                    transition: 'width 0.3s ease',
-                                  },
-                                  '&:hover:after': {
-                                    width: '60px',
-                                  },
                                 }}
                               >
                                 {feature.title}
