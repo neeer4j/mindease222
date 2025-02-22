@@ -232,46 +232,119 @@ const Navbar = ({ toggleTheme }) => {
   };
 
   const navbarVariants = {
-    hidden: { y: '-120%', opacity: 0 },
+    hidden: { 
+      y: '-120%', 
+      opacity: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 100,
+        damping: 20,
+        duration: 0.4
+      }
+    },
     visible: {
       y: 0,
       opacity: 1,
-      transition: { type: 'spring', stiffness: 170, damping: 26 },
-    },
+      transition: { 
+        type: 'spring', 
+        stiffness: 120, 
+        damping: 22,
+        duration: 0.4,
+        mass: 1.2
+      }
+    }
   };
 
   const toggleButtonVariants = {
-    hidden: { opacity: 0 },
+    hidden: { 
+      opacity: 0,
+      scale: 0.8,
+      transition: {
+        duration: 0.2,
+        ease: 'easeOut'
+      }
+    },
     visible: {
       opacity: 1,
-      transition: { type: 'spring', stiffness: 200, damping: 20 },
-    },
+      scale: 1,
+      transition: { 
+        type: 'spring', 
+        stiffness: 200, 
+        damping: 20,
+        duration: 0.3
+      }
+    }
   };
 
   const navItemVariants = {
-    hidden: { opacity: 0, y: -10 },
+    hidden: { 
+      opacity: 0, 
+      y: -10,
+      transition: {
+        duration: 0.2,
+        ease: 'easeOut'
+      }
+    },
     visible: (i = 1) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.05, type: 'spring', stiffness: 100, damping: 15 },
-    }),
+      transition: { 
+        delay: i * 0.06, 
+        type: 'spring', 
+        stiffness: 120, 
+        damping: 14,
+        mass: 1
+      }
+    })
   };
 
   const submenuItemVariants = {
-    hidden: { opacity: 0, y: 5 },
+    hidden: { 
+      opacity: 0, 
+      x: -10,
+      transition: {
+        duration: 0.15,
+        ease: 'easeOut'
+      }
+    },
     visible: (i = 1) => ({
       opacity: 1,
-      y: 0,
-      transition: { delay: i * 0.05, type: 'spring', stiffness: 100, damping: 15 },
-    }),
+      x: 0,
+      transition: { 
+        delay: i * 0.05, 
+        duration: 0.3,
+        ease: [0.4, 0, 0.2, 1]
+      }
+    })
   };
 
   const commonButtonSx = {
-    transition: 'color 0s ease-in-out, background-color 0s ease-in-out',
-  };
-
-  const activeLinkSx = {
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     position: 'relative',
+    '&:hover': {
+      backgroundColor: 'transparent',
+      '& .MuiSvgIcon-root': {
+        transform: 'scale(1.05)',
+        color: theme.palette.primary.main,
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      },
+      '& .MuiButton-label': {
+        color: theme.palette.primary.main,
+      },
+      '&::after': {
+        content: '""',
+        position: 'absolute',
+        bottom: -2,
+        left: 0,
+        right: 0,
+        height: '2px',
+        backgroundColor: theme.palette.primary.main,
+        borderRadius: '1px',
+        transform: 'scaleX(1)',
+        opacity: 0.5,
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      }
+    },
     '&::after': {
       content: '""',
       position: 'absolute',
@@ -281,6 +354,29 @@ const Navbar = ({ toggleTheme }) => {
       height: '2px',
       backgroundColor: theme.palette.primary.main,
       borderRadius: '1px',
+      transform: 'scaleX(0)',
+      opacity: 0,
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    }
+  };
+
+  const activeLinkSx = {
+    position: 'relative',
+    color: theme.palette.primary.main,
+    '& .MuiSvgIcon-root': {
+      color: theme.palette.primary.main,
+    },
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      bottom: -2,
+      left: 0,
+      right: 0,
+      height: '2px',
+      backgroundColor: theme.palette.primary.main,
+      borderRadius: '1px',
+      transform: 'scaleX(1)',
+      transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     },
   };
 
@@ -289,40 +385,86 @@ const Navbar = ({ toggleTheme }) => {
     <AnimatePresence>
       {submenuOpen === item.title && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          transition={{ duration: 0.2, ease: 'easeInOut' }}
+          initial={{ 
+            opacity: 0,
+            clipPath: 'inset(0% 50% 100% 50% round 16px)',
+            transformOrigin: 'top center'
+          }}
+          animate={{ 
+            opacity: 1,
+            clipPath: 'inset(0% 0% 0% 0% round 16px)',
+          }}
+          exit={{ 
+            opacity: 0,
+            clipPath: 'inset(0% 50% 100% 50% round 16px)',
+            transition: {
+              duration: 0.2,
+              ease: [0.4, 0, 0.2, 1]
+            }
+          }}
+          transition={{ 
+            duration: 0.3,
+            ease: [0.2, 0, 0, 1]
+          }}
           onMouseLeave={() => setSubmenuOpen(null)}
           style={{
             position: 'absolute',
-            top: '100%',
-            left: 0,
-            width: '500px',
-            backgroundColor: theme.palette.background.paper,
-            borderRadius: '8px',
-            boxShadow: theme.shadows[4],
+            top: 'calc(100% + 8px)',
+            left: -20,
+            width: '520px',
+            backgroundColor: theme.palette.mode === 'dark' 
+              ? 'rgba(17, 17, 17, 0.95)'
+              : 'rgba(255, 255, 255, 0.95)',
+            borderRadius: '16px',
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+              : '0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.03)',
             zIndex: 1000,
             padding: 0,
             display: 'flex',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            backdropFilter: 'blur(20px)',
+            border: theme.palette.mode === 'dark'
+              ? '1px solid rgba(255, 255, 255, 0.05)'
+              : '1px solid rgba(0, 0, 0, 0.03)',
           }}
         >
           <Box
             sx={{
               width: '60%',
               p: 2,
-              '&::-webkit-scrollbar': { width: '8px' },
-              '&::-webkit-scrollbar-track': { background: theme.palette.background.paper },
-              '&::-webkit-scrollbar-thumb': { backgroundColor: theme.palette.primary.main, borderRadius: '4px' },
+              background: theme.palette.mode === 'dark'
+                ? 'linear-gradient(to right, rgba(17, 17, 17, 0.95), rgba(17, 17, 17, 0.98))'
+                : 'linear-gradient(to right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.98))',
+              '&::-webkit-scrollbar': { 
+                width: '6px',
+                background: 'transparent'
+              },
+              '&::-webkit-scrollbar-thumb': { 
+                background: theme.palette.mode === 'dark' ? '#ffffff20' : '#00000020',
+                borderRadius: '6px',
+                '&:hover': {
+                  background: theme.palette.mode === 'dark' ? '#ffffff30' : '#00000030'
+                }
+              },
               scrollbarWidth: 'thin',
-              scrollbarColor: `${theme.palette.primary.main} ${theme.palette.background.paper}`,
+              scrollbarColor: `${theme.palette.mode === 'dark' ? '#ffffff20' : '#00000020'} transparent`,
             }}
           >
             <List sx={{ p: 0 }}>
               {item.children.map((child, i) => (
-                <motion.div key={child.title} custom={i} initial="hidden" animate="visible" exit="hidden" variants={submenuItemVariants}>
-                  <ListItem disablePadding>
+                <motion.div 
+                  key={child.title} 
+                  custom={i} 
+                  initial="hidden" 
+                  animate="visible" 
+                  exit="hidden" 
+                  variants={submenuItemVariants}
+                >
+                  <ListItem 
+                    disablePadding 
+                    sx={{ mb: 0.5 }}
+                  >
                     <ListItemButton
                       component={child.path.startsWith('http') ? 'a' : Link}
                       to={child.path.startsWith('http') ? undefined : child.path}
@@ -340,33 +482,119 @@ const Navbar = ({ toggleTheme }) => {
                         }
                       }}
                       sx={{ 
-                        pl: 2, 
-                        borderRadius: '8px',
+                        pl: 2,
+                        py: 1.5,
+                        borderRadius: '12px',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        position: 'relative',
+                        overflow: 'hidden',
                         '&:hover': {
-                          backgroundColor: theme.palette.action.hover
+                          backgroundColor: theme.palette.mode === 'dark' 
+                            ? 'rgba(255, 255, 255, 0.1)'
+                            : 'rgba(0, 0, 0, 0.05)',
+                          transform: 'translateX(4px)',
+                          '& .MuiListItemIcon-root': {
+                            transform: 'scale(1.1)',
+                            color: theme.palette.mode === 'dark' ? '#fff' : '#000',
+                          },
+                          '& .MuiListItemText-primary': {
+                            color: theme.palette.mode === 'dark' ? '#fff' : '#000',
+                            transform: 'translateX(4px)',
+                          },
                         }
                       }}
                     >
-                      <ListItemIcon>{child.icon}</ListItemIcon>
-                      <ListItemText primary={child.title} />
+                      <ListItemIcon 
+                        sx={{ 
+                          minWidth: 40,
+                          color: theme.palette.mode === 'dark' 
+                            ? 'rgba(255, 255, 255, 0.7)'
+                            : 'rgba(0, 0, 0, 0.7)',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          '& .MuiSvgIcon-root': {
+                            fontSize: '1.5rem',
+                          }
+                        }}
+                      >
+                        {child.icon}
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary={child.title}
+                        sx={{
+                          '& .MuiListItemText-primary': {
+                            fontWeight: 500,
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            color: theme.palette.mode === 'dark'
+                              ? 'rgba(255, 255, 255, 0.9)'
+                              : 'rgba(0, 0, 0, 0.9)',
+                          }
+                        }}
+                      />
                     </ListItemButton>
                   </ListItem>
                 </motion.div>
               ))}
             </List>
           </Box>
-          <Box sx={{ 
-            width: '40%', 
-            position: 'relative',
-            bgcolor: 'background.default'
-          }}>
+          <Box 
+            sx={{ 
+              width: '40%', 
+              position: 'relative',
+              background: theme.palette.mode === 'dark'
+                ? 'linear-gradient(to right, rgba(17, 17, 17, 0.98), rgba(17, 17, 17, 0.95))'
+                : 'linear-gradient(to right, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95))',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: theme.palette.mode === 'dark' 
+                  ? 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 100%)'
+                  : 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)',
+                zIndex: 2,
+                pointerEvents: 'none',
+              },
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: theme.palette.mode === 'dark'
+                  ? 'linear-gradient(45deg, rgba(255,255,255,0.02), transparent)'
+                  : 'linear-gradient(45deg, rgba(0,0,0,0.01), transparent)',
+                zIndex: 1,
+                opacity: 1,
+                pointerEvents: 'none',
+              }
+            }}
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={activePhoto}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                initial={{ 
+                  opacity: 0,
+                  scale: 1.1,
+                  filter: 'blur(10px)'
+                }}
+                animate={{ 
+                  opacity: 1,
+                  scale: 1,
+                  filter: 'blur(0px)'
+                }}
+                exit={{ 
+                  opacity: 0,
+                  scale: 1.1,
+                  filter: 'blur(10px)'
+                }}
+                transition={{ 
+                  duration: 0.4,
+                  ease: [0.2, 0, 0, 1]
+                }}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -376,9 +604,11 @@ const Navbar = ({ toggleTheme }) => {
                   backgroundImage: `url(${activePhoto})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  borderRadius: '0 8px 8px 0'
+                  borderRadius: '0 16px 16px 0',
+                  filter: theme.palette.mode === 'dark' 
+                    ? 'brightness(0.85) contrast(1.1) saturate(0.9)'
+                    : 'brightness(1.02) contrast(1.02) saturate(0.95)',
                 }}
-                tabIndex={-1} // Prevent focusing on container when menu is active
               />
             </AnimatePresence>
           </Box>
@@ -438,12 +668,13 @@ const Navbar = ({ toggleTheme }) => {
             px: 2,
             py: 0,
             display: 'flex',
-            alignItems: 'center', // Changed to center
+            alignItems: 'center',
             justifyContent: 'space-between',
-            height: '64px', // Reduced height to match theme toggle
+            height: '64px',
             opacity: showTitle ? 1 : 0,
             transform: showTitle ? 'translateY(0)' : 'translateY(-20px)',
-            transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            backdropFilter: 'blur(10px)',
           }}
         >
           <Link 
@@ -490,12 +721,25 @@ const Navbar = ({ toggleTheme }) => {
                   disableRipple
                   disableFocusRipple
                   sx={{ 
-                    '&:hover': { backgroundColor: 'transparent' }, 
-                    transition: 'color 0s ease-in-out',
-                    color: mobileTextColor
+                    '&:hover': { 
+                      backgroundColor: 'transparent',
+                      transform: 'scale(1.1)',
+                    }, 
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '& svg': {
+                      fontSize: '1.5rem',
+                      transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'rotate(180deg)'
+                      }
+                    }
                   }}
                 >
-                  {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                  {theme.palette.mode === 'dark' ? (
+                    <Brightness7Icon sx={{ color: 'primary.light' }} />
+                  ) : (
+                    <Brightness4Icon sx={{ color: 'primary.main' }} />
+                  )}
                 </IconButton>
               </motion.div>
             </Box>
@@ -685,30 +929,28 @@ const Navbar = ({ toggleTheme }) => {
                               aria-label="Toggle light and dark mode"
                               disableRipple
                               disableFocusRipple
-                              sx={{ '&:hover': { backgroundColor: 'transparent' }, transition: 'color 0s ease-in-out' }}
+                              sx={{ 
+                                '&:hover': { 
+                                  backgroundColor: 'transparent',
+                                  transform: 'scale(1.1)',
+                                }, 
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                '& svg': {
+                                  fontSize: '1.5rem',
+                                  transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                  '&:hover': {
+                                    transform: 'rotate(180deg)'
+                                  }
+                                }
+                              }}
                             >
-                              {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+                              {theme.palette.mode === 'dark' ? (
+                                <Brightness7Icon sx={{ color: 'primary.light' }} />
+                              ) : (
+                                <Brightness4Icon sx={{ color: 'primary.main' }} />
+                              )}
                             </IconButton>
                           </motion.div>
-                          
-                          {/* Add Logout button when in admin mode */}
-                          {isAdmin && isInAdminMode && (
-                            <motion.div
-                              whileTap={{ scale: 0.9 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Tooltip title="Logout">
-                                <IconButton
-                                  onClick={handleLogout}
-                                  color="inherit"
-                                  aria-label="Logout"
-                                  sx={{ ml: 1 }}
-                                >
-                                  <LogoutIcon />
-                                </IconButton>
-                              </Tooltip>
-                            </motion.div>
-                          )}
                         </>
                       )}
                     </Box>

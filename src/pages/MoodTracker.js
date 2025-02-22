@@ -23,7 +23,16 @@ import {
   Alert,
   useMediaQuery,
   Menu,
-  MenuItem
+  MenuItem,
+  Collapse,
+  Pagination,
+  Select,
+  FormControl,
+  InputLabel,
+  Card,
+  CardContent,
+  Chip,
+  Divider
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -31,7 +40,11 @@ import {
   Mic as MicIcon,
   MicOff as MicOffIcon,
   Close as CloseIcon,
-  Insights as InsightsIcon
+  Insights as InsightsIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  Sort as SortIcon,
+  FilterList as FilterIcon
 } from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
 import { Chart, registerables } from 'chart.js';
@@ -61,7 +74,19 @@ if (!apiKey) {
   console.error("REACT_APP_GEMINI_API_KEY is not set in your environment variables.");
 }
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-thinking-exp" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+// Add OpenRouter API configuration
+const openRouterApi = {
+  url: "https://openrouter.ai/api/v1/chat/completions",
+  headers: {
+    "Authorization": `Bearer ${process.env.REACT_APP_OPENROUTER_API_KEY}`,
+    "HTTP-Referer": window.location.origin,
+    "X-Title": "MindEase",
+    "Content-Type": "application/json"
+  },
+  model: "meta-llama/llama-3-8b-instruct:free"
+};
 
 // Styled Gradient Button
 const GradientButton = styled(Button)(({ theme }) => ({
@@ -96,6 +121,26 @@ const textVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
 };
 
+// Add these animation variants after other animation variants
+const expandVariants = {
+  hidden: { 
+    height: 0,
+    opacity: 0,
+    transition: {
+      duration: 0.3,
+      ease: "easeInOut"
+    }
+  },
+  visible: { 
+    height: "auto",
+    opacity: 1,
+    transition: {
+      duration: 0.3,
+      ease: "easeInOut"
+    }
+  }
+};
+
 // Mood Options
 const moodOptions = [
   { value: 1, label: '😢 Very Low', color: '#ef4444' },
@@ -112,6 +157,9 @@ const enhancementOptions = [
   { id: 'descriptive', label: "Add Detail" },
   { id: 'emotional', label: "Enhance Emotional Tone" },
 ];
+
+// Add this after the chartOptions definition
+const ENTRIES_PER_PAGE = 5;
 
 const MoodTracker = () => {
   const theme = useTheme();
@@ -152,6 +200,14 @@ const MoodTracker = () => {
   const recognitionRef = useRef(null);
 
   const inputRef = useRef(null);
+
+  // Add these new states for logged entries section
+  const [entriesExpanded, setEntriesExpanded] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filterMood, setFilterMood] = useState('all');
+
+  // Add this new state for using backup API
+  const [useBackupApi, setUseBackupApi] = useState(false);
 
   // Initialize Speech Recognition API
   useEffect(() => {
@@ -218,89 +274,198 @@ const MoodTracker = () => {
   // Google Generative AI Integration
   // -------------------------
 
-  // Function to fetch sentiment analysis with markdown formatting
-  const fetchMoodAnalysis = async (mood, text) => {
-    setShowInsights(true); // Show insights when analysis is fetched
+  // Modify fetchMoodAnalysis to use both APIs
+  const fetchMoodAnalysis = async (moodRating, journalText) => {
+    setAnalyzing(true);
     try {
-      // Get recent mood history for trend analysis
-      const recentMoods = moodEntries
-        .slice(-5)
-        .map(entry => entry.mood)
-        .filter(m => m !== undefined);
-      
-      const avgMood = recentMoods.length > 0 
-        ? recentMoods.reduce((a, b) => a + b, 0) / recentMoods.length 
-        : mood;
-      
-      const trendDirection = mood > avgMood ? "improving" : mood < avgMood ? "declining" : "stable";
+      // Always try Gemini API first
+      try {
+        const result = await model.generateContent(`
+          Analyze this mood entry:
+          
+          Mood Rating: ${moodRating}/5 (1 = Very Low/Depressed, 2 = Low/Sad, 3 = Neutral, 4 = Good/Happy, 5 = Excellent/Very Happy)
+          Journal Entry: ${journalText}
+          
+          Please provide a comprehensive analysis that includes:
+          
+          1. Emotional State Assessment:
+             - Current mood level and its significance
+             - Key emotions expressed or implied
+             - Intensity and nature of feelings
+          
+          2. Context & Triggers:
+             - Identify potential triggers or causes
+             - Note any mentioned circumstances or events
+             - Recognize patterns if apparent
+          
+          3. Coping & Resilience:
+             - Identify positive coping strategies mentioned
+             - Note areas of strength or resilience
+             - Suggest healthy coping mechanisms if needed
+          
+          4. Recommendations:
+             - Provide 2-3 specific, actionable suggestions
+             - Include both immediate and long-term strategies
+             - Focus on mood improvement and emotional well-being
+          
+          5. Supportive Conclusion:
+             - Validate feelings and experiences
+             - Offer encouragement and hope
+             - Emphasize capability for positive change
+          
+          Format the response in markdown, keeping it empathetic and supportive while being thorough.
+          If the mood is low (1-2), focus more on support and gentle encouragement.
+          If the mood is high (4-5), focus on maintaining and building on positive aspects.
+        `);
+        setUseBackupApi(false); // Reset to primary API on success
+        return result.response.text();
+      } catch (error) {
+        console.error('Error with Gemini API:', error);
+        
+        // Only try OpenRouter as backup if Gemini fails
+        try {
+          console.log('Falling back to OpenRouter API...');
+          const response = await fetch(openRouterApi.url, {
+            method: "POST",
+            headers: openRouterApi.headers,
+            body: JSON.stringify({
+              model: openRouterApi.model,
+              messages: [
+                {
+                  role: "system",
+                  content: "You are an empathetic AI assistant that provides detailed, supportive analysis of mood entries. You understand that mood ratings range from 1 (lowest) to 5 (highest) and adjust your response accordingly."
+                },
+                {
+                  role: "user",
+                  content: `
+                    Analyze this mood entry:
+                    
+                    Mood Rating: ${moodRating}/5 (1 = Very Low/Depressed, 2 = Low/Sad, 3 = Neutral, 4 = Good/Happy, 5 = Excellent/Very Happy)
+                    Journal Entry: ${journalText}
+                    
+                    Please provide a comprehensive analysis that includes:
+                    
+                    1. Emotional State Assessment:
+                       - Current mood level and its significance
+                       - Key emotions expressed or implied
+                       - Intensity and nature of feelings
+                    
+                    2. Context & Triggers:
+                       - Identify potential triggers or causes
+                       - Note any mentioned circumstances or events
+                       - Recognize patterns if apparent
+                    
+                    3. Coping & Resilience:
+                       - Identify positive coping strategies mentioned
+                       - Note areas of strength or resilience
+                       - Suggest healthy coping mechanisms if needed
+                    
+                    4. Recommendations:
+                       - Provide 2-3 specific, actionable suggestions
+                       - Include both immediate and long-term strategies
+                       - Focus on mood improvement and emotional well-being
+                    
+                    5. Supportive Conclusion:
+                       - Validate feelings and experiences
+                       - Offer encouragement and hope
+                       - Emphasize capability for positive change
+                    
+                    Format the response in markdown, keeping it empathetic and supportive while being thorough.
+                    If the mood is low (1-2), focus more on support and gentle encouragement.
+                    If the mood is high (4-5), focus on maintaining and building on positive aspects.
+                  `
+                }
+              ]
+            })
+          });
 
-      const moodContext = `
-Scale Context (1 is lowest, 5 is highest):
-1 = Very Low (😢) - Feeling deeply down or distressed
-2 = Low (😞) - Feeling down or upset
-3 = Neutral (😐) - Neither particularly positive nor negative
-4 = Good (🙂) - Feeling positive and upbeat
-5 = Excellent (😁) - Feeling fantastic and energized
+          if (!response.ok) {
+            throw new Error('Backup API request failed');
+          }
 
-Current Mood Level: ${mood}
-Recent Mood Trend: ${trendDirection}
-Average Recent Mood: ${avgMood.toFixed(1)}
-Journal Entry: "${text}"
-
-Based on this context, please provide a comprehensive analysis including:
-1. Current emotional state assessment
-2. Mood trend analysis comparing current mood to recent average
-3. Pattern recognition and potential mood triggers from the journal content
-4. Tailored self-care recommendations based on current mood level
-5. Specific coping strategies or mood maintenance tips
-6. A personalized affirmation or encouragement message
-
-Format the response in markdown with clear sections using ## headers.
-Keep the analysis concise but meaningful.
-If mood is low (1-2), focus on support and gentle encouragement.
-If mood is neutral (3), focus on mindfulness and growth.
-If mood is high (4-5), focus on maintaining positivity and gratitude.`;
-
-      const result = await model.generateContent(moodContext);
-      const analysis = result.response.text() || "";
-
-      // Enhanced mood trend indicator with emoji and color context
-      const getTrendEmoji = (trend) => {
-        switch(trend) {
-          case "improving": return "↗️";
-          case "declining": return "↘️";
-          default: return "➡️";
+          const data = await response.json();
+          setUseBackupApi(true); // Indicate we're using backup
+          return data.choices[0].message.content;
+        } catch (backupError) {
+          console.error('Error with backup API:', backupError);
+          throw new Error('Both primary and backup APIs failed. Please try again later.');
         }
-      };
-
-      const trendIndicator = `${getTrendEmoji(trendDirection)} **Mood Trend:** Your current mood (${mood}/5) is ${trendDirection} compared to your recent average (${avgMood.toFixed(1)}/5).\n\n`;
-
-      const moodSummary = mood <= 2 ? 
-        "⚠️ **Current State:** Your mood is on the lower end today. Remember that challenging emotions are temporary, and support is available when you need it." :
-        mood >= 4 ?
-        "🌟 **Current State:** You're experiencing positive emotions today! Let's explore ways to maintain this uplifted state." :
-        "💭 **Current State:** You're in a balanced state today. This is an ideal time for reflection and personal growth.";
-
-      return `${moodSummary}\n\n${trendIndicator}${analysis}`;
-    } catch (err) {
-      console.error("Error in mood analysis:", err);
-      return "Unable to analyze mood at this moment. Remember that your feelings are valid, and it's okay to seek support when needed.";
+      }
+    } catch (error) {
+      console.error('Error analyzing mood:', error);
+      throw error;
+    } finally {
+      setAnalyzing(false);
     }
   };
 
-  // Function to fetch auto-complete suggestions as the user types
-  const fetchAutoCompletion = async (text) => {
+  // Modify fetchAutoCompletion to use both APIs
+  const fetchAutoCompletion = async (currentText) => {
     try {
-      const prompt = `Given the journal entry "${text}", provide a short follow-up question to encourage deeper reflection.`;
-      const result = await model.generateContent(prompt);
-      if (result.response.text()) {
-        setCompletionSuggestion(result.response.text());
-      } else {
-        setCompletionSuggestion("");
+      // Always try Gemini API first
+      try {
+        const result = await model.generateContent(`
+          Complete this journal entry naturally:
+          "${currentText}"
+          
+          Continue the thought in a way that:
+          1. Maintains the same tone and style
+          2. Adds meaningful reflection
+          3. Feels natural and personal
+          
+          Keep the completion concise and relevant.
+        `);
+        setUseBackupApi(false); // Reset to primary API on success
+        return result.response.text();
+      } catch (error) {
+        console.error('Error with Gemini API:', error);
+        
+        // Only try OpenRouter as backup if Gemini fails
+        try {
+          console.log('Falling back to OpenRouter API...');
+          const response = await fetch(openRouterApi.url, {
+            method: "POST",
+            headers: openRouterApi.headers,
+            body: JSON.stringify({
+              model: openRouterApi.model,
+              messages: [
+                {
+                  role: "system",
+                  content: "You are an AI assistant that helps complete journal entries naturally and meaningfully."
+                },
+                {
+                  role: "user",
+                  content: `
+                    Complete this journal entry naturally:
+                    "${currentText}"
+                    
+                    Continue the thought in a way that:
+                    1. Maintains the same tone and style
+                    2. Adds meaningful reflection
+                    3. Feels natural and personal
+                    
+                    Keep the completion concise and relevant.
+                  `
+                }
+              ]
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('Backup API request failed');
+          }
+
+          const data = await response.json();
+          setUseBackupApi(true); // Indicate we're using backup
+          return data.choices[0].message.content;
+        } catch (backupError) {
+          console.error('Error with backup API:', backupError);
+          throw new Error('Both primary and backup APIs failed. Please try again later.');
+        }
       }
-    } catch (err) {
-      console.error("Error fetching auto completion:", err);
-      setCompletionSuggestion("");
+    } catch (error) {
+      console.error('Error fetching completion:', error);
+      throw error;
     }
   };
 
@@ -311,19 +476,54 @@ If mood is high (4-5), focus on maintaining positivity and gratitude.`;
       let prompt = "";
       switch (option) {
         case "clarify":
-          prompt = `Clarify the following journal entry in a concise manner:\n\n"${dailyNotes}"`;
+          prompt = `
+            Make this journal entry clearer and more focused:
+            "${dailyNotes}"
+            
+            Keep the response natural and personal, focusing on the core message.
+            Do not provide multiple options or examples.
+            Return only the enhanced version.
+          `;
           break;
         case "concise":
-          prompt = `Make the following journal entry more concise:\n\n"${dailyNotes}"`;
+          prompt = `
+            Make this journal entry more concise while keeping its meaning:
+            "${dailyNotes}"
+            
+            Keep the essential emotions and thoughts.
+            Do not provide multiple options or examples.
+            Return only the shortened version.
+          `;
           break;
         case "descriptive":
-          prompt = `Add a bit more detail to the following journal entry:\n\n"${dailyNotes}"`;
+          prompt = `
+            Add meaningful detail to this journal entry:
+            "${dailyNotes}"
+            
+            Include emotions, thoughts, and context.
+            Do not provide multiple options or examples.
+            Return only the enhanced version.
+          `;
           break;
         case "emotional":
-          prompt = `Enhance the emotional tone of the following journal entry in a short and supportive way:\n\n"${dailyNotes}"`;
+          prompt = `
+            Enhance the emotional expression in this journal entry:
+            "${dailyNotes}"
+            
+            Make feelings more vivid while staying authentic.
+            Do not provide multiple options or examples.
+            Return only the enhanced version.
+          `;
           break;
         default:
-          prompt = `Enhance the following journal entry:\n\n"${dailyNotes}"`;
+          prompt = `
+            Improve this journal entry while maintaining its core message:
+            "${dailyNotes}"
+            
+            Keep it natural and personal.
+            Do not provide multiple options or examples.
+            Return only the enhanced version.
+          `;
       }
       const result = await model.generateContent(prompt);
       const enhancedText = result.response.text() || "";
@@ -610,6 +810,238 @@ If mood is high (4-5), focus on maintaining positivity and gratitude.`;
     setShowSplash(true);
   };
 
+  // Update the getSortedEntries function to only sort by newest first
+  const getSortedEntries = () => {
+    let sorted = [...moodEntries];
+    
+    if (filterMood !== 'all') {
+      sorted = sorted.filter(entry => entry.mood === parseInt(filterMood));
+    }
+    
+    // Always sort by newest first
+    return sorted.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  };
+
+  // Calculate total pages
+  const totalPages = Math.ceil(getSortedEntries().length / ENTRIES_PER_PAGE);
+
+  // Get current page entries
+  const getCurrentPageEntries = () => {
+    const sorted = getSortedEntries();
+    const startIndex = (currentPage - 1) * ENTRIES_PER_PAGE;
+    return sorted.slice(startIndex, startIndex + ENTRIES_PER_PAGE);
+  };
+
+  // Update the LoggedEntriesSection component
+  const LoggedEntriesSection = () => {
+    // Calculate filtered entries count
+    const filteredEntriesCount = getSortedEntries().length;
+    
+    return (
+      <Card sx={{ 
+        mt: 4,
+        borderRadius: 2,
+        boxShadow: theme.shadows[5],
+        background: `linear-gradient(to bottom, ${theme.palette.background.paper}, ${alpha(theme.palette.primary.main, 0.05)})`,
+        overflow: 'hidden',
+      }}>
+        <CardContent sx={{ p: 0 }}>
+          <Box sx={{ 
+            p: 2, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            borderBottom: `1px solid ${theme.palette.divider}`
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" component="div" sx={{ color: theme.palette.text.primary }}>
+                Logged Entries
+              </Typography>
+              <Chip 
+                label={filterMood === 'all' 
+                  ? `${filteredEntriesCount} entries`
+                  : `${filteredEntriesCount} of ${moodEntries.length} entries`
+                }
+                size="small" 
+                sx={{ 
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  '& .MuiChip-label': {
+                    px: 1.5,
+                  }
+                }} 
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <Select
+                  value={filterMood}
+                  onChange={(e) => {
+                    setFilterMood(e.target.value);
+                    setCurrentPage(1); // Reset to first page when filter changes
+                  }}
+                  displayEmpty
+                  variant="outlined"
+                  sx={{ height: 32 }}
+                >
+                  <MenuItem value="all">All Moods</MenuItem>
+                  {moodOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <IconButton 
+                size="small"
+                onClick={() => setEntriesExpanded(!entriesExpanded)}
+                sx={{
+                  transform: entriesExpanded ? 'rotate(0deg)' : 'rotate(180deg)',
+                  transition: 'transform 0.3s ease'
+                }}
+              >
+                <ExpandMoreIcon />
+              </IconButton>
+            </Box>
+          </Box>
+
+          <motion.div
+            variants={expandVariants}
+            initial="hidden"
+            animate={entriesExpanded ? "visible" : "hidden"}
+            style={{ overflow: 'hidden' }}
+          >
+            <List sx={{ px: isMobile ? 1 : 2, py: 1 }}>
+              {getCurrentPageEntries().map((entry, index) => (
+                <motion.div
+                  key={entry.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <ListItem
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      bgcolor: theme.palette.background.paper,
+                      borderRadius: 2,
+                      boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.1)}`,
+                      transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`,
+                      }
+                    }}
+                    secondaryAction={
+                      <Box>
+                        <Tooltip title="Edit Entry">
+                          <IconButton 
+                            edge="end" 
+                            onClick={() => handleEditMood(entry)} 
+                            size={isMobile ? "small" : "medium"}
+                            sx={{ 
+                              color: theme.palette.primary.main,
+                              '&:hover': { 
+                                bgcolor: alpha(theme.palette.primary.main, 0.1) 
+                              }
+                            }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete Entry">
+                          <IconButton 
+                            edge="end" 
+                            onClick={() => handleDeleteMood(entry.id)} 
+                            size={isMobile ? "small" : "medium"}
+                            sx={{ 
+                              color: theme.palette.error.main,
+                              '&:hover': { 
+                                bgcolor: alpha(theme.palette.error.main, 0.1) 
+                              }
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    }
+                  >
+                    <ListItemAvatar>
+                      <motion.div 
+                        whileHover={{ scale: 1.2, rotate: 10 }} 
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
+                        <Avatar
+                          sx={{
+                            bgcolor: `${moodOptions.find((o) => o.value === entry.mood)?.color}40`,
+                            width: isMobile ? 40 : 50,
+                            height: isMobile ? 40 : 50,
+                            fontSize: isMobile ? "1rem" : "1.5rem",
+                            border: `2px solid ${moodOptions.find((o) => o.value === entry.mood)?.color}`,
+                          }}
+                        >
+                          {moodOptions.find((o) => o.value === entry.mood)?.label.split(" ")[0]}
+                        </Avatar>
+                      </motion.div>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Typography variant={isMobile ? "subtitle2" : "subtitle1"} sx={{ fontWeight: 600 }}>
+                          {entry.timestamp ? format(parseISO(entry.timestamp), "MMMM d, yyyy, h:mm a") : "Unknown Date"}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography 
+                          variant={isMobile ? "caption" : "body2"} 
+                          sx={{ 
+                            color: theme.palette.text.secondary,
+                            mt: 0.5,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          {entry.notes || "No notes"}
+                        </Typography>
+                      }
+                    />
+                  </ListItem>
+                </motion.div>
+              ))}
+            </List>
+            
+            {totalPages > 1 && (
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                p: 2,
+                borderTop: `1px solid ${theme.palette.divider}`
+              }}>
+                <Pagination 
+                  count={totalPages} 
+                  page={currentPage} 
+                  onChange={(e, page) => setCurrentPage(page)}
+                  color="primary"
+                  size={isMobile ? "small" : "medium"}
+                  sx={{
+                    '& .MuiPaginationItem-root': {
+                      '&.Mui-selected': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      },
+                    },
+                  }}
+                />
+              </Box>
+            )}
+          </motion.div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <PageLayout>
       {showSplash && <MoodTrackerSplash onComplete={handleTutorialComplete} />}
@@ -650,7 +1082,7 @@ If mood is high (4-5), focus on maintaining positivity and gratitude.`;
                   variant={isMobile ? 'h3' : 'h2'}
                   sx={{ color: 'text.primary' }}
                 >
-                  📆
+                  
                 </Typography>
               </Box>
               <Typography
@@ -1035,67 +1467,8 @@ If mood is high (4-5), focus on maintaining positivity and gratitude.`;
             </Box>
           )}
 
-          {/* Logged Entries List */}
-          {moodEntries.length > 0 && (
-            <Box>
-              <motion.div variants={textVariants} initial="hidden" animate="visible">
-                <Typography variant={isMobile ? "h6" : "h5"} gutterBottom sx={{ textAlign: "center", color: theme.palette.text.primary }}>
-                  Logged Entries
-                </Typography>
-              </motion.div>
-              <List sx={{ px: isMobile ? 1 : 0 }}>
-                {moodEntries
-                  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                  .map((entry) => (
-                    <ListItem
-                      key={entry.id}
-                      sx={{
-                        mb: 2,
-                        p: 2,
-                        bgcolor: theme.palette.background.paper,
-                        borderRadius: 2,
-                        boxShadow: 1,
-                      }}
-                      secondaryAction={
-                        <Box>
-                          <Tooltip title="Edit Entry">
-                            <IconButton edge="end" onClick={() => handleEditMood(entry)} aria-label="edit" size={isMobile ? "small" : "medium"}>
-                              <EditIcon color="primary" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete Entry">
-                            <IconButton edge="end" onClick={() => handleDeleteMood(entry.id)} aria-label="delete" size={isMobile ? "small" : "medium"}>
-                              <DeleteIcon color="error" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      }
-                    >
-                      <ListItemAvatar>
-                        <motion.div whileHover={{ scale: 1.3, rotate: 10 }} transition={{ type: "spring", stiffness: 300 }}>
-                          <Avatar
-                            sx={{
-                              bgcolor: `${moodOptions.find((o) => o.value === entry.mood)?.color}40`,
-                              width: isMobile ? 40 : 50,
-                              height: isMobile ? 40 : 50,
-                              fontSize: isMobile ? "1rem" : "1.5rem",
-                            }}
-                          >
-                            {moodOptions.find((o) => o.value === entry.mood)?.label.split(" ")[0]}
-                          </Avatar>
-                        </motion.div>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primaryTypographyProps={{ variant: isMobile ? "subtitle2" : "body1" }}
-                        secondaryTypographyProps={{ variant: isMobile ? "caption" : "body2" }}
-                        primary={entry.timestamp ? format(parseISO(entry.timestamp), "MMMM d, yyyy, h:mm a") : "Unknown Date"}
-                        secondary={entry.notes || "No notes"}
-                      />
-                    </ListItem>
-                  ))}
-              </List>
-            </Box>
-          )}
+          {/* Replace the existing logged entries section with: */}
+          {moodEntries.length > 0 && <LoggedEntriesSection />}
 
           {/* Edit Entry Dialog */}
           <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>

@@ -417,6 +417,7 @@ const ChartContainer = styled(Box)(({ theme }) => ({
     fill: theme.palette.mode === 'light'
       ? theme.palette.primary.dark
       : theme.palette.text.secondary,
+    fontSize: '0.75rem',
   },
   '& .recharts-brush-slide': {
     fill: theme.palette.mode === 'light'
@@ -943,49 +944,102 @@ const DashboardPage = () => {
                         <MoodIcon sx={{ fontSize: '1.2rem', color: theme.palette.primary.light }} />
                         Mood Summary
                       </WidgetTitle>
-                      <MoodHeader>
-                        <Typography variant="body2" color="textSecondary">
-                          {moodSummary}
-                          <Typography
-                            component="span"
-                            sx={{ fontWeight: 600, color: theme.palette.primary.dark, ml: 0.5 }}
-                          >
-                            {moodEntries.length > 0 &&
-                              parseFloat(
-                                moodEntries.sort(
-                                  (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-                                )[moodEntries.length - 1].mood
-                              ).toFixed(1)}{' '}
-                            / 5
+                      <CardContent
+                        sx={{
+                          height: isMobile ? 'auto' : 240,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1,
+                          p: 1,
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1 }}>
+                          <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.9rem' }}>
+                            Current Mood:
+                            <Typography
+                              component="span"
+                              sx={{ 
+                                fontWeight: 600, 
+                                color: theme.palette.primary.main,
+                                ml: 1,
+                                fontSize: '1.1rem'
+                              }}
+                            >
+                              {moodEntries.length > 0 &&
+                                parseFloat(
+                                  moodEntries.sort(
+                                    (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
+                                  )[moodEntries.length - 1].mood
+                                ).toFixed(1)}{' '}
+                              / 5
+                            </Typography>
                           </Typography>
-                        </Typography>
-                      </MoodHeader>
-                      <ChartContainer>
-                        {moodLoading ? (
-                          <Skeleton variant="rectangular" width="100%" height="100%" sx={{ borderRadius: '12px' }} />
-                        ) : moodChartData && moodChartData.length > 0 ? (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={moodChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.2)} />
-                              <XAxis dataKey="name" stroke={theme.palette.text.secondary} />
-                              <YAxis stroke={theme.palette.text.secondary} domain={[1, 5]} />
-                              <ChartTooltip contentStyle={{ backgroundColor: theme.palette.background.paper }} />
-                              <Area type="monotone" dataKey="mood" stroke={theme.palette.primary.main} fill={alpha(theme.palette.primary.main, 0.2)} />
-                              <Brush dataKey="name" startIndex={chartBrushStartIndex} height={20} stroke={theme.palette.primary.main} onChange={({ startIndex, endIndex }) => handleBrushChange(startIndex, endIndex)} />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        ) : null}
-                      </ChartContainer>
-                      <CardActions sx={{ justifyContent: 'space-between', padding: theme.spacing(1) }}>
-                        <SubtleButton
-                          size="small"
-                          onClick={() => navigate('/mood-tracker')}
-                          startIcon={<VisibilityIcon sx={{ fontSize: '1rem' }} />}
-                          style={{ fontSize: '0.8rem' }}
-                        >
-                          View Mood History
-                        </SubtleButton>
-                      </CardActions>
+                          <SubtleButton
+                            size="small"
+                            onClick={() => navigate('/mood-tracker')}
+                            startIcon={<VisibilityIcon sx={{ fontSize: '1rem' }} />}
+                            style={{ fontSize: '0.75rem' }}
+                          >
+                            View History
+                          </SubtleButton>
+                        </Box>
+
+                        <ChartContainer>
+                          {moodLoading ? (
+                            <Skeleton variant="rectangular" width="100%" height="100%" sx={{ borderRadius: '12px' }} />
+                          ) : moodChartData && moodChartData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={moodChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                  <linearGradient id="moodGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0.1}/>
+                                  </linearGradient>
+                                </defs>
+                                <XAxis 
+                                  dataKey="name" 
+                                  stroke={theme.palette.text.secondary}
+                                  tick={{ fontSize: 10 }}
+                                  tickLine={false}
+                                />
+                                <YAxis 
+                                  stroke={theme.palette.text.secondary}
+                                  domain={[1, 5]}
+                                  tick={{ fontSize: 10 }}
+                                  tickLine={false}
+                                  tickCount={5}
+                                />
+                                <ChartTooltip 
+                                  contentStyle={{ 
+                                    backgroundColor: theme.palette.background.paper,
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    borderRadius: '8px',
+                                    fontSize: '0.75rem',
+                                  }} 
+                                />
+                                <Area 
+                                  type="monotone" 
+                                  dataKey="mood" 
+                                  stroke={theme.palette.primary.main}
+                                  fill="url(#moodGradient)"
+                                  strokeWidth={2}
+                                />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <Box 
+                              display="flex" 
+                              alignItems="center" 
+                              justifyContent="center" 
+                              height="100%"
+                            >
+                              <Typography variant="body2" color="textSecondary">
+                                No mood data available
+                              </Typography>
+                            </Box>
+                          )}
+                        </ChartContainer>
+                      </CardContent>
                     </DashboardCard>
                   </motion.div>
                 </Grid>
