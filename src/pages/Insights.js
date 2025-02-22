@@ -91,6 +91,20 @@ const sectionVariants = {
   },
 };
 
+// Add keyframes for gradient animation
+const gradientKeyframes = `
+@keyframes gradient {
+  0% { background-position: 0% 50% }
+  50% { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
+}
+`;
+
+// Add style element to inject keyframes
+const styleElement = document.createElement('style');
+styleElement.textContent = gradientKeyframes;
+document.head.appendChild(styleElement);
+
 const Insights = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -957,7 +971,9 @@ Use **bold** for emphasis on key points.`;
                     position: 'relative',
                     zIndex: 1,
                     textShadow: `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
-                    background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.primary.main, 0.8)} 100%)`,
+                    background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.primary.main, 0.8)} 50%, ${theme.palette.text.primary} 100%)`,
+                    backgroundSize: '200% auto',
+                    animation: 'gradient 8s linear infinite',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                   }}

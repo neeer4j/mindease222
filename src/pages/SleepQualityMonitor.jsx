@@ -23,10 +23,15 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle
+  DialogTitle,
+  Avatar,
+  Collapse,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
-import { motion } from 'framer-motion';
-import { styled } from '@mui/system';
+import { motion, AnimatePresence } from 'framer-motion';
+import { styled, alpha } from '@mui/system';
 import {
   Bedtime as BedtimeIcon,
   Delete as DeleteIcon,
@@ -35,18 +40,15 @@ import {
   CheckCircleOutline as CheckCircleOutlineIcon,
   HelpOutline as HelpOutlineIcon,
   Edit as EditIcon,
+  ExpandMore as ExpandMoreIcon,
+  FormatListBulleted as FormatListBulletedIcon,
+  Insights as InsightsIcon,
 } from '@mui/icons-material';
-import { alpha } from '@mui/material/styles';
 import Chart from 'react-apexcharts';
 import { SleepContext } from '../contexts/SleepContext';
 import PageLayout from '../components/PageLayout';
-
-// Import Gemini API from Google Generative AI library
 import { GoogleGenerativeAI } from '@google/generative-ai';
-// Import ReactMarkdown for rendering markdown content
 import ReactMarkdown from 'react-markdown';
-
-// Add this import at the top with other imports
 import SleepQualityMonitorSplash from '../components/SleepQualityMonitorSplash';
 import SplashScreenToggle from '../components/SplashScreenToggle';
 
@@ -58,18 +60,52 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey);
 const sleepModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// Styled Gradient Button
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.6, -0.05, 0.01, 0.99],
+      when: 'beforeChildren',
+      staggerChildren: 0.1
+    }
+  },
+  exit: { 
+    opacity: 0,
+    y: -20,
+    transition: {
+      duration: 0.6
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.6, -0.05, 0.01, 0.99]
+    }
+  }
+};
+
+// Styled components
 const GradientButton = styled(Button)(({ theme }) => ({
-  background: `linear-gradient(45deg, ${theme.palette.secondary.light} 30%, ${theme.palette.secondary.main} 90%)`,
-  color: theme.palette.secondary.contrastText,
+  background: `linear-gradient(45deg, ${theme.palette.primary.light} 30%, ${theme.palette.primary.main} 90%)`,
+  color: theme.palette.primary.contrastText,
   borderRadius: '12px',
   padding: '10px 22px',
   boxShadow: theme.shadows[4],
-  transition: 'background 0.5s, box-shadow 0.3s, transform 0.3s',
+  transition: 'background 0.4s ease-out, box-shadow 0.3s ease-out, transform 0.3s ease-out',
   '&:hover': {
-    background: `linear-gradient(45deg, ${theme.palette.secondary.main} 30%, ${theme.palette.secondary.dark} 90%)`,
-    boxShadow: theme.shadows[6],
-    transform: 'scale(1.03)',
+    background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.primary.dark} 90%)`,
+    boxShadow: theme.shadows[7],
+    transform: 'scale(1.05)',
   },
 }));
 
@@ -77,60 +113,160 @@ const GradientButton = styled(Button)(({ theme }) => ({
 const StyledSlider = styled(Slider, {
   shouldForwardProp: (prop) => prop !== 'isMobile',
 })(({ theme, isMobile }) => ({
-  color: theme.palette.secondary.main,
-  height: 8,
-  padding: '15px 0',
+  color: theme.palette.primary.main,
+  height: 3,
+  padding: '35px 0',
   '& .MuiSlider-track': {
     border: 'none',
-    height: 8,
-    borderRadius: 4,
-    background: `linear-gradient(to right, ${theme.palette.secondary.light} 0%, ${theme.palette.secondary.main} 100%)`,
+    height: 3,
+    background: `linear-gradient(to right, 
+      ${theme.palette.primary.main}, 
+      ${theme.palette.secondary.main}
+    )`,
   },
   '& .MuiSlider-rail': {
-    height: 8,
-    borderRadius: 4,
+    height: 3,
+    opacity: 0.38,
     backgroundColor: theme.palette.grey[300],
   },
   '& .MuiSlider-thumb': {
-    height: isMobile ? 20 : 24,
-    width: isMobile ? 20 : 24,
+    height: isMobile ? 20 : 22,
+    width: isMobile ? 20 : 22,
     backgroundColor: theme.palette.background.paper,
-    border: `2px solid ${theme.palette.secondary.main}`,
-    boxShadow: theme.shadows[2],
-    '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
-      boxShadow: theme.shadows[4],
-      '@keyframes thumbPulse': {
-        '0%': { transform: 'scale(1)' },
-        '50%': { transform: 'scale(1.15)' },
-        '100%': { transform: 'scale(1)' },
-      },
-      animation: 'thumbPulse 1.5s infinite',
+    border: `2px solid currentColor`,
+    transition: theme.transitions.create(['box-shadow']),
+    '&:hover, &.Mui-focusVisible': {
+      boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`,
+    },
+    '&.Mui-active': {
+      boxShadow: `0 0 0 12px ${alpha(theme.palette.primary.main, 0.16)}`,
     },
   },
   '& .MuiSlider-valueLabel': {
-    backgroundColor: theme.palette.secondary.dark,
-    color: theme.palette.secondary.contrastText,
-    borderRadius: 4,
-    fontFamily: theme.typography.fontFamily,
-    fontWeight: 500,
+    fontSize: 13,
+    fontWeight: 'normal',
+    top: -10,
+    backgroundColor: theme.palette.primary.main,
+    borderRadius: 8,
+    padding: '4px 8px',
     '&:before': {
-      backgroundColor: theme.palette.secondary.dark,
+      display: 'none',
+    },
+    '& *': {
+      background: 'transparent',
     },
   },
   '& .MuiSlider-mark': {
-    height: 8,
-    width: 8,
+    backgroundColor: theme.palette.grey[400],
+    height: 3,
+    width: 3,
     borderRadius: '50%',
-    backgroundColor: theme.palette.grey[500],
     '&.MuiSlider-markActive': {
-      backgroundColor: theme.palette.primary.main,
+      opacity: 1,
+      backgroundColor: 'currentColor',
     },
   },
   '& .MuiSlider-markLabel': {
-    color: theme.palette.text.secondary,
-    fontSize: '0.8rem',
-    top: 25,
+    fontSize: '1.2rem',
+    marginTop: 8,
+    '&.MuiSlider-markLabelActive': {
+      color: theme.palette.text.primary,
+    },
   },
+}));
+
+const GlowingPaper = styled(Paper)(({ theme }) => ({
+  position: 'relative',
+  padding: theme.spacing(3),
+  borderRadius: 24,
+  background: `linear-gradient(145deg, 
+    ${alpha(theme.palette.background.paper, 0.9)}, 
+    ${alpha(theme.palette.background.paper, 0.95)}
+  )`,
+  backdropFilter: 'blur(10px)',
+  boxShadow: `
+    0 8px 32px 0 ${alpha(theme.palette.common.black, 0.1)},
+    0 0 0 1px ${alpha(theme.palette.primary.main, 0.05)},
+    inset 0 0 80px ${alpha(theme.palette.primary.main, 0.05)}
+  `,
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+  overflow: 'hidden',
+  transition: 'all 0.3s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: `
+      0 12px 48px 0 ${alpha(theme.palette.common.black, 0.12)},
+      0 0 0 2px ${alpha(theme.palette.primary.main, 0.1)},
+      inset 0 0 100px ${alpha(theme.palette.primary.main, 0.08)}
+    `,
+  },
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '4px',
+    background: `linear-gradient(90deg, 
+      ${theme.palette.primary.main}, 
+      ${theme.palette.secondary.main}, 
+      ${theme.palette.primary.main}
+    )`,
+    backgroundSize: '200% 100%',
+    animation: 'gradient 8s linear infinite',
+  },
+  '@keyframes gradient': {
+    '0%': { backgroundPosition: '0% 50%' },
+    '100%': { backgroundPosition: '200% 50%' }
+  }
+}));
+
+const FloatingIcon = styled('div')(({ theme }) => ({
+  position: 'absolute',
+  top: theme.spacing(3),
+  right: theme.spacing(3),
+  width: '48px',
+  height: '48px',
+  borderRadius: '50%',
+  background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+  color: theme.palette.common.white,
+  animation: 'float 3s ease-in-out infinite',
+  '@keyframes float': {
+    '0%, 100%': { transform: 'translateY(0)' },
+    '50%': { transform: 'translateY(-10px)' }
+  }
+}));
+
+const StyledAccordion = styled(Accordion)(({ theme }) => ({
+  background: 'transparent',
+  boxShadow: 'none',
+  '&:before': {
+    display: 'none',
+  },
+  '& .MuiAccordionSummary-root': {
+    borderRadius: 12,
+    backgroundColor: alpha(theme.palette.background.paper, 0.6),
+    transition: 'all 0.3s ease',
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.background.paper, 0.8),
+    }
+  },
+  '& .MuiAccordionDetails-root': {
+    padding: theme.spacing(3),
+    backgroundColor: 'transparent',
+  }
+}));
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  borderRadius: theme.shape.borderRadius,
+  boxShadow: theme.shadows[2],
+  backgroundColor: alpha(theme.palette.background.paper, 0.8),
+  backdropFilter: 'blur(8px)',
 }));
 
 // *** START: SleepLogForm Component ***
@@ -139,6 +275,7 @@ const SleepLogForm = ({ onSubmit, initialValues = {}, factorOptions, isEditing }
   const [endTime, setEndTime] = useState(initialValues.endTime || '');
   const [notes, setNotes] = useState(initialValues.notes || '');
   const [sleepQualityRating, setSleepQualityRating] = useState(initialValues.qualityRating || 3);
+  const [showFactors, setShowFactors] = useState(false);
   const [sleepFactors, setSleepFactors] = useState(initialValues.factors || []);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -164,111 +301,278 @@ const SleepLogForm = ({ onSubmit, initialValues = {}, factorOptions, isEditing }
 
   return (
     <form onSubmit={handleSubmit}>
-      <Grid container spacing={3} mb={3}>
+      <Grid container spacing={3}>
+        {/* Time Selection */}
         <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            type="datetime-local"
-            label="Sleep Start Time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            InputLabelProps={{
-              style: { color: theme.palette.text.secondary },
-              shrink: true,
-            }}
-            required
-            InputProps={{
-              style: { color: theme.palette.text.primary },
-            }}
-            aria-label="Sleep Start Time"
-            size="small"
-          />
+          <motion.div variants={itemVariants}>
+            <GlowingPaper sx={{ 
+              minHeight: '100%', 
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              height: '280px'
+            }}>
+              <FloatingIcon>
+                <BedtimeIcon />
+              </FloatingIcon>
+              <Typography variant="h6" gutterBottom sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+                mb: 3
+              }}>
+                When did you sleep?
+              </Typography>
+              <Box sx={{ 
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
+              }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      type="datetime-local"
+                      label="Bedtime"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      required
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.1)}`
+                          },
+                          '&.Mui-focused': {
+                            boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      type="datetime-local"
+                      label="Wake time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      required
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: 2,
+                          transition: 'all 0.3s ease',
+                          '&:hover': {
+                            boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.1)}`
+                          },
+                          '&.Mui-focused': {
+                            boxShadow: `0 0 0 2px ${alpha(theme.palette.primary.main, 0.2)}`
+                          }
+                        }
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            </GlowingPaper>
+          </motion.div>
         </Grid>
+
+        {/* Sleep Quality Rating */}
         <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            type="datetime-local"
-            label="Sleep End Time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            InputLabelProps={{
-              style: { color: theme.palette.text.secondary },
-              shrink: true,
-            }}
-            required
-            InputProps={{
-              style: { color: theme.palette.text.primary },
-            }}
-            aria-label="Sleep End Time"
-            size="small"
-          />
+          <motion.div variants={itemVariants}>
+            <GlowingPaper sx={{ 
+              minHeight: '100%', 
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              height: '280px'
+            }}>
+              <FloatingIcon>
+                <InsightsIcon />
+              </FloatingIcon>
+              <Typography variant="h6" gutterBottom sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+                mb: 3
+              }}>
+                How well did you sleep?
+              </Typography>
+              <Box sx={{ 
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                px: 2
+              }}>
+                <StyledSlider
+                  isMobile={isMobile}
+                  value={sleepQualityRating}
+                  onChange={(e, newValue) => setSleepQualityRating(newValue)}
+                  step={1}
+                  marks={[
+                    { value: 1, label: '😴' },
+                    { value: 2, label: '🥱' },
+                    { value: 3, label: '😊' },
+                    { value: 4, label: '😃' },
+                    { value: 5, label: '🤩' },
+                  ]}
+                  min={1}
+                  max={5}
+                  valueLabelDisplay="on"
+                  valueLabelFormat={(value) => {
+                    const labels = {
+                      1: 'Poor',
+                      2: 'Fair',
+                      3: 'Good',
+                      4: 'Very Good',
+                      5: 'Excellent'
+                    };
+                    return labels[value];
+                  }}
+                />
+                <Box sx={{ 
+                  mt: 2,
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  px: 1
+                }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>Poor</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>Excellent</Typography>
+                </Box>
+              </Box>
+            </GlowingPaper>
+          </motion.div>
         </Grid>
 
+        {/* Optional Details Button */}
         <Grid item xs={12}>
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }} color="textSecondary">
-            Rate your sleep quality:
-          </Typography>
-          <StyledSlider
-            isMobile={isMobile}
-            value={sleepQualityRating}
-            onChange={(e, newValue) => setSleepQualityRating(newValue)}
-            step={1}
-            marks={[
-              { value: 1, label: 'Poor' },
-              { value: 2, label: 'Fair' },
-              { value: 3, label: 'Average' },
-              { value: 4, label: 'Good' },
-              { value: 5, label: 'Excellent' },
-            ]}
-            min={1}
-            max={5}
-            valueLabelDisplay="auto"
-            aria-label="Sleep Quality Slider"
-          />
+          <motion.div variants={itemVariants}>
+            <Button
+              variant="outlined"
+              onClick={() => setShowFactors(!showFactors)}
+              startIcon={showFactors ? <HelpOutlineIcon /> : <HelpOutlineIcon />}
+              sx={{ 
+                mb: 2,
+                borderRadius: 8,
+                borderWidth: 2,
+                background: `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.95)})`,
+                backdropFilter: 'blur(10px)',
+                boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.1)}`,
+                '&:hover': {
+                  borderWidth: 2,
+                  transform: 'translateY(-2px)',
+                  boxShadow: `0 6px 25px ${alpha(theme.palette.primary.main, 0.15)}`
+                }
+              }}
+            >
+              {showFactors ? "Hide Additional Details" : "Add More Details (Optional)"}
+            </Button>
+
+            <AnimatePresence>
+              {showFactors && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                >
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <GlowingPaper>
+                        <FloatingIcon>
+                          <HelpOutlineIcon />
+                        </FloatingIcon>
+                        <Typography variant="h6" gutterBottom sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 1,
+                          color: theme.palette.primary.main,
+                          fontWeight: 600,
+                          mb: 3
+                        }}>
+                          What affected your sleep?
+                        </Typography>
+                        <Grid container spacing={1}>
+                          {factorOptions.map((factor) => (
+                            <Grid item xs={6} sm={4} key={factor}>
+                              <motion.div
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                <FormControlLabel
+                                  control={
+                                    <Checkbox 
+                                      checked={sleepFactors.includes(factor)} 
+                                      onChange={handleFactorChange(factor)}
+                                      sx={{
+                                        color: theme.palette.primary.main,
+                                        '&.Mui-checked': {
+                                          color: theme.palette.primary.main,
+                                        }
+                                      }}
+                                    />
+                                  }
+                                  label={factor}
+                                  sx={{
+                                    '& .MuiFormControlLabel-label': {
+                                      fontSize: '0.9rem'
+                                    }
+                                  }}
+                                />
+                              </motion.div>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </GlowingPaper>
+                    </Grid>
+                  </Grid>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </Grid>
 
+        {/* Submit Button */}
         <Grid item xs={12}>
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }} color="textSecondary">
-            Factors that may have affected sleep (optional):
-          </Typography>
-          <FormGroup row>
-            {factorOptions.map((factor) => (
-              <FormControlLabel
-                key={factor}
-                control={<Checkbox checked={sleepFactors.includes(factor)} onChange={handleFactorChange(factor)} name={factor} />}
-                label={factor}
-                sx={{
-                  color: theme.palette.text.primary,
-                  '& .MuiSvgIcon-root': { color: theme.palette.secondary.main },
-                }}
-                aria-label={`Sleep Factor: ${factor}`}
-              />
-            ))}
-          </FormGroup>
-        </Grid>
-
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label="Notes (Optional)"
-            multiline
-            rows={2}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="How did you sleep? Any factors affecting your sleep?"
-            InputProps={{ style: { color: theme.palette.text.primary } }}
-            InputLabelProps={{
-              style: { color: theme.palette.text.secondary },
-              shrink: true,
-            }}
-            aria-label="Sleep Notes"
-            size="small"
-          />
-        </Grid>
-        <Grid item xs={12} sx={{ textAlign: 'right' }}>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <GradientButton type="submit" variant="contained" startIcon={<CheckCircleOutlineIcon />}>
-              {isEditing ? 'Update Sleep' : 'Log Sleep'}
+          <motion.div 
+            variants={itemVariants}
+            style={{ textAlign: 'center' }}
+          >
+            <GradientButton 
+              type="submit" 
+              variant="contained" 
+              startIcon={<CheckCircleOutlineIcon />}
+              sx={{ 
+                minWidth: 250,
+                py: 1.8,
+                fontSize: '1.1rem',
+                borderRadius: 8,
+                background: `linear-gradient(45deg, 
+                  ${theme.palette.primary.main}, 
+                  ${theme.palette.secondary.main}
+                )`,
+                boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+                '&:hover': {
+                  background: `linear-gradient(45deg, 
+                    ${theme.palette.primary.dark}, 
+                    ${theme.palette.secondary.dark}
+                  )`,
+                  boxShadow: `0 6px 25px ${alpha(theme.palette.primary.main, 0.4)}`,
+                  transform: 'translateY(-2px)'
+                }
+              }}
+            >
+              {isEditing ? 'Update Sleep Log' : 'Save Sleep Log'}
             </GradientButton>
           </motion.div>
         </Grid>
@@ -542,6 +846,7 @@ const SleepLogList = ({ sleepLogs, onDeleteLog, onEditLog, theme }) => {
 
 const SleepQualityMonitor = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { sleepLogs, addSleepLog, deleteSleepLog, loading } = useContext(SleepContext);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -706,85 +1011,182 @@ const SleepQualityMonitor = () => {
   return (
     <PageLayout>
       {showSplash && <SleepQualityMonitorSplash onComplete={handleTutorialComplete} />}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.8 }}
-        style={{
-          minHeight: '100vh',
-          background: theme.palette.background.gradient || theme.palette.background.default,
-          paddingTop: theme.spacing(8),
-          paddingBottom: theme.spacing(10),
-          color: theme.palette.text.primary,
-        }}
-      >
-        <Container maxWidth="md">
-          <Paper elevation={3} sx={{
-            padding: theme.spacing(4),
-            borderRadius: '24px',
-            background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-            backdropFilter: 'blur(10px)',
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            boxShadow: 'rgba(17, 12, 46, 0.15) 0px 48px 100px 0px',
-            transition: 'all 0.3s ease-in-out',
-            '&:hover': {
-              boxShadow: 'rgba(17, 12, 46, 0.2) 0px 48px 100px 0px',
-              transform: 'translateY(-6px)',
-            },
-            color: theme.palette.text.primary
-          }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
-              <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 700, color: theme.palette.primary.main, display: 'flex', alignItems: 'center' }}>
-                <BedtimeIcon sx={{ mr: 1, fontSize: '2.5rem' }} /> Sleep Quality Monitor
+      <Container maxWidth="md">
+        {/* Page Header */}
+        <Box textAlign="center" mb={6}>
+          <motion.div variants={itemVariants}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: { xs: '0.25rem', sm: '0.5rem' }, 
+              mb: 2,
+              position: 'relative'
+            }}>
+              <Typography
+                variant={isMobile ? 'h3' : 'h2'}
+                component="h1"
+                sx={{
+                  fontWeight: 800,
+                  position: 'relative',
+                  zIndex: 1,
+                  background: `linear-gradient(135deg, 
+                    ${theme.palette.primary.main} 0%, 
+                    ${theme.palette.secondary.main} 50%,
+                    ${theme.palette.primary.main} 100%
+                  )`,
+                  backgroundSize: '200% auto',
+                  animation: 'gradient 8s linear infinite',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  textShadow: `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
+                }}
+              >
+                <BedtimeIcon sx={{ 
+                  fontSize: 'inherit',
+                  color: theme.palette.primary.main,
+                  filter: `drop-shadow(0 2px 4px ${alpha(theme.palette.primary.main, 0.3)})`
+                }} />
+                Sleep Quality Monitor
               </Typography>
-              <Tooltip title="Understand how to use this feature">
-                <IconButton color="primary" aria-label="Help">
-                  <HelpOutlineIcon />
-                </IconButton>
-              </Tooltip>
             </Box>
+            <Typography 
+              variant="subtitle1" 
+              sx={{
+                color: alpha(theme.palette.text.primary, 0.8),
+                maxWidth: '600px',
+                margin: '0 auto',
+                fontSize: '1.1rem'
+              }}
+            >
+              Track and analyze your sleep patterns for better rest
+            </Typography>
+          </motion.div>
+        </Box>
 
-            {loading ? (
-              <Box display="flex" justifyContent="center" alignItems="center" my={4}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <>
-                <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
-                  {isEditing ? 'Edit Sleep Log' : 'Log Your Sleep'}
-                </Typography>
-                <SleepLogForm
-                  onSubmit={handleLogSleep}
-                  factorOptions={factorOptions}
-                  initialValues={initialFormValues}
-                  isEditing={isEditing}
-                />
+        {/* Main Content */}
+        <motion.div variants={itemVariants}>
+          {loading ? (
+            <Box display="flex" justifyContent="center" p={4}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <SleepLogForm
+              onSubmit={handleLogSleep}
+              factorOptions={factorOptions}
+              initialValues={initialFormValues}
+              isEditing={isEditing}
+            />
+          )}
+        </motion.div>
 
-                <SleepHistoryChart sleepLogs={sleepLogs} chartOptions={baseChartOptions} theme={theme} />
-                <SleepStats sleepLogs={sleepLogs} theme={theme} />
+        {/* History Section - Only show if there are logs */}
+        {sleepLogs.length > 0 && (
+          <motion.div variants={itemVariants}>
+            <Box mt={4}>
+              <StyledAccordion>
+                <AccordionSummary 
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    '& .MuiAccordionSummary-content': {
+                      margin: '12px 0',
+                    }
+                  }}
+                >
+                  <Typography variant="h6" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1,
+                    color: theme.palette.primary.main,
+                    fontWeight: 600
+                  }}>
+                    <TimelineIcon /> Sleep History
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <StyledPaper>
+                      <SleepHistoryChart sleepLogs={sleepLogs} chartOptions={baseChartOptions} theme={theme} />
+                      <Box mt={3} textAlign="center">
+                        <GradientButton 
+                          onClick={analyzeSleepLogs} 
+                          disabled={analyzingSleep} 
+                          startIcon={analyzingSleep ? <CircularProgress size={20} /> : <InsightsIcon />}
+                          sx={{ minWidth: 200 }}
+                        >
+                          Get Sleep Insights
+                        </GradientButton>
+                      </Box>
+                      {sleepAnalysis && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4 }}
+                        >
+                          <Alert 
+                            severity="info" 
+                            sx={{ 
+                              mt: 3,
+                              borderRadius: 2,
+                              '& .MuiAlert-message': {
+                                width: '100%'
+                              }
+                            }}
+                          >
+                            <ReactMarkdown>{sleepAnalysis}</ReactMarkdown>
+                          </Alert>
+                        </motion.div>
+                      )}
+                    </StyledPaper>
+                  </motion.div>
+                </AccordionDetails>
+              </StyledAccordion>
 
-                {/* Gemini Sleep Insights Section */}
-                <Box mt={3} mb={2} textAlign="center">
-                  <GradientButton onClick={analyzeSleepLogs} disabled={analyzingSleep || sleepLogs.length === 0}>
-                    {analyzingSleep ? <CircularProgress size={24} color="inherit" /> : "Get Sleep Insights"}
-                  </GradientButton>
-                </Box>
-                {sleepAnalysis && (
-                  <Box mb={3}>
-                    <Alert severity="info">
-                      <ReactMarkdown>{sleepAnalysis}</ReactMarkdown>
-                    </Alert>
-                  </Box>
-                )}
+              <StyledAccordion sx={{ mt: 2 }}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="h6" sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1,
+                    color: theme.palette.primary.main,
+                    fontWeight: 600
+                  }}>
+                    <FormatListBulletedIcon /> Previous Logs
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <SleepLogList sleepLogs={sleepLogs} onDeleteLog={handleDeleteLog} onEditLog={handleEditLog} theme={theme} />
+                </AccordionDetails>
+              </StyledAccordion>
+            </Box>
+          </motion.div>
+        )}
+      </Container>
 
-                <SleepLogList sleepLogs={sleepLogs} onDeleteLog={handleDeleteLog} onEditLog={handleEditLog} theme={theme} />
-              </>
-            )}
-          </Paper>
-        </Container>
-      </motion.div>
-      <SplashScreenToggle onShowSplash={handleShowSplash} />
+      <Snackbar 
+        open={snackbarOpen} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbarSeverity}
+          sx={{ 
+            borderRadius: 2,
+            boxShadow: theme.shadows[4]
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </PageLayout>
   );
 };
