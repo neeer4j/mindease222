@@ -1075,10 +1075,12 @@ Format as simple reply options without bullets or numbers.`;
     setCustomInstructionsInput(customInstructions);
     setCustomInstructionsDialogOpen(true);
   };
+
   const closeCustomInstructionsDialog = () => {
     setCustomInstructionsDialogOpen(false);
     setCustomInstructionsInput('');
   };
+
   const handleCustomInstructionsSave = async () => {
     if (!user) return;
     try {
@@ -1087,9 +1089,18 @@ Format as simple reply options without bullets or numbers.`;
         customInstructions: customInstructionsInput.trim(),
       });
       setCustomInstructions(customInstructionsInput.trim());
+      
+      // Clear chat after setting custom instructions
+      await clearChat();
+      if (user) {
+        localStorage.removeItem(`mindease_messages_${user.uid}`);
+        localStorage.removeItem(`mindease_last_welcome_${user.uid}`);
+        sessionStorage.removeItem(`mindease_welcomed_${user.uid}`);
+      }
+      
       setSnackbar({
         open: true,
-        message: 'Custom instructions saved successfully.',
+        message: 'Custom instructions saved and chat history cleared.',
         severity: 'success',
       });
       closeCustomInstructionsDialog();
@@ -1630,7 +1641,10 @@ Format as simple reply options without bullets or numbers.`;
           </DialogTitle>
           <DialogContent>
             <DialogContentText sx={{ fontSize: '1rem', opacity: 0.8, mb: 2 }}>
-              Add custom instructions to tailor the AI's responses to better suit your needs.
+              Add custom instructions to tailor the AI's responses to better suit your needs. 
+              <Box component="span" sx={{ color: 'warning.main', mt: 1, display: 'block' }}>
+                Note: Changing custom instructions will clear your chat history to ensure consistent AI behavior.
+              </Box>
             </DialogContentText>
             <StyledTextField
               autoFocus
@@ -1659,7 +1673,7 @@ Format as simple reply options without bullets or numbers.`;
                 background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
               }}
             >
-              Save Changes
+              Save & Clear Chat
             </Button>
           </DialogActions>
         </StyledDialog>
@@ -1960,7 +1974,10 @@ Format as simple reply options without bullets or numbers.`;
         </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ fontSize: '1rem', opacity: 0.8, mb: 2 }}>
-            Add custom instructions to tailor the AI's responses to better suit your needs.
+            Add custom instructions to tailor the AI's responses to better suit your needs. 
+            <Box component="span" sx={{ color: 'warning.main', mt: 1, display: 'block' }}>
+              Note: Changing custom instructions will clear your chat history to ensure consistent AI behavior.
+            </Box>
           </DialogContentText>
           <StyledTextField
             autoFocus
@@ -1989,7 +2006,7 @@ Format as simple reply options without bullets or numbers.`;
               background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
             }}
           >
-            Save Changes
+            Save & Clear Chat
           </Button>
         </DialogActions>
       </StyledDialog>
