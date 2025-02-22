@@ -29,6 +29,8 @@ import {
   MenuItem,
   Snackbar,
   Alert,
+  Badge,
+  Chip,
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -38,6 +40,7 @@ import MoodIcon from '@mui/icons-material/Mood';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
+import SyncAltIcon from '@mui/icons-material/SyncAlt';
 import { motion } from 'framer-motion';
 import { styled, alpha } from '@mui/system';
 
@@ -70,12 +73,11 @@ const NEGATIVE_SENTIMENT_WORDS = [
   'anxious',
 ];
 const MOOD_OPTIONS = [
-  { label: '😊 Happy', value: 'happy' },
-  { label: '😔 Sad', value: 'sad' },
-  { label: '😠 Angry', value: 'angry' },
-  { label: '😨 Anxious', value: 'anxious' },
-  { label: '😴 Tired', value: 'tired' },
-  { label: '😕 Neutral', value: 'neutral' },
+  { label: '😁 Excellent', value: 5 },  // Very Happy/Excellent
+  { label: '🙂 Good', value: 4 },       // Good/Happy
+  { label: '😐 Neutral', value: 3 },    // Neutral
+  { label: '😔 Low', value: 2 },        // Low/Sad
+  { label: '😢 Very Low', value: 1 }    // Very Low/Depressed
 ];
 
 const BOTTOM_NAV_HEIGHT = 56;
@@ -253,6 +255,51 @@ const TimeStamp = styled(Typography)(({ theme }) => ({
   textAlign: 'center',
 }));
 
+const StyledBadge = styled(Badge)(({ theme }) => ({
+  '& .MuiBadge-badge': {
+    backgroundColor: theme.palette.success.main,
+    color: theme.palette.success.contrastText,
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    '&::after': {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      borderRadius: '50%',
+      animation: 'ripple 1.2s infinite ease-in-out',
+      border: '1px solid currentColor',
+      content: '""',
+    },
+  },
+  '@keyframes ripple': {
+    '0%': {
+      transform: 'scale(1)',
+      opacity: 1,
+    },
+    '100%': {
+      transform: 'scale(2)',
+      opacity: 0,
+    },
+  },
+}));
+
+// Add after the existing constants
+const SERVER_CONFIG = {
+  primary: {
+    name: 'Server 1',
+    description: 'Primary Server',
+    color: 'primary'
+  },
+  backup: {
+    name: 'Server 2',
+    description: 'Backup Server',
+    color: 'secondary'
+  }
+};
+
 const Chat = ({ toggleTheme }) => {
   // Contexts
   const { user } = useContext(AuthContext);
@@ -288,6 +335,8 @@ const Chat = ({ toggleTheme }) => {
   const [customInstructionsDialogOpen, setCustomInstructionsDialogOpen] = useState(false);
   const [customInstructionsInput, setCustomInstructionsInput] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [useBackupApi, setUseBackupApi] = useState(false);
+  const [apiToggleAnchorEl, setApiToggleAnchorEl] = useState(null);
 
   // Refs and responsive helpers
   const recognitionRef = useRef(null);
@@ -313,6 +362,18 @@ const Chat = ({ toggleTheme }) => {
     }),
     [genAI]
   );
+
+  // Add OpenRouter API configuration
+  const openRouterApi = useMemo(() => ({
+    url: "https://openrouter.ai/api/v1/chat/completions",
+    headers: {
+      "Authorization": `Bearer ${process.env.REACT_APP_OPENROUTER_API_KEY}`,
+      "HTTP-Referer": window.location.origin,
+      "X-Title": "MindEase",
+      "Content-Type": "application/json"
+    },
+    model: "meta-llama/llama-3-8b-instruct:free"
+  }), []);
 
   // Build full mood and sleep data strings
   const fullMoodData = useMemo(() => {
@@ -510,7 +571,7 @@ The user's name is ${userName}. You have access to their mood and sleep history.
     }
   }, [user, moodEntries, messages, moodDialogOpen]);
 
-  // Handler for sending a message
+  // Modified handleSend function to use selected API
   const handleSend = useCallback(async () => {
     const trimmedInput = userInput.trim();
     if (!trimmedInput || isTyping) return;
@@ -568,41 +629,107 @@ The user's name is ${userName}. You have access to their mood and sleep history.
     setUserInput('');
     setIsTyping(true);
 
-    try {
-      const lastMoodTimestamp =
-        moodEntries.length > 0
-          ? new Date(moodEntries[moodEntries.length - 1].timestamp)
-          : null;
-      const filteredMessages = lastMoodTimestamp
-        ? messages.filter(
-            (msg) =>
-              !msg.isWelcome && new Date(msg.timestamp) > lastMoodTimestamp
-          )
-        : messages.filter((msg) => !msg.isWelcome);
-      const updatedChatHistory = [
-        {
-          role: 'user',
-          parts: [{ text: systemInstructionContent }],
-        },
-        ...filteredMessages.map((msg) => ({
-          role: msg.isBot ? 'model' : 'user',
-          parts: [{ text: msg.text }],
-        })),
-      ];
+    const tryServer = async (isPrimary) => {
+      try {
+        let response;
+        
+        if (isPrimary) {
+          // Use Gemini API (Server 1)
+          const lastMoodTimestamp =
+            moodEntries.length > 0
+              ? new Date(moodEntries[moodEntries.length - 1].timestamp)
+              : null;
+          const filteredMessages = lastMoodTimestamp
+            ? messages.filter(
+                (msg) =>
+                  !msg.isWelcome && new Date(msg.timestamp) > lastMoodTimestamp
+              )
+            : messages.filter((msg) => !msg.isWelcome);
+          const updatedChatHistory = [
+            {
+              role: 'user',
+              parts: [{ text: systemInstructionContent }],
+            },
+            ...filteredMessages.map((msg) => ({
+              role: msg.isBot ? 'model' : 'user',
+              parts: [{ text: msg.text }],
+            })),
+          ];
 
-      const chat = model.startChat({ history: updatedChatHistory });
-      const result = await chat.sendMessage(trimmedInput);
-      const response = await result.response;
-      const text = response.text();
+          const chat = model.startChat({ history: updatedChatHistory });
+          const result = await chat.sendMessage(trimmedInput);
+          response = await result.response;
+          return response.text();
+        } else {
+          // Use OpenRouter API (Server 2)
+          const chatHistory = messages
+            .filter(msg => !msg.isWelcome)
+            .map(msg => ({
+              role: msg.isBot ? 'assistant' : 'user',
+              content: msg.text
+            }));
+
+          const openRouterResponse = await fetch(openRouterApi.url, {
+            method: "POST",
+            headers: openRouterApi.headers,
+            body: JSON.stringify({
+              model: openRouterApi.model,
+              messages: [
+                {
+                  role: "system",
+                  content: systemInstructionContent
+                },
+                ...chatHistory,
+                {
+                  role: "user",
+                  content: trimmedInput
+                }
+              ]
+            })
+          });
+
+          if (!openRouterResponse.ok) {
+            throw new Error('Server 2 request failed');
+          }
+
+          const data = await openRouterResponse.json();
+          return data.choices[0].message.content;
+        }
+      } catch (error) {
+        console.error(`Error with ${isPrimary ? 'Server 1' : 'Server 2'}:`, error);
+        throw error;
+      }
+    };
+
+    try {
+      // Try current server first
+      const currentServer = !useBackupApi;
+      let response;
+      
+      try {
+        response = await tryServer(currentServer);
+      } catch (error) {
+        // If current server fails, auto-switch to other server
+        setUseBackupApi(!currentServer);
+        setSnackbar({
+          open: true,
+          message: `Automatically switched to ${currentServer ? 'Server 2' : 'Server 1'} due to error`,
+          severity: 'info',
+        });
+        response = await tryServer(!currentServer);
+      }
+
       const botMessage = {
-        text,
+        text: response,
         isBot: true,
         timestamp: new Date().toISOString(),
         isEmergency: false,
+        server: useBackupApi ? 'Server 2' : 'Server 1'
       };
       const botMessageId = await addMessage(botMessage.text, botMessage.isBot, {
         isEmergency: false,
         timestamp: botMessage.timestamp,
+        server: botMessage.server
       });
       if (!botMessageId) {
         setSnackbar({
@@ -612,14 +739,14 @@ The user's name is ${userName}. You have access to their mood and sleep history.
         });
         return;
       }
-      const quickReplies = await fetchQuickReplies(trimmedInput, text);
+      const quickReplies = await fetchQuickReplies(trimmedInput, response);
       if (quickReplies && quickReplies.length > 0) {
         await addQuickReplies(botMessageId, quickReplies);
       }
     } catch (error) {
-      console.error('Error fetching AI response:', error);
+      console.error('Error fetching AI response from both servers:', error);
       const errorMessage = {
-        text: "Sorry, I'm having trouble connecting. Please try again.",
+        text: "Sorry, I'm having trouble connecting to both servers. Please try again later.",
         isBot: true,
         timestamp: new Date().toISOString(),
         isEmergency: false,
@@ -645,6 +772,8 @@ The user's name is ${userName}. You have access to their mood and sleep history.
     moodEntries,
     messages,
     systemInstructionContent,
+    useBackupApi,
+    openRouterApi,
   ]);
 
   const handleKeyDown = (e) => {
@@ -699,10 +828,13 @@ The user's name is ${userName}. You have access to their mood and sleep history.
   const openMoodDialog = () => setMoodDialogOpen(true);
   const closeMoodDialog = () => setMoodDialogOpen(false);
   const handleMoodSelect = (mood) => {
-    addMood(mood, 'Logged via chat interface');
-    addMessage(`Mood "${mood}" logged.`, false, {
-      timestamp: new Date().toISOString(),
-    });
+    const moodOption = MOOD_OPTIONS.find(option => option.value === mood);
+    if (moodOption) {
+      addMood(moodOption.value, 'Logged via chat interface');
+      addMessage(`Mood "${moodOption.label.split(' ')[1]}" logged.`, false, {
+        timestamp: new Date().toISOString(),
+      });
+    }
     closeMoodDialog();
   };
 
@@ -844,6 +976,25 @@ Format as simple reply options without bullets or numbers.`;
     }
   };
 
+  // Add API toggle menu handlers
+  const handleApiToggleClick = (event) => {
+    setApiToggleAnchorEl(event.currentTarget);
+  };
+
+  const handleApiToggleClose = () => {
+    setApiToggleAnchorEl(null);
+  };
+
+  const handleApiChange = (useBackup) => {
+    setUseBackupApi(useBackup);
+    handleApiToggleClose();
+    setSnackbar({
+      open: true,
+      message: `Switched to ${useBackup ? 'Server 2' : 'Server 1'} API`,
+      severity: 'info',
+    });
+  };
+
   // ----------------------------
   // Mobile Layout
   // ----------------------------
@@ -910,6 +1061,15 @@ Format as simple reply options without bullets or numbers.`;
               </Box>
             </Box>
             <Box sx={{ display: 'flex', gap: 0.5 }}>
+              <Tooltip title={`Current: ${useBackupApi ? SERVER_CONFIG.backup.name : SERVER_CONFIG.primary.name}`}>
+                <IconButton
+                  size="small"
+                  onClick={handleApiToggleClick}
+                  sx={{ color: useBackupApi ? 'secondary.main' : 'primary.main' }}
+                >
+                  <SyncAltIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <IconButton
                 size="small"
                 onClick={openMoodDialog}
@@ -1189,6 +1349,70 @@ Format as simple reply options without bullets or numbers.`;
 
         {/* Mobile Menus and Dialogs */}
         <Menu
+          anchorEl={apiToggleAnchorEl}
+          open={Boolean(apiToggleAnchorEl)}
+          onClose={handleApiToggleClose}
+          PaperProps={{
+            sx: {
+              mt: 1,
+              borderRadius: '12px',
+              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+              boxShadow: (theme) => `0 4px 20px ${alpha(theme.palette.common.black, 0.1)}`,
+            },
+          }}
+        >
+          <MenuItem 
+            onClick={() => handleApiChange(false)}
+            selected={!useBackupApi}
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              gap: 2,
+              minWidth: '200px'
+            }}
+          >
+            <Box>
+              <Typography variant="body1">{SERVER_CONFIG.primary.name}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {SERVER_CONFIG.primary.description}
+              </Typography>
+            </Box>
+            {!useBackupApi && (
+              <Chip 
+                label="Active" 
+                size="small" 
+                color={SERVER_CONFIG.primary.color}
+                variant="outlined"
+              />
+            )}
+          </MenuItem>
+          <MenuItem 
+            onClick={() => handleApiChange(true)}
+            selected={useBackupApi}
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              gap: 2,
+              minWidth: '200px'
+            }}
+          >
+            <Box>
+              <Typography variant="body1">{SERVER_CONFIG.backup.name}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {SERVER_CONFIG.backup.description}
+              </Typography>
+            </Box>
+            {useBackupApi && (
+              <Chip 
+                label="Active" 
+                size="small" 
+                color={SERVER_CONFIG.backup.color}
+                variant="outlined"
+              />
+            )}
+          </MenuItem>
+        </Menu>
+        <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleReactionClose}
@@ -1426,6 +1650,23 @@ Format as simple reply options without bullets or numbers.`;
             </Box>
           </Box>
           <Box sx={{ ml: 'auto', display: 'flex', gap: 1.5 }}>
+            <Tooltip title={`Current: ${useBackupApi ? SERVER_CONFIG.backup.name : SERVER_CONFIG.primary.name}`}>
+              <Box sx={{ position: 'relative' }}>
+                <StyledBadge
+                  overlap="circular"
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  variant="dot"
+                >
+                  <IconButton
+                    onClick={handleApiToggleClick}
+                    color={useBackupApi ? 'secondary' : 'primary'}
+                    sx={{ ml: 1 }}
+                  >
+                    <SyncAltIcon />
+                  </IconButton>
+                </StyledBadge>
+              </Box>
+            </Tooltip>
             <Tooltip title="Log Your Mood">
               <IconButton onClick={openMoodDialog} aria-label="log mood" color="inherit">
                 <MoodIcon />
@@ -1766,6 +2007,72 @@ Format as simple reply options without bullets or numbers.`;
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Add the apiToggleMenu to the Menus and Dialogs section */}
+      <Menu
+        anchorEl={apiToggleAnchorEl}
+        open={Boolean(apiToggleAnchorEl)}
+        onClose={handleApiToggleClose}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            borderRadius: '12px',
+            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+            boxShadow: (theme) => `0 4px 20px ${alpha(theme.palette.common.black, 0.1)}`,
+          },
+        }}
+      >
+        <MenuItem 
+          onClick={() => handleApiChange(false)}
+          selected={!useBackupApi}
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            gap: 2,
+            minWidth: '250px'
+          }}
+        >
+          <Box>
+            <Typography variant="body1">{SERVER_CONFIG.primary.name}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {SERVER_CONFIG.primary.description}
+            </Typography>
+          </Box>
+          {!useBackupApi && (
+            <Chip 
+              label="Active" 
+              size="small" 
+              color={SERVER_CONFIG.primary.color}
+              variant="outlined"
+            />
+          )}
+        </MenuItem>
+        <MenuItem 
+          onClick={() => handleApiChange(true)}
+          selected={useBackupApi}
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between',
+            gap: 2,
+            minWidth: '250px'
+          }}
+        >
+          <Box>
+            <Typography variant="body1">{SERVER_CONFIG.backup.name}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {SERVER_CONFIG.backup.description}
+            </Typography>
+          </Box>
+          {useBackupApi && (
+            <Chip 
+              label="Active" 
+              size="small" 
+              color={SERVER_CONFIG.backup.color}
+              variant="outlined"
+            />
+          )}
+        </MenuItem>
+      </Menu>
     </motion.div>
   );
 };

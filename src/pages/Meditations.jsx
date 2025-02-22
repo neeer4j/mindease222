@@ -77,7 +77,7 @@ const MeditationCard = styled(Card)(({ theme, isPlaying }) => ({
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
-  justifyContent: 'space-between',
+  justifyContent: 'flex-start',
   padding: theme.spacing(3),
   border: isPlaying
     ? `2px solid ${alpha(theme.palette.primary.main, 0.8)}`
@@ -772,16 +772,17 @@ const Meditations = () => {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.5, delay: meditation.id * 0.1 }}
+                style={{ height: '100%' }}
               >
                 <MeditationCard isPlaying={currentMeditation?.id === meditation.id && isPlaying}>
-                  <Box sx={{ position: 'relative', mb: 3 }}>
+                  <Box sx={{ position: 'relative', mb: 3, height: { xs: 160, sm: 200 } }}>
                     <Avatar
                       alt={meditation.title}
                       src={meditation.image}
                       variant="rounded"
                       sx={{
                         width: '100%',
-                        height: { xs: 160, sm: 200 },
+                        height: '100%',
                         borderRadius: '24px',
                         boxShadow: `0 8px 20px ${alpha(theme.palette.primary.main, 0.15)}`,
                       }}
@@ -831,6 +832,11 @@ const Meditations = () => {
                       fontWeight: 700,
                       mb: 2,
                       color: theme.palette.text.primary,
+                      height: { xs: '48px', sm: '56px' },
+                      overflow: 'hidden',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
                     }}
                   >
                     {meditation.title}
@@ -841,7 +847,11 @@ const Meditations = () => {
                     sx={{
                       color: theme.palette.text.secondary,
                       mb: 3,
-                      minHeight: { xs: 48, sm: 60 },
+                      height: { xs: '72px', sm: '80px' },
+                      overflow: 'hidden',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
                       fontSize: isMobile ? '0.875rem' : '0.95rem',
                     }}
                   >

@@ -490,7 +490,7 @@ const ActivityLogging = () => {
                   variant={isMobile ? 'h3' : 'h2'}
                   sx={{ color: 'text.primary' }}
                 >
-                  📓
+                  
                 </Typography>
               </Box>
               <Typography

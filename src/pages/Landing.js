@@ -150,7 +150,8 @@ const Landing = () => {
       author: "Jennifer C Fernandez",
       avatarUrl: "images/pp.jpg",
       imageUrl: "images/pp.jpg",
-      alt: "Happy person smiling"
+      alt: "Happy person smiling",
+      rating: 4.8
     },
     {
       quote:
@@ -158,7 +159,8 @@ const Landing = () => {
       author: "Vivek Vinod",
       avatarUrl: "images/p2.jpg",
       imageUrl: "images/p2.jpg",
-      alt: "Person using laptop in calm environment"
+      alt: "Person using laptop in calm environment",
+      rating: 4.5
     },
     {
       quote:
@@ -166,7 +168,8 @@ const Landing = () => {
       author: "Nandana N Kumar",
       avatarUrl: "images/p3.jpg",
       imageUrl: "images/p3.jpg",
-      alt: "Person journaling in a serene setting"
+      alt: "Person journaling in a serene setting",
+      rating: 5.0
     },
     {
       quote:
@@ -174,7 +177,8 @@ const Landing = () => {
       author: "Arathi Das",
       avatarUrl: "images/p4.jpg",
       imageUrl: "images/p4.jpg",
-      alt: "Smiling person looking inspired"
+      alt: "Smiling person looking inspired",
+      rating: 4.7
     },
     {
       quote:
@@ -182,7 +186,8 @@ const Landing = () => {
       author: "Aliya Fathima",
       avatarUrl: "images/p5.jpg",
       imageUrl: "images/p5.jpg",
-      alt: "Person meditating peacefully"
+      alt: "Person meditating peacefully",
+      rating: 4.9
     },
     {
       quote:
@@ -190,7 +195,8 @@ const Landing = () => {
       author: "B. Joniyal",
       avatarUrl: "images/p6.jpg",
       imageUrl: "images/p6.jpg",
-      alt: "Person with thoughtful expression"
+      alt: "Person with thoughtful expression",
+      rating: 4.6
     }
   ];
 
@@ -202,12 +208,7 @@ const Landing = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [swipeDirection, setSwipeDirection] = useState('right');
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slideCount);
-    }, 10000);
-    return () => clearInterval(timer);
-  }, [slideCount]);
+  // Removed auto-scrolling timer
 
   // Touch handling logic for features
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
@@ -264,45 +265,13 @@ const Landing = () => {
 
   // Testimonials components
   const TestimonialScroll = () => {
-    // Create more duplicates to ensure seamless scrolling
     const duplicatedTestimonials = [...testimonials, ...testimonials, ...testimonials, ...testimonials, ...testimonials];
     const containerRef = useRef(null);
     const [isPaused, setIsPaused] = useState(false);
     const [scrollPosition, setScrollPosition] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
 
-    useEffect(() => {
-      let animationFrameId;
-      let lastTimestamp = 0;
-      const speed = 0.001; // Keep the slow speed
-
-      const animate = (timestamp) => {
-        if (!lastTimestamp) lastTimestamp = timestamp;
-        const deltaTime = timestamp - lastTimestamp;
-        
-        if (!isPaused && !isDragging) {
-          setScrollPosition(prev => {
-            const newPosition = prev - speed * deltaTime;
-            // Reset position when scrolled past one third of content
-            if (newPosition <= -33.33) {
-              return newPosition + 33.33;
-            }
-            return newPosition;
-          });
-        }
-        
-        lastTimestamp = timestamp;
-        animationFrameId = requestAnimationFrame(animate);
-      };
-
-      animationFrameId = requestAnimationFrame(animate);
-
-      return () => {
-        if (animationFrameId) {
-          cancelAnimationFrame(animationFrameId);
-        }
-      };
-    }, [isPaused, isDragging]);
+    // Removed continuous scroll animation
 
     return (
       <Box 
@@ -565,15 +534,46 @@ const Landing = () => {
                 </Typography>
 
                 <Box sx={{ display: 'flex', gap: 0.5, color: theme.palette.warning.main }}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Box key={star} sx={{ fontSize: '1.25rem' }}>★</Box>
-                  ))}
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const rating = testimonials[currentIndex].rating;
+                    const filled = star <= Math.floor(rating);
+                    const partial = !filled && star === Math.ceil(rating);
+                    const fillPercentage = partial ? ((rating % 1) * 100) : 0;
+                    
+                    return (
+                      <Box 
+                        key={star} 
+                        sx={{ 
+                          fontSize: '1.25rem',
+                          position: 'relative',
+                          display: 'inline-block'
+                        }}
+                      >
+                        {partial ? (
+                          <>
+                            <Box component="span" sx={{ 
+                              position: 'absolute',
+                              left: 0,
+                              top: 0,
+                              width: `${fillPercentage}%`,
+                              overflow: 'hidden',
+                              color: theme.palette.warning.main
+                            }}>★</Box>
+                            <Box component="span" sx={{ color: alpha(theme.palette.warning.main, 0.3) }}>★</Box>
+                          </>
+                        ) : (
+                          <Box component="span" sx={{ 
+                            color: filled ? theme.palette.warning.main : alpha(theme.palette.warning.main, 0.3)
+                          }}>★</Box>
+                        )}
+                      </Box>
+                    );
+                  })}
                 </Box>
               </Box>
             </Card>
           </motion.div>
         </AnimatePresence>
-
         {/* Navigation Dots */}
         <Box
           sx={{
@@ -854,17 +854,52 @@ const Landing = () => {
                         color: theme.palette.warning.main
                       }}
                     >
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Box 
-                          key={star}
-                          sx={{
-                            color: theme.palette.warning.main,
-                            fontSize: '1.25rem'
-                          }}
-                        >
-                          ★
-                        </Box>
-                      ))}
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const rating = testimonial.rating;
+                        const filled = star <= Math.floor(rating);
+                        const partial = !filled && star === Math.ceil(rating);
+                        const fillPercentage = partial ? ((rating % 1) * 100) : 0;
+                        
+                        return (
+                          <Box 
+                            key={star} 
+                            sx={{ 
+                              fontSize: '1.25rem',
+                              position: 'relative',
+                              display: 'inline-block'
+                            }}
+                          >
+                            {partial ? (
+                              <>
+                                <Box component="span" sx={{ 
+                                  position: 'absolute',
+                                  left: 0,
+                                  top: 0,
+                                  width: `${fillPercentage}%`,
+                                  overflow: 'hidden',
+                                  color: theme.palette.warning.main
+                                }}>★</Box>
+                                <Box component="span" sx={{ color: alpha(theme.palette.warning.main, 0.3) }}>★</Box>
+                              </>
+                            ) : (
+                              <Box component="span" sx={{ 
+                                color: filled ? theme.palette.warning.main : alpha(theme.palette.warning.main, 0.3)
+                              }}>★</Box>
+                            )}
+                          </Box>
+                        );
+                      })}
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          ml: 1,
+                          color: theme.palette.text.secondary,
+                          fontSize: '0.9rem',
+                          fontWeight: 500
+                        }}
+                      >
+                        {testimonial.rating.toFixed(1)}
+                      </Typography>
                     </Box>
                   </Box>
                 </motion.div>
@@ -2029,3 +2064,4 @@ const debounce = (func, wait) => {
 };
 
 export default React.memo(Landing);
+
