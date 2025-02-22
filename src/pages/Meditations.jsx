@@ -42,6 +42,19 @@ import SplashScreenToggle from '../components/SplashScreenToggle';
 import { alpha } from '@mui/material/styles';
 import { Fade } from '@mui/material';
 
+// Add keyframes at the top of the file after imports
+const gradientKeyframes = `
+@keyframes gradient {
+  0% { background-position: 0% center }
+  50% { background-position: -100% center }
+  100% { background-position: 0% center }
+}`;
+
+// Create and inject the style element
+const styleElement = document.createElement('style');
+styleElement.textContent = gradientKeyframes;
+document.head.appendChild(styleElement);
+
 // ----------------------
 // Styled Components
 // ----------------------
@@ -670,7 +683,9 @@ const Meditations = () => {
                 position: 'relative',
                 zIndex: 1,
                 textShadow: `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
-                background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.primary.main, 0.8)} 100%)`,
+                background: `linear-gradient(to right, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.primary.main, 0.8)} 50%, ${theme.palette.text.primary} 100%)`,
+                backgroundSize: '200% auto',
+                animation: 'gradient 8s linear infinite',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}

@@ -108,7 +108,11 @@ const GradientButton = styled(Button)(({ theme }) => ({
 // Animation Variants for Framer Motion
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.8 }
+  },
+  exit: { opacity: 0 }
 };
 
 const emojiVariants = {
@@ -118,7 +122,11 @@ const emojiVariants = {
 
 const textVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6 }
+  }
 };
 
 // Add these animation variants after other animation variants
@@ -140,6 +148,19 @@ const expandVariants = {
     }
   }
 };
+
+// Add keyframes for gradient animation
+const gradientKeyframes = `
+@keyframes gradient {
+  0% { background-position: 0% center }
+  50% { background-position: -100% center }
+  100% { background-position: 0% center }
+}`;
+
+// Create and inject the style element
+const styleElement = document.createElement('style');
+styleElement.textContent = gradientKeyframes;
+document.head.appendChild(styleElement);
 
 // Mood Options
 const moodOptions = [
@@ -1062,7 +1083,7 @@ const MoodTracker = () => {
           <motion.div variants={textVariants} initial="hidden" animate="visible">
             <Box textAlign="center" mb={isMobile ? 4 : 6}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                <Typography 
+                <Typography
                   variant={isMobile ? 'h3' : 'h2'} 
                   component="h1" 
                   sx={{
@@ -1071,7 +1092,9 @@ const MoodTracker = () => {
                     position: 'relative',
                     zIndex: 1,
                     textShadow: `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
-                    background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.primary.main, 0.8)} 100%)`,
+                    background: `linear-gradient(to right, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.primary.main, 0.8)} 50%, ${theme.palette.text.primary} 100%)`,
+                    backgroundSize: '200% auto',
+                    animation: 'gradient 8s linear infinite',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                   }}
