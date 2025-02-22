@@ -8,6 +8,8 @@ import React, {
   useCallback,
   useContext,
 } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   Typography,
   Button,
@@ -299,6 +301,74 @@ const SERVER_CONFIG = {
     color: 'secondary'
   }
 };
+
+const StyledMarkdown = styled(ReactMarkdown)(({ theme }) => ({
+  '& p': {
+    margin: 0,
+    lineHeight: 1.6,
+  },
+  '& p:not(:last-child)': {
+    marginBottom: '0.75em',
+  },
+  '& a': {
+    color: theme.palette.primary.main,
+    textDecoration: 'none',
+    '&:hover': {
+      textDecoration: 'underline',
+    },
+  },
+  '& code': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+    padding: '2px 4px',
+    borderRadius: '4px',
+    fontSize: '0.9em',
+    fontFamily: 'monospace',
+  },
+  '& pre': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+    padding: '12px',
+    borderRadius: '8px',
+    overflow: 'auto',
+    '& code': {
+      backgroundColor: 'transparent',
+      padding: 0,
+    },
+  },
+  '& ul, & ol': {
+    paddingLeft: '1.5em',
+    marginTop: '0.5em',
+    marginBottom: '0.5em',
+  },
+  '& blockquote': {
+    borderLeft: `4px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+    margin: '0.5em 0',
+    padding: '0.5em 1em',
+    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+    borderRadius: '4px',
+    '& p': {
+      margin: 0,
+    },
+  },
+  '& img': {
+    maxWidth: '100%',
+    height: 'auto',
+    borderRadius: '8px',
+  },
+  '& table': {
+    borderCollapse: 'collapse',
+    width: '100%',
+    marginTop: '0.5em',
+    marginBottom: '0.5em',
+  },
+  '& th, & td': {
+    border: `1px solid ${theme.palette.divider}`,
+    padding: '8px',
+    textAlign: 'left',
+  },
+  '& th': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+  },
+}));
 
 const Chat = ({ toggleTheme }) => {
   // Contexts
@@ -1143,16 +1213,25 @@ Format as simple reply options without bullets or numbers.`;
                   >
                     <MessageContainer isBot={msg.isBot}>
                       <MessageBubble isBot={msg.isBot}>
-                        <Typography 
-                          variant="body1" 
-                          sx={{ 
-                            fontSize: '0.95rem',
-                            lineHeight: 1.5,
-                            color: theme.palette.text.primary,
+                        <StyledMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ children }) => (
+                              <Typography 
+                                variant="body1" 
+                                sx={{ 
+                                  fontSize: '0.95rem',
+                                  lineHeight: 1.5,
+                                  color: theme.palette.text.primary,
+                                }}
+                              >
+                                {children}
+                              </Typography>
+                            ),
                           }}
                         >
                           {msg.text}
-                        </Typography>
+                        </StyledMarkdown>
                       </MessageBubble>
                     </MessageContainer>
                   </motion.div>
@@ -1726,9 +1805,18 @@ Format as simple reply options without bullets or numbers.`;
                   >
                     <MessageContainer isBot={msg.isBot}>
                       <MessageBubble isBot={msg.isBot}>
-                        <Typography variant="body1">
+                        <StyledMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ children }) => (
+                              <Typography variant="body1">
+                                {children}
+                              </Typography>
+                            ),
+                          }}
+                        >
                           {msg.text}
-                        </Typography>
+                        </StyledMarkdown>
                       </MessageBubble>
                     </MessageContainer>
                   </motion.div>
