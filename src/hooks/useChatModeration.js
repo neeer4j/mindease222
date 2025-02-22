@@ -1,5 +1,5 @@
 // src/hooks/useChatModeration.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   collection,
   query,
@@ -10,171 +10,212 @@ import {
   setDoc,
   doc,
   updateDoc,
-  limit
+  limit,
+  writeBatch,
+  getDocs
 } from 'firebase/firestore';
 import { db } from '../firebase';
+
+const BATCH_SIZE = 20; // Process messages in batches
+const ANALYSIS_INTERVAL = 5000; // 5 seconds between batch processing
+const MAX_CACHED_ALERTS = 100; // Maximum number of alerts to keep in memory
 
 const useChatModeration = () => {
   const [chatAlerts, setChatAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [flaggedMessages, setFlaggedMessages] = useState([]);
+  
+  // Use refs for better performance with large datasets
+  const alertsRef = useRef([]);
+  const processedMessagesRef = useRef(new Set());
+  const isProcessingRef = useRef(false);
 
-  // Define lists of words/phrases
-  const abuseWords = [
-    'fuck', 'shit', 'bitch', 'asshole', 
-    'nigger', 'faggot', 'slut', 'whore',
-    'cunt', 'dick', 'cock', 'stupid', 'idiot',
-    'bastard', 'motherfucker', 'cocksucker', 'douchebag',
-    'prick', 'fucking', 'damn', 'screw you'
-  ];
+  // Memoize word lists for better performance
+  const wordLists = useMemo(() => ({
+    abuse: [
+      'fuck', 'shit', 'bitch', 'asshole', 
+      'nigger', 'faggot', 'slut', 'whore',
+      'cunt', 'dick', 'cock', 'stupid', 'idiot',
+      'bastard', 'motherfucker', 'cocksucker', 'douchebag',
+      'prick', 'fucking', 'damn', 'screw you'
+    ],
+    spam: [
+      'buy now', 'free', 'click here', 'subscribe', 'check out',
+      'discount', 'sale', 'limited offer', 'act now', 'winner',
+      'win', 'congratulations', 'credit', 'loan', 'deal'
+    ],
+    distress: [
+      'suicide', 'kill myself', 'i want to die', 'i dont want to live',
+      'depressed', 'depression', 'hopeless', 'worthless', 'self harm',
+      'self-harm', 'hurt myself', 'no hope', 'cant go on', 'end my life'
+    ]
+  }), []);
 
-  const spamWords = [
-    'buy now', 'free', 'click here', 'subscribe', 'check out',
-    'discount', 'sale', 'limited offer', 'act now', 'winner',
-    'win', 'congratulations', 'credit', 'loan', 'deal'
-  ];
+  // Optimized message analysis function
+  const analyzeMessage = useCallback((message) => {
+    if (!message?.text || typeof message.text !== 'string') return null;
+    
+    const textToAnalyze = message.text.trim().toLowerCase();
+    if (!textToAnalyze) return null;
 
-  const distressWords = [
-    'suicide', 'kill myself', 'i want to die', 'i dont want to live',
-    'depressed', 'depression', 'hopeless', 'worthless', 'self harm',
-    'self-harm', 'hurt myself', 'no hope', 'cant go on', 'end my life'
-  ];
+    const results = {
+      abuse: [],
+      spam: [],
+      distress: []
+    };
 
-  // 1. Listen for new messages in the global "messages" collection (all messages)
-  useEffect(() => {
-    const chatQuery = query(
-      collection(db, 'messages'),
-      orderBy('timestamp', 'desc'),
-      limit(100)
-    );
-
-    const unsubscribe = onSnapshot(chatQuery, async (snapshot) => {
-      const messages = snapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      }));
-
-      // Analyze only un-analyzed messages from any user
-      for (const message of messages) {
-        if (message.isAnalyzed || message.isBot || !message.text) continue;
-
-        try {
-          console.log('Analyzing message:', message.text);
-          const textToAnalyze = message.text.trim().toLowerCase();
-          if (!textToAnalyze) continue;
-
-          // Check for each type of trigger
-          let foundAbuse = [];
-          let foundSpam = [];
-          let foundDistress = [];
-
-          abuseWords.forEach(word => {
-            if (textToAnalyze.includes(word)) {
-              foundAbuse.push(word);
-            }
-          });
-
-          spamWords.forEach(word => {
-            if (textToAnalyze.includes(word)) {
-              foundSpam.push(word);
-            }
-          });
-
-          distressWords.forEach(word => {
-            if (textToAnalyze.includes(word)) {
-              foundDistress.push(word);
-            }
-          });
-
-          // If any category is triggered, flag the message
-          if (foundAbuse.length || foundSpam.length || foundDistress.length) {
-            // Determine categories based on detected words
-            const categories = [];
-            if (foundAbuse.length) categories.push('abuse');
-            if (foundSpam.length) categories.push('spam');
-            if (foundDistress.length) categories.push('distress');
-
-            // Set severity based on total violations
-            const totalFound = foundAbuse.length + foundSpam.length + foundDistress.length;
-            const severity = foundDistress.length > 0 
-              ? 'critical' 
-              : totalFound > 2 
-                ? 'high' 
-                : 'medium';
-
-            // Create chat abuse record regardless of user type
-            const alert = {
-              id: `chat-${message.id}`,
-              messageId: message.id,
-              userId: message.userId,
-              text: message.text,
-              timestamp: message.timestamp,
-              categories,
-              severity,
-              detectedWords: {
-                abuse: foundAbuse,
-                spam: foundSpam,
-                distress: foundDistress
-              }
-            };
-
-            // Store abuse alert in Firestore
-            await setDoc(doc(db, 'chatAbuse', alert.id), {
-              ...alert,
-              createdAt: serverTimestamp(),
-            });
-
-            // Update local state
-            setChatAlerts(prev => [alert, ...prev]);
-
-            // Mark message as flagged
-            await updateDoc(doc(db, 'messages', message.id), {
-              isFlagged: true,
-              flagType: categories.includes('distress') ? 'distress' : 'abuse',
-              flaggedAt: serverTimestamp(),
-              categories,
-              severity,
-              detectedWords: {
-                abuse: foundAbuse,
-                spam: foundSpam,
-                distress: foundDistress
-              }
-            });
+    // Use Set for faster lookups
+    const words = new Set(textToAnalyze.split(/\s+/));
+    
+    for (const [category, list] of Object.entries(wordLists)) {
+      for (const phrase of list) {
+        if (phrase.includes(' ')) {
+          // For multi-word phrases
+          if (textToAnalyze.includes(phrase)) {
+            results[category].push(phrase);
           }
+        } else {
+          // For single words
+          if (words.has(phrase)) {
+            results[category].push(phrase);
+          }
+        }
+      }
+    }
 
-          // Always mark as analyzed
-          await updateDoc(doc(db, 'messages', message.id), {
+    if (Object.values(results).some(arr => arr.length > 0)) {
+      return {
+        categories: Object.entries(results)
+          .filter(([_, words]) => words.length > 0)
+          .map(([category]) => category),
+        severity: results.distress.length > 0 
+          ? 'critical' 
+          : Object.values(results).reduce((sum, arr) => sum + arr.length, 0) > 2 
+            ? 'high' 
+            : 'medium',
+        detectedWords: results
+      };
+    }
+
+    return null;
+  }, [wordLists]);
+
+  // Batch processing of messages
+  const processBatch = useCallback(async (messages) => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
+
+    try {
+      const batch = writeBatch(db);
+      const newAlerts = [];
+      let updates = 0;
+
+      for (const message of messages) {
+        if (processedMessagesRef.current.has(message.id)) continue;
+        
+        const analysis = analyzeMessage(message);
+        if (analysis) {
+          const alert = {
+            id: `chat-${message.id}`,
+            messageId: message.id,
+            userId: message.userId,
+            text: message.text,
+            timestamp: message.timestamp,
+            categories: analysis.categories,
+            severity: analysis.severity,
+            detectedWords: analysis.detectedWords
+          };
+
+          // Add to batch operations
+          batch.set(doc(db, 'chatAbuse', alert.id), {
+            ...alert,
+            createdAt: serverTimestamp(),
+          });
+
+          batch.update(doc(db, 'messages', message.id), {
+            isFlagged: true,
+            flagType: analysis.categories.includes('distress') ? 'distress' : 'abuse',
+            flaggedAt: serverTimestamp(),
+            categories: analysis.categories,
+            severity: analysis.severity,
+            detectedWords: analysis.detectedWords,
             isAnalyzed: true,
             analyzedAt: serverTimestamp()
           });
 
-        } catch (error) {
-          console.error('Error analyzing message:', error);
-          // Mark as analyzed even on error to prevent infinite loops
-          await updateDoc(doc(db, 'messages', message.id), {
+          newAlerts.push(alert);
+          updates++;
+        } else {
+          // Mark as analyzed even if no issues found
+          batch.update(doc(db, 'messages', message.id), {
             isAnalyzed: true,
-            analysisError: true,
-            errorMessage: error.message
+            analyzedAt: serverTimestamp()
           });
         }
+
+        processedMessagesRef.current.add(message.id);
       }
-    });
 
-    return () => unsubscribe();
-  }, []);
+      if (updates > 0) {
+        await batch.commit();
+        
+        // Update alerts with limit
+        alertsRef.current = [...newAlerts, ...alertsRef.current]
+          .slice(0, MAX_CACHED_ALERTS);
+        setChatAlerts(alertsRef.current);
+      }
+    } catch (error) {
+      console.error('Error processing message batch:', error);
+    } finally {
+      isProcessingRef.current = false;
+    }
+  }, [analyzeMessage]);
 
-  // 2. Listen for flagged messages
+  // Optimized message listener with batching
   useEffect(() => {
     const messagesQuery = query(
       collection(db, 'messages'),
-      where('isFlagged', '==', true),
-      orderBy('timestamp', 'desc')
+      orderBy('timestamp', 'desc'),
+      limit(BATCH_SIZE)
     );
 
+    let timeoutId;
     const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const flagged = snapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data()
+      const messages = snapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .filter(msg => !msg.isAnalyzed && !msg.isBot);
+
+      if (messages.length > 0) {
+        // Debounce processing to avoid too frequent updates
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          processBatch(messages);
+        }, ANALYSIS_INTERVAL);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeoutId);
+    };
+  }, [processBatch]);
+
+  // Listen for flagged messages with optimized query
+  useEffect(() => {
+    const flaggedQuery = query(
+      collection(db, 'messages'),
+      where('isFlagged', '==', true),
+      orderBy('timestamp', 'desc'),
+      limit(MAX_CACHED_ALERTS)
+    );
+
+    const unsubscribe = onSnapshot(flaggedQuery, (snapshot) => {
+      const flagged = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
       }));
       setFlaggedMessages(flagged);
       setLoading(false);
@@ -183,35 +224,43 @@ const useChatModeration = () => {
     return () => unsubscribe();
   }, []);
 
-  // Helper functions for handling alerts
-  const handleAlert = async (alertId, action) => {
-    const alert = chatAlerts.find(a => a.id === alertId);
+  // Optimized alert handling with batching
+  const handleAlert = useCallback(async (alertId, action) => {
+    const alert = alertsRef.current.find(a => a.id === alertId);
     if (!alert) return false;
 
     try {
+      const batch = writeBatch(db);
+
       if (action === 'remove') {
-        await updateDoc(doc(db, 'messages', alert.messageId), {
+        batch.update(doc(db, 'messages', alert.messageId), {
           text: '[Message removed by moderator]',
           isRemoved: true,
           removedAt: serverTimestamp(),
         });
       }
 
-      await updateDoc(doc(db, 'chatAbuse', alert.id), {
+      batch.update(doc(db, 'chatAbuse', alert.id), {
         status: action,
         resolvedAt: serverTimestamp(),
       });
 
-      setChatAlerts(prev => prev.filter(a => a.id !== alertId));
+      await batch.commit();
+
+      // Update local state
+      alertsRef.current = alertsRef.current.filter(a => a.id !== alertId);
+      setChatAlerts(alertsRef.current);
       return true;
     } catch (error) {
       console.error('Error handling chat alert:', error);
       return false;
     }
-  };
+  }, []);
 
-  const moderateMessage = async (messageId, action) => {
+  // Optimized message moderation with batching
+  const moderateMessage = useCallback(async (messageId, action) => {
     try {
+      const batch = writeBatch(db);
       const messageRef = doc(db, 'messages', messageId);
       const updates = {
         moderationStatus: action,
@@ -223,34 +272,21 @@ const useChatModeration = () => {
         updates.isRemoved = true;
       }
 
-      await updateDoc(messageRef, updates);
+      batch.update(messageRef, updates);
+      await batch.commit();
       return true;
     } catch (error) {
       console.error('Error moderating message:', error);
       return false;
     }
-  };
-
-  const updateAbuseReport = async (messageId, details) => {
-    try {
-      await updateDoc(doc(db, 'messages', messageId), {
-        abuseDetails: details,
-        updatedAt: serverTimestamp()
-      });
-      return true;
-    } catch (error) {
-      console.error('Error updating abuse report:', error);
-      return false;
-    }
-  };
+  }, []);
 
   return {
-    chatAlerts,
+    chatAlerts: alertsRef.current,
     flaggedMessages,
     loading,
     handleAlert,
-    moderateMessage,
-    updateAbuseReport
+    moderateMessage
   };
 };
 

@@ -370,6 +370,92 @@ const StyledMarkdown = styled(ReactMarkdown)(({ theme }) => ({
   },
 }));
 
+// Add formatTime utility function before MemoizedMessage
+const formatTime = (ts) => {
+  try {
+    if (!ts) return '—';
+    const date = ts.toDate ? ts.toDate() : ts instanceof Date ? ts : new Date(ts);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return 'Invalid Date';
+  }
+};
+
+// Memoize styled components that don't depend on props
+const MemoizedMessageContainer = React.memo(MessageContainer);
+const MemoizedMessageBubble = React.memo(MessageBubble);
+const MemoizedStyledMarkdown = React.memo(StyledMarkdown);
+const MemoizedTimeStamp = React.memo(TimeStamp);
+const MemoizedTypingIndicator = React.memo(TypingIndicator);
+
+// Memoize the message component
+const MemoizedMessage = React.memo(({ msg, index, showTimestamp, theme, handleQuickReply }) => {
+  return (
+    <React.Fragment>
+      {showTimestamp && !msg.isWelcome && (
+        <Box display="flex" justifyContent="center" my={2}>
+          <MemoizedTimeStamp variant="caption">
+            {formatTime(msg.timestamp)}
+          </MemoizedTimeStamp>
+        </Box>
+      )}
+      <motion.div
+        initial={{ opacity: 0, translateY: 10 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.1 }}
+      >
+        <MemoizedMessageContainer isBot={msg.isBot}>
+          <MemoizedMessageBubble isBot={msg.isBot}>
+            <MemoizedStyledMarkdown 
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ children }) => (
+                  <Typography variant="body1">
+                    {children}
+                  </Typography>
+                ),
+              }}
+            >
+              {msg.text}
+            </MemoizedStyledMarkdown>
+          </MemoizedMessageBubble>
+        </MemoizedMessageContainer>
+      </motion.div>
+      {msg.isBot && msg.quickReplies && (
+        <Box 
+          display="flex" 
+          flexWrap="wrap" 
+          gap={1} 
+          mt={1} 
+          mb={2}
+          sx={{
+            justifyContent: 'flex-start',
+            paddingLeft: theme.spacing(1),
+            paddingRight: theme.spacing(1),
+            [theme.breakpoints.down('sm')]: {
+              maxWidth: '80%',
+            }
+          }}
+        >
+          {msg.quickReplies.map((reply, idx) => (
+            <Button
+              key={idx}
+              variant="outlined"
+              size="small"
+              onClick={() => handleQuickReply(reply)}
+              sx={{ borderRadius: '16px', textTransform: 'none', padding: '4px 10px' }}
+            >
+              {reply}
+            </Button>
+          ))}
+        </Box>
+      )}
+    </React.Fragment>
+  );
+});
+
 const Chat = ({ toggleTheme }) => {
   // Contexts
   const { user } = useContext(AuthContext);
@@ -475,8 +561,8 @@ const Chat = ({ toggleTheme }) => {
     }
   }, [sleepLogs]);
 
-  // System instructions for the AI
-  const systemInstructionContent = useMemo(() => {
+  // Memoize expensive computations
+  const memoizedSystemInstructions = useMemo(() => {
     let instructions = `You are MindEase, a warm, empathetic, and supportive AI therapist with expertise in cognitive behavioral therapy, mindfulness, and positive psychology. When responding:
 - Use a warm, conversational tone like a caring human therapist
 - Show genuine empathy and understanding
@@ -718,7 +804,7 @@ The user's name is ${userName}. You have access to their mood and sleep history.
           const updatedChatHistory = [
             {
               role: 'user',
-              parts: [{ text: systemInstructionContent }],
+              parts: [{ text: memoizedSystemInstructions }],
             },
             ...filteredMessages.map((msg) => ({
               role: msg.isBot ? 'model' : 'user',
@@ -747,7 +833,7 @@ The user's name is ${userName}. You have access to their mood and sleep history.
               messages: [
                 {
                   role: "system",
-                  content: systemInstructionContent
+                  content: memoizedSystemInstructions
                 },
                 ...chatHistory,
                 {
@@ -841,7 +927,7 @@ The user's name is ${userName}. You have access to their mood and sleep history.
     checkAndPromptMood,
     moodEntries,
     messages,
-    systemInstructionContent,
+    memoizedSystemInstructions,
     useBackupApi,
     openRouterApi,
   ]);
@@ -1033,19 +1119,6 @@ Format as simple reply options without bullets or numbers.`;
     }
   };
 
-  const formatTime = (ts) => {
-    try {
-      if (!ts) return '—';
-      const date =
-        ts.toDate ? ts.toDate() : ts instanceof Date ? ts : new Date(ts);
-      if (isNaN(date.getTime())) return 'Invalid Date';
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (error) {
-      console.error('Error formatting time:', error);
-      return 'Invalid Date';
-    }
-  };
-
   // Add API toggle menu handlers
   const handleApiToggleClick = (event) => {
     setApiToggleAnchorEl(event.currentTarget);
@@ -1064,6 +1137,96 @@ Format as simple reply options without bullets or numbers.`;
       severity: 'info',
     });
   };
+
+  // Memoize handlers
+  const memoizedHandleQuickReply = useCallback(async (reply) => {
+    setUserInput(reply);
+    await handleSend();
+  }, [handleSend]);
+
+  const memoizedHandleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    } else {
+      setUserIsTyping(true);
+    }
+  }, [handleSend]);
+
+  const memoizedHandleVoiceInput = useCallback(() => {
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+  }, [isListening]);
+
+  // Memoize message rendering logic
+  const renderMessages = useCallback(() => {
+    return messages.map((msg, index) => {
+      const showTimestamp = !isSameTimeGroup(messages[index - 1], msg);
+      return (
+        <MemoizedMessage
+          key={msg.id || index}
+          msg={msg}
+          index={index}
+          showTimestamp={showTimestamp}
+          theme={theme}
+          handleQuickReply={memoizedHandleQuickReply}
+        />
+      );
+    });
+  }, [messages, theme, memoizedHandleQuickReply]);
+
+  // Update the chat input section to use memoized handlers
+  const renderChatInput = useMemo(() => (
+    <Box
+      sx={{
+        padding: '24px',
+        borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        background: alpha(theme.palette.background.paper, 0.5),
+        backdropFilter: 'blur(8px)',
+      }}
+    >
+      <Box display="flex" alignItems="center" gap={2}>
+        <StyledTextField
+          inputRef={inputRef}
+          value={userInput}
+          onChange={(e) => setUserInput(e.target.value)}
+          placeholder={`How are you feeling today, ${userName}?`}
+          variant="outlined"
+          multiline
+          minRows={1}
+          maxRows={4}
+          fullWidth
+          onKeyDown={memoizedHandleKeyDown}
+        />
+        <AnimatedButton
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={memoizedHandleVoiceInput}
+        >
+          {isListening ? <MicOffIcon /> : <MicIcon />}
+        </AnimatedButton>
+        <AnimatedButton
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleSend}
+          disabled={isTyping || !userInput.trim()}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            width={24}
+            height={24}
+          >
+            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
+          </svg>
+        </AnimatedButton>
+      </Box>
+    </Box>
+  ), [userInput, userName, isTyping, isListening, memoizedHandleKeyDown, memoizedHandleVoiceInput, handleSend, theme]);
 
   // ----------------------------
   // Mobile Layout
@@ -1195,90 +1358,7 @@ Format as simple reply options without bullets or numbers.`;
           aria-live="polite"
         >
           <ErrorBoundary>
-            {messages.map((msg, index) => {
-              const showTimestamp = !isSameTimeGroup(messages[index - 1], msg);
-              return (
-                <React.Fragment key={msg.id || index}>
-                  {showTimestamp && !msg.isWelcome && (
-                    <Box display="flex" justifyContent="center" my={1}>
-                      <TimeStamp variant="caption">
-                        {formatTime(msg.timestamp)}
-                      </TimeStamp>
-                    </Box>
-                  )}
-                  <motion.div
-                    initial={{ opacity: 0, translateY: 10 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ duration: 0.2, delay: index * 0.02 }}
-                  >
-                    <MessageContainer isBot={msg.isBot}>
-                      <MessageBubble isBot={msg.isBot}>
-                        <StyledMarkdown 
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            p: ({ children }) => (
-                              <Typography 
-                                variant="body1" 
-                                sx={{ 
-                                  fontSize: '0.95rem',
-                                  lineHeight: 1.5,
-                                  color: theme.palette.text.primary,
-                                }}
-                              >
-                                {children}
-                              </Typography>
-                            ),
-                          }}
-                        >
-                          {msg.text}
-                        </StyledMarkdown>
-                      </MessageBubble>
-                    </MessageContainer>
-                  </motion.div>
-                  {msg.isBot && msg.quickReplies && (
-                    <Box 
-                      display="flex" 
-                      flexWrap="wrap" 
-                      gap={1} 
-                      mt={1} 
-                      mb={2}
-                      sx={{
-                        justifyContent: 'flex-start',
-                        paddingLeft: theme.spacing(1),
-                        paddingRight: theme.spacing(1),
-                        [theme.breakpoints.down('sm')]: {
-                          maxWidth: '80%',
-                        }
-                      }}
-                    >
-                      {msg.quickReplies.map((reply, idx) => (
-                        <Button
-                          key={idx}
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleQuickReply(reply)}
-                          sx={{
-                            borderRadius: '16px',
-                            textTransform: 'none',
-                            fontSize: '0.875rem',
-                            padding: '4px 10px',
-                            minHeight: '32px',
-                            borderColor: alpha(theme.palette.primary.main, 0.3),
-                            color: theme.palette.primary.main,
-                            '&:hover': {
-                              borderColor: theme.palette.primary.main,
-                              backgroundColor: alpha(theme.palette.primary.main, 0.05),
-                            },
-                          }}
-                        >
-                          {reply}
-                        </Button>
-                      ))}
-                    </Box>
-                  )}
-                </React.Fragment>
-              );
-            })}
+            {renderMessages()}
             {isTyping && (
               <Box display="flex" alignItems="center" mb={1} pl={4}>
                 <Box
@@ -1345,7 +1425,7 @@ Format as simple reply options without bullets or numbers.`;
               inputRef={inputRef}
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
-              placeholder={`How are you feeling today, ${userName}?`}
+              placeholder={`How are you feeling today?`}
               multiline
               maxRows={MOBILE_MAX_ROWS}
               fullWidth
@@ -1787,71 +1867,7 @@ Format as simple reply options without bullets or numbers.`;
               },
             }}
           >
-            {messages.map((msg, index) => {
-              const showTimestamp = !isSameTimeGroup(messages[index - 1], msg);
-              return (
-                <React.Fragment key={msg.id || index}>
-                  {showTimestamp && !msg.isWelcome && (
-                    <Box display="flex" justifyContent="center" my={2}>
-                      <TimeStamp variant="caption">
-                        {formatTime(msg.timestamp)}
-                      </TimeStamp>
-                    </Box>
-                  )}
-                  <motion.div
-                    initial={{ opacity: 0, translateY: 10 }}
-                    animate={{ opacity: 1, translateY: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                  >
-                    <MessageContainer isBot={msg.isBot}>
-                      <MessageBubble isBot={msg.isBot}>
-                        <StyledMarkdown 
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            p: ({ children }) => (
-                              <Typography variant="body1">
-                                {children}
-                              </Typography>
-                            ),
-                          }}
-                        >
-                          {msg.text}
-                        </StyledMarkdown>
-                      </MessageBubble>
-                    </MessageContainer>
-                  </motion.div>
-                  {msg.isBot && msg.quickReplies && (
-                    <Box 
-                      display="flex" 
-                      flexWrap="wrap" 
-                      gap={1} 
-                      mt={1} 
-                      mb={2}
-                      sx={{
-                        justifyContent: 'flex-start',
-                        paddingLeft: theme.spacing(1),
-                        paddingRight: theme.spacing(1),
-                        [theme.breakpoints.down('sm')]: {
-                          maxWidth: '80%',
-                        }
-                      }}
-                    >
-                      {msg.quickReplies.map((reply, idx) => (
-                        <Button
-                          key={idx}
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleQuickReply(reply)}
-                          sx={{ borderRadius: '16px', textTransform: 'none', padding: '4px 10px' }}
-                        >
-                          {reply}
-                        </Button>
-                      ))}
-                    </Box>
-                  )}
-                </React.Fragment>
-              );
-            })}
+            {renderMessages()}
             
             {isTyping && (
               <motion.div
@@ -1860,7 +1876,7 @@ Format as simple reply options without bullets or numbers.`;
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
               >
-                <TypingIndicator>
+                <MemoizedTypingIndicator>
                   <TypingDot
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2 }}
@@ -1873,64 +1889,13 @@ Format as simple reply options without bullets or numbers.`;
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2, delay: 0.4 }}
                   />
-                </TypingIndicator>
+                </MemoizedTypingIndicator>
               </motion.div>
             )}
           </Box>
         </ErrorBoundary>
 
-        {/* Desktop Chat Input */}
-        <Box
-          sx={{
-            padding: '24px',
-            borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            background: alpha(theme.palette.background.paper, 0.5),
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          <Box display="flex" alignItems="center" gap={2}>
-            <StyledTextField
-              inputRef={inputRef}
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              placeholder={`How are you feeling today, ${userName}?`}
-              variant="outlined"
-              multiline
-              minRows={1}
-              maxRows={4}
-              fullWidth
-              onKeyDown={handleKeyDown}
-            />
-            <AnimatedButton
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleVoiceInput}
-            >
-              {isListening ? <MicOffIcon /> : <MicIcon />}
-            </AnimatedButton>
-            <AnimatedButton
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSend}
-              disabled={isTyping || !userInput.trim()}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                width={24}
-                height={24}
-              >
-                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.169-1.408l-7-14z" />
-              </svg>
-            </AnimatedButton>
-          </Box>
-          <Box mt={2} textAlign="center">
-            <Typography variant="body2" color="textSecondary" fontStyle="italic">
-              MindEase provides supportive listening, not professional therapy.
-            </Typography>
-          </Box>
-        </Box>
+        {renderChatInput}
       </StyledChatContainer>
       
       {/* Menus and Dialogs */}
@@ -2165,4 +2130,5 @@ Format as simple reply options without bullets or numbers.`;
   );
 };
 
-export default Chat;
+// Memoize the entire Chat component
+export default React.memo(Chat);
