@@ -301,27 +301,33 @@ const SleepLogForm = ({ onSubmit, initialValues = {}, factorOptions, isEditing }
 
   return (
     <form onSubmit={handleSubmit}>
-      <Grid container spacing={3}>
+      <Grid container spacing={isMobile ? 2 : 3}>
         {/* Time Selection */}
         <Grid item xs={12} md={6}>
           <motion.div variants={itemVariants}>
             <GlowingPaper sx={{ 
-              minHeight: '100%', 
+              minHeight: isMobile ? '220px' : '280px', 
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
-              height: '280px'
+              padding: isMobile ? theme.spacing(2) : theme.spacing(3)
             }}>
-              <FloatingIcon>
-                <BedtimeIcon />
+              <FloatingIcon sx={{ 
+                width: isMobile ? '36px' : '48px',
+                height: isMobile ? '36px' : '48px',
+                top: isMobile ? theme.spacing(2) : theme.spacing(3),
+                right: isMobile ? theme.spacing(2) : theme.spacing(3)
+              }}>
+                <BedtimeIcon sx={{ fontSize: isMobile ? '1.2rem' : '1.5rem' }} />
               </FloatingIcon>
-              <Typography variant="h6" gutterBottom sx={{ 
+              <Typography variant={isMobile ? "subtitle1" : "h6"} gutterBottom sx={{ 
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: 1,
                 color: theme.palette.primary.main,
                 fontWeight: 600,
-                mb: 3
+                mb: isMobile ? 2 : 3,
+                fontSize: isMobile ? '1rem' : 'inherit'
               }}>
                 When did you sleep?
               </Typography>
@@ -331,7 +337,7 @@ const SleepLogForm = ({ onSubmit, initialValues = {}, factorOptions, isEditing }
                 flexDirection: 'column',
                 justifyContent: 'center'
               }}>
-                <Grid container spacing={2}>
+                <Grid container spacing={isMobile ? 1 : 2}>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
@@ -341,6 +347,7 @@ const SleepLogForm = ({ onSubmit, initialValues = {}, factorOptions, isEditing }
                       onChange={(e) => setStartTime(e.target.value)}
                       InputLabelProps={{ shrink: true }}
                       required
+                      size={isMobile ? "small" : "medium"}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 2,
@@ -364,6 +371,7 @@ const SleepLogForm = ({ onSubmit, initialValues = {}, factorOptions, isEditing }
                       onChange={(e) => setEndTime(e.target.value)}
                       InputLabelProps={{ shrink: true }}
                       required
+                      size={isMobile ? "small" : "medium"}
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           borderRadius: 2,
@@ -388,22 +396,23 @@ const SleepLogForm = ({ onSubmit, initialValues = {}, factorOptions, isEditing }
         <Grid item xs={12} md={6}>
           <motion.div variants={itemVariants}>
             <GlowingPaper sx={{ 
-              minHeight: '100%', 
+              minHeight: isMobile ? '220px' : '280px',
               position: 'relative',
               display: 'flex',
               flexDirection: 'column',
-              height: '280px'
+              padding: isMobile ? theme.spacing(2) : theme.spacing(3)
             }}>
               <FloatingIcon>
                 <InsightsIcon />
               </FloatingIcon>
-              <Typography variant="h6" gutterBottom sx={{ 
+              <Typography variant={isMobile ? "subtitle1" : "h6"} gutterBottom sx={{ 
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: 1,
                 color: theme.palette.primary.main,
                 fontWeight: 600,
-                mb: 3
+                mb: isMobile ? 2 : 3,
+                fontSize: isMobile ? '1rem' : 'inherit'
               }}>
                 How well did you sleep?
               </Typography>
@@ -412,7 +421,7 @@ const SleepLogForm = ({ onSubmit, initialValues = {}, factorOptions, isEditing }
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
-                px: 2
+                px: isMobile ? 1 : 2
               }}>
                 <StyledSlider
                   isMobile={isMobile}
@@ -420,11 +429,11 @@ const SleepLogForm = ({ onSubmit, initialValues = {}, factorOptions, isEditing }
                   onChange={(e, newValue) => setSleepQualityRating(newValue)}
                   step={1}
                   marks={[
-                    { value: 1, label: '😴' },
-                    { value: 2, label: '🥱' },
-                    { value: 3, label: '😊' },
-                    { value: 4, label: '😃' },
-                    { value: 5, label: '🤩' },
+                    { value: 1, label: isMobile ? '1' : '😴' },
+                    { value: 2, label: isMobile ? '2' : '🥱' },
+                    { value: 3, label: isMobile ? '3' : '😊' },
+                    { value: 4, label: isMobile ? '4' : '😃' },
+                    { value: 5, label: isMobile ? '5' : '🤩' },
                   ]}
                   min={1}
                   max={5}
@@ -454,122 +463,59 @@ const SleepLogForm = ({ onSubmit, initialValues = {}, factorOptions, isEditing }
           </motion.div>
         </Grid>
 
-        {/* Optional Details Button */}
-        <Grid item xs={12}>
-          <motion.div variants={itemVariants}>
-            <Button
-              variant="outlined"
-              onClick={() => setShowFactors(!showFactors)}
-              startIcon={showFactors ? <HelpOutlineIcon /> : <HelpOutlineIcon />}
-              sx={{ 
-                mb: 2,
-                borderRadius: 8,
-                borderWidth: 2,
-                background: `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.95)})`,
-                backdropFilter: 'blur(10px)',
-                boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.1)}`,
-                '&:hover': {
-                  borderWidth: 2,
-                  transform: 'translateY(-2px)',
-                  boxShadow: `0 6px 25px ${alpha(theme.palette.primary.main, 0.15)}`
-                }
-              }}
-            >
-              {showFactors ? "Hide Additional Details" : "Add More Details (Optional)"}
-            </Button>
-
-            <AnimatePresence>
-              {showFactors && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                >
-                  <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                      <GlowingPaper>
-                        <FloatingIcon>
-                          <HelpOutlineIcon />
-                        </FloatingIcon>
-                        <Typography variant="h6" gutterBottom sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: 1,
-                          color: theme.palette.primary.main,
-                          fontWeight: 600,
-                          mb: 3
-                        }}>
-                          What affected your sleep?
-                        </Typography>
-                        <Grid container spacing={1}>
-                          {factorOptions.map((factor) => (
-                            <Grid item xs={6} sm={4} key={factor}>
-                              <motion.div
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                              >
-                                <FormControlLabel
-                                  control={
-                                    <Checkbox 
-                                      checked={sleepFactors.includes(factor)} 
-                                      onChange={handleFactorChange(factor)}
-                                      sx={{
-                                        color: theme.palette.primary.main,
-                                        '&.Mui-checked': {
-                                          color: theme.palette.primary.main,
-                                        }
-                                      }}
-                                    />
-                                  }
-                                  label={factor}
-                                  sx={{
-                                    '& .MuiFormControlLabel-label': {
-                                      fontSize: '0.9rem'
-                                    }
-                                  }}
-                                />
-                              </motion.div>
-                            </Grid>
-                          ))}
-                        </Grid>
-                      </GlowingPaper>
-                    </Grid>
+        {/* Factors Grid - Mobile Optimization */}
+        {showFactors && (
+          <Grid item xs={12}>
+            <GlowingPaper sx={{ 
+              padding: isMobile ? theme.spacing(2) : theme.spacing(3)
+            }}>
+              <Typography variant={isMobile ? "subtitle1" : "h6"} gutterBottom sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+                mb: isMobile ? 2 : 3
+              }}>
+                What affected your sleep?
+              </Typography>
+              <Grid container spacing={1}>
+                {factorOptions.map((factor) => (
+                  <Grid item xs={6} sm={4} key={factor}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox 
+                          checked={sleepFactors.includes(factor)} 
+                          onChange={handleFactorChange(factor)}
+                          size={isMobile ? "small" : "medium"}
+                        />
+                      }
+                      label={factor}
+                      sx={{
+                        '& .MuiFormControlLabel-label': {
+                          fontSize: isMobile ? '0.8rem' : '0.9rem'
+                        }
+                      }}
+                    />
                   </Grid>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </Grid>
+                ))}
+              </Grid>
+            </GlowingPaper>
+          </Grid>
+        )}
 
-        {/* Submit Button */}
+        {/* Submit Button - Mobile Optimization */}
         <Grid item xs={12}>
-          <motion.div 
-            variants={itemVariants}
-            style={{ textAlign: 'center' }}
-          >
+          <motion.div variants={itemVariants} style={{ textAlign: 'center' }}>
             <GradientButton 
               type="submit" 
               variant="contained" 
               startIcon={<CheckCircleOutlineIcon />}
               sx={{ 
-                minWidth: 250,
-                py: 1.8,
-                fontSize: '1.1rem',
-                borderRadius: 8,
-                background: `linear-gradient(45deg, 
-                  ${theme.palette.primary.main}, 
-                  ${theme.palette.secondary.main}
-                )`,
-                boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
-                '&:hover': {
-                  background: `linear-gradient(45deg, 
-                    ${theme.palette.primary.dark}, 
-                    ${theme.palette.secondary.dark}
-                  )`,
-                  boxShadow: `0 6px 25px ${alpha(theme.palette.primary.main, 0.4)}`,
-                  transform: 'translateY(-2px)'
-                }
+                minWidth: isMobile ? '100%' : 250,
+                py: isMobile ? 1.5 : 1.8,
+                fontSize: isMobile ? '1rem' : '1.1rem',
+                borderRadius: 8
               }}
             >
               {isEditing ? 'Update Sleep Log' : 'Save Sleep Log'}
@@ -1011,23 +957,24 @@ const SleepQualityMonitor = () => {
   return (
     <PageLayout>
       {showSplash && <SleepQualityMonitorSplash onComplete={handleTutorialComplete} />}
-      <Container maxWidth="md">
-        {/* Page Header */}
-        <Box textAlign="center" mb={6}>
+      <Container maxWidth="md" sx={{ px: isMobile ? 2 : 3 }}>
+        {/* Page Header - Mobile Optimization */}
+        <Box textAlign="center" mb={isMobile ? 4 : 6}>
           <motion.div variants={itemVariants}>
             <Box sx={{ 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
               gap: { xs: '0.25rem', sm: '0.5rem' }, 
-              mb: 2,
+              mb: isMobile ? 1 : 2,
               position: 'relative'
             }}>
               <Typography
-                variant={isMobile ? 'h3' : 'h2'}
+                variant={isMobile ? 'h4' : 'h2'}
                 component="h1"
                 sx={{
                   fontWeight: 800,
+                  fontSize: isMobile ? '1.8rem' : 'inherit',
                   position: 'relative',
                   zIndex: 1,
                   background: `linear-gradient(135deg, 
@@ -1046,7 +993,7 @@ const SleepQualityMonitor = () => {
                 }}
               >
                 <BedtimeIcon sx={{ 
-                  fontSize: 'inherit',
+                  fontSize: isMobile ? '1.8rem' : 'inherit',
                   color: theme.palette.primary.main,
                   filter: `drop-shadow(0 2px 4px ${alpha(theme.palette.primary.main, 0.3)})`
                 }} />
@@ -1059,7 +1006,8 @@ const SleepQualityMonitor = () => {
                 color: alpha(theme.palette.text.primary, 0.8),
                 maxWidth: '600px',
                 margin: '0 auto',
-                fontSize: '1.1rem'
+                fontSize: isMobile ? '0.9rem' : '1.1rem',
+                px: isMobile ? 2 : 0
               }}
             >
               Track and analyze your sleep patterns for better rest
@@ -1083,27 +1031,29 @@ const SleepQualityMonitor = () => {
           )}
         </motion.div>
 
-        {/* History Section - Only show if there are logs */}
+        {/* History Section - Mobile Optimization */}
         {sleepLogs.length > 0 && (
           <motion.div variants={itemVariants}>
-            <Box mt={4}>
+            <Box mt={isMobile ? 2 : 4}>
               <StyledAccordion>
                 <AccordionSummary 
                   expandIcon={<ExpandMoreIcon />}
                   sx={{
+                    minHeight: isMobile ? 48 : 56,
                     '& .MuiAccordionSummary-content': {
-                      margin: '12px 0',
+                      margin: isMobile ? '8px 0' : '12px 0',
                     }
                   }}
                 >
-                  <Typography variant="h6" sx={{ 
+                  <Typography variant={isMobile ? "subtitle1" : "h6"} sx={{ 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: 1,
                     color: theme.palette.primary.main,
-                    fontWeight: 600
+                    fontWeight: 600,
+                    fontSize: isMobile ? '1rem' : 'inherit'
                   }}>
-                    <TimelineIcon /> Sleep History
+                    <TimelineIcon sx={{ fontSize: isMobile ? '1.2rem' : 'inherit' }} /> Sleep History
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
