@@ -54,7 +54,7 @@ import { ChatContext } from '../contexts/ChatContext';
 import { MoodContext } from "../contexts/MoodContext";
 import { SleepContext } from "../contexts/SleepContext";
 import { db } from '../firebase';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, onSnapshot } from 'firebase/firestore';
 
 // *** Added from old code: run chat moderation in background ***
 import useChatModeration from '../hooks/useChatModeration';
@@ -618,6 +618,34 @@ The user's name is ${userName}. You have access to their mood and sleep history.
     }
   }, [user, addMessage, messages.length]);
 
+  // Load custom instructions from Firestore
+  useEffect(() => {
+    const loadCustomInstructions = async () => {
+      if (!user) return;
+      
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubscribe = onSnapshot(userDocRef, (doc) => {
+          if (doc.exists() && doc.data().customInstructions) {
+            setCustomInstructions(doc.data().customInstructions);
+            setCustomInstructionsInput(doc.data().customInstructions);
+          }
+        });
+
+        return () => unsubscribe();
+      } catch (error) {
+        console.error('Error loading custom instructions:', error);
+        setSnackbar({
+          open: true,
+          message: 'Failed to load custom instructions.',
+          severity: 'error',
+        });
+      }
+    };
+
+    loadCustomInstructions();
+  }, [user]);
+
   // Modified welcome message logic
   useEffect(() => {
     if (chatLoading || !user) return;
@@ -1072,7 +1100,7 @@ Format as simple reply options without bullets or numbers.`;
 
   // Custom instructions handlers
   const openCustomInstructionsDialog = () => {
-    setCustomInstructionsInput(customInstructions);
+    setCustomInstructionsInput(customInstructions || '');
     setCustomInstructionsDialogOpen(true);
   };
 
