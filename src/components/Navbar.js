@@ -19,6 +19,7 @@ import {
   Tooltip,
   Switch,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';  // Add this import
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext, useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -300,22 +301,30 @@ const Navbar = ({ toggleTheme }) => {
 
   const submenuItemVariants = {
     hidden: { 
-      opacity: 0, 
-      x: -10,
+      opacity: 0,
+      x: -20,
       transition: {
-        duration: 0.15,
+        duration: 0.2,
         ease: 'easeOut'
       }
     },
-    visible: (i = 1) => ({
+    visible: (i = 0) => ({
       opacity: 1,
       x: 0,
-      transition: { 
-        delay: i * 0.05, 
+      transition: {
+        delay: i * 0.1,
         duration: 0.3,
-        ease: [0.4, 0, 0.2, 1]
+        ease: [0.48, 0.15, 0.25, 0.96]
       }
-    })
+    }),
+    exit: {
+      opacity: 0,
+      x: -20,
+      transition: {
+        duration: 0.2,
+        ease: 'easeInOut'
+      }
+    }
   };
 
   const commonButtonSx = {
@@ -385,70 +394,67 @@ const Navbar = ({ toggleTheme }) => {
     <AnimatePresence>
       {submenuOpen === item.title && (
         <motion.div
-          initial={{ 
-            opacity: 0,
-            clipPath: 'inset(0% 50% 100% 50% round 16px)',
-            transformOrigin: 'top center'
-          }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ 
-            opacity: 1,
-            clipPath: 'inset(0% 0% 0% 0% round 16px)',
-          }}
-          exit={{ 
-            opacity: 0,
-            clipPath: 'inset(0% 50% 100% 50% round 16px)',
+            opacity: 1, 
+            y: 0,
             transition: {
-              duration: 0.2,
-              ease: [0.4, 0, 0.2, 1]
+              type: 'spring',
+              stiffness: 260,
+              damping: 20
             }
           }}
-          transition={{ 
-            duration: 0.3,
-            ease: [0.2, 0, 0, 1]
+          exit={{ 
+            opacity: 0, 
+            y: 10,
+            transition: {
+              duration: 0.2,
+              ease: 'easeInOut'
+            }
           }}
           onMouseLeave={() => setSubmenuOpen(null)}
           style={{
             position: 'absolute',
-            top: 'calc(100% + 8px)',
-            left: -20,
-            width: '520px',
-            backgroundColor: theme.palette.mode === 'dark' 
-              ? 'rgba(17, 17, 17, 0.95)'
-              : 'rgba(255, 255, 255, 0.95)',
+            top: '100%',
+            left: 0,
+            width: '500px',
+            backgroundColor: theme.palette.mode === 'light'
+              ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.04)} 0%, ${alpha(theme.palette.primary.main, 0.08)} 100%)`
+              : `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.primary.main, 0.15)} 100%)`,
             borderRadius: '16px',
             boxShadow: theme.palette.mode === 'dark'
-              ? '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)'
-              : '0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.03)',
+              ? `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`
+              : `0 8px 32px ${alpha(theme.palette.primary.main, 0.25)}`,
+            border: `1px solid ${theme.palette.mode === 'light'
+              ? alpha(theme.palette.primary.main, 0.2)
+              : alpha(theme.palette.primary.main, 0.15)}`,
             zIndex: 1000,
             padding: 0,
             display: 'flex',
             overflow: 'hidden',
-            backdropFilter: 'blur(20px)',
-            border: theme.palette.mode === 'dark'
-              ? '1px solid rgba(255, 255, 255, 0.05)'
-              : '1px solid rgba(0, 0, 0, 0.03)',
+            transform: 'translateZ(0)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
           <Box
             sx={{
               width: '60%',
               p: 2,
-              background: theme.palette.mode === 'dark'
-                ? 'linear-gradient(to right, rgba(17, 17, 17, 0.95), rgba(17, 17, 17, 0.98))'
-                : 'linear-gradient(to right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.98))',
+              background: theme.palette.background.paper,
+              borderRight: `1px solid ${alpha(theme.palette.divider, theme.palette.mode === 'dark' ? 0.1 : 0.15)}`,
               '&::-webkit-scrollbar': { 
                 width: '6px',
                 background: 'transparent'
               },
               '&::-webkit-scrollbar-thumb': { 
-                background: theme.palette.mode === 'dark' ? '#ffffff20' : '#00000020',
+                background: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.1),
                 borderRadius: '6px',
                 '&:hover': {
-                  background: theme.palette.mode === 'dark' ? '#ffffff30' : '#00000030'
+                  background: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.3 : 0.2)
                 }
               },
               scrollbarWidth: 'thin',
-              scrollbarColor: `${theme.palette.mode === 'dark' ? '#ffffff20' : '#00000020'} transparent`,
+              scrollbarColor: `${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.1)} transparent`
             }}
           >
             <List sx={{ p: 0 }}>
@@ -458,13 +464,10 @@ const Navbar = ({ toggleTheme }) => {
                   custom={i} 
                   initial="hidden" 
                   animate="visible" 
-                  exit="hidden" 
+                  exit="exit" 
                   variants={submenuItemVariants}
                 >
-                  <ListItem 
-                    disablePadding 
-                    sx={{ mb: 0.5 }}
-                  >
+                  <ListItem disablePadding sx={{ mb: 0.5 }}>
                     <ListItemButton
                       component={child.path.startsWith('http') ? 'a' : Link}
                       to={child.path.startsWith('http') ? undefined : child.path}
@@ -490,27 +493,39 @@ const Navbar = ({ toggleTheme }) => {
                         overflow: 'hidden',
                         '&:hover': {
                           backgroundColor: theme.palette.mode === 'dark' 
-                            ? 'rgba(255, 255, 255, 0.1)'
-                            : 'rgba(0, 0, 0, 0.05)',
+                            ? alpha(theme.palette.primary.main, 0.15)
+                            : alpha(theme.palette.primary.main, 0.08),
                           transform: 'translateX(4px)',
                           '& .MuiListItemIcon-root': {
                             transform: 'scale(1.1)',
-                            color: theme.palette.mode === 'dark' ? '#fff' : '#000',
+                            color: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main
                           },
                           '& .MuiListItemText-primary': {
-                            color: theme.palette.mode === 'dark' ? '#fff' : '#000',
-                            transform: 'translateX(4px)',
-                          },
+                            color: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main
+                          }
+                        },
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, transparent 100%)`,
+                          opacity: 0,
+                          transition: 'opacity 0.3s ease-in-out',
+                        },
+                        '&:hover::before': {
+                          opacity: 1,
                         }
                       }}
                     >
                       <ListItemIcon 
                         sx={{ 
                           minWidth: 40,
-                          color: theme.palette.mode === 'dark' 
-                            ? 'rgba(255, 255, 255, 0.7)'
-                            : 'rgba(0, 0, 0, 0.7)',
+                          color: theme.palette.text.secondary,
                           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          transform: 'translateZ(0)',
                           '& .MuiSvgIcon-root': {
                             fontSize: '1.5rem',
                           }
@@ -524,9 +539,7 @@ const Navbar = ({ toggleTheme }) => {
                           '& .MuiListItemText-primary': {
                             fontWeight: 500,
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            color: theme.palette.mode === 'dark'
-                              ? 'rgba(255, 255, 255, 0.9)'
-                              : 'rgba(0, 0, 0, 0.9)',
+                            color: theme.palette.text.primary
                           }
                         }}
                       />
@@ -540,77 +553,29 @@ const Navbar = ({ toggleTheme }) => {
             sx={{ 
               width: '40%', 
               position: 'relative',
-              background: theme.palette.mode === 'dark'
-                ? 'linear-gradient(to right, rgba(17, 17, 17, 0.98), rgba(17, 17, 17, 0.95))'
-                : 'linear-gradient(to right, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95))',
+              background: theme.palette.background.paper,
               overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: theme.palette.mode === 'dark' 
-                  ? 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 100%)'
-                  : 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%)',
-                zIndex: 2,
-                pointerEvents: 'none',
-              },
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: theme.palette.mode === 'dark'
-                  ? 'linear-gradient(45deg, rgba(255,255,255,0.02), transparent)'
-                  : 'linear-gradient(45deg, rgba(0,0,0,0.01), transparent)',
-                zIndex: 1,
-                opacity: 1,
-                pointerEvents: 'none',
-              }
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activePhoto}
-                initial={{ 
-                  opacity: 0,
-                  scale: 1.1,
-                  filter: 'blur(10px)'
-                }}
-                animate={{ 
-                  opacity: 1,
-                  scale: 1,
-                  filter: 'blur(0px)'
-                }}
-                exit={{ 
-                  opacity: 0,
-                  scale: 1.1,
-                  filter: 'blur(10px)'
-                }}
-                transition={{ 
-                  duration: 0.4,
-                  ease: [0.2, 0, 0, 1]
-                }}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
+            {activePhoto && (
+              <Box
+                component="img"
+                src={activePhoto}
+                alt="Feature preview"
+                sx={{
                   width: '100%',
                   height: '100%',
-                  backgroundImage: `url(${activePhoto})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  borderRadius: '0 16px 16px 0',
-                  filter: theme.palette.mode === 'dark' 
-                    ? 'brightness(0.85) contrast(1.1) saturate(0.9)'
-                    : 'brightness(1.02) contrast(1.02) saturate(0.95)',
+                  objectFit: 'cover',
+                  opacity: theme.palette.mode === 'dark' ? 0.7 : 0.9,
+                  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: 'translateZ(0)',
+                  filter: theme.palette.mode === 'dark' ? 'brightness(0.8) contrast(1.2)' : 'none'
                 }}
               />
-            </AnimatePresence>
+            )}
           </Box>
         </motion.div>
       )}
