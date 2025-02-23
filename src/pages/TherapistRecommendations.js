@@ -41,6 +41,7 @@ const DashboardContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   minHeight: '100vh',
+  background: `linear-gradient(135deg, ${alpha(theme.palette.background.default, 0.8)} 0%, ${alpha(theme.palette.background.default, 0.95)} 100%)`,
   '& > *': {
     overflowY: 'auto',
     scrollBehavior: 'smooth',
@@ -63,17 +64,17 @@ const DashboardContainer = styled(Box)(({ theme }) => ({
 
 // Updated WidgetCard: Retains the old gradient & border but removes backdropFilter
 const WidgetCard = styled(Card)(({ theme }) => ({
-  borderRadius: '16px',
+  borderRadius: '20px',
   boxShadow: 'none',
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
-  height: 280,
+  height: 320,
   background: `linear-gradient(135deg, 
-    ${alpha(theme.palette.background.paper, 0.9)} 0%,
-    ${alpha(theme.palette.background.paper, 0.7)} 100%)`,
+    ${alpha(theme.palette.background.paper, 0.95)} 0%,
+    ${alpha(theme.palette.background.paper, 0.85)} 100%)`,
   position: 'relative',
-  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
   transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
   '&:before': {
     content: '""',
@@ -90,8 +91,8 @@ const WidgetCard = styled(Card)(({ theme }) => ({
   },
   '&:hover': {
     transform: 'translateY(-8px)',
-    boxShadow: `0 12px 24px -10px ${alpha(theme.palette.primary.main, 0.15)}`,
-    border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+    boxShadow: `0 20px 40px -12px ${alpha(theme.palette.primary.main, 0.2)}`,
+    border: `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
     '&:before': {
       opacity: 1,
     },
@@ -138,31 +139,40 @@ const WidgetHeader = styled(Box)(({ theme }) => ({
 
 // HeroSection for the header area (unchanged if desired)
 const HeroSection = styled(Box)(({ theme }) => ({
-  marginBottom: theme.spacing(3),
-  padding: theme.spacing(4),
-  borderRadius: '24px',
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(
-    theme.palette.background.paper,
-    0.9
-  )} 100%)`,
-  // You can remove or reduce the backdrop filter here as well if needed
-  // For smoother performance, consider removing it:
-  // backdropFilter: 'blur(10px)',
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-  boxShadow: theme.shadows[3],
+  marginBottom: theme.spacing(4),
+  padding: theme.spacing(6, 4),
+  borderRadius: '32px',
+  background: `linear-gradient(135deg, 
+    ${alpha(theme.palette.primary.main, 0.08)} 0%, 
+    ${alpha(theme.palette.secondary.main, 0.08)} 100%)`,
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+  boxShadow: `0 20px 40px -12px ${alpha(theme.palette.primary.main, 0.1)}`,
   color: theme.palette.text.primary,
   display: 'flex',
   alignItems: 'center',
   position: 'relative',
+  overflow: 'hidden',
   transition: 'all 0.3s ease-in-out',
+  '&:before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: `radial-gradient(circle at top right, 
+      ${alpha(theme.palette.primary.main, 0.1)} 0%, 
+      transparent 70%)`,
+    zIndex: 0,
+  },
   '&:hover': {
-    boxShadow: theme.shadows[8],
     transform: 'translateY(-6px)',
+    boxShadow: `0 24px 48px -12px ${alpha(theme.palette.primary.main, 0.15)}`,
   },
   [theme.breakpoints.down('sm')]: {
     flexDirection: 'column',
     textAlign: 'center',
-    padding: theme.spacing(3),
+    padding: theme.spacing(4, 2),
   },
 }));
 
@@ -224,7 +234,6 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
     }
   }, []);
 
-  // Direct Google Maps URL using therapist.id
   const googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${therapist.id}`;
 
   return (
@@ -236,8 +245,64 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
     >
       <WidgetCard>
         <WidgetHeader>
-          <Typography variant="subtitle2">{therapist.name}</Typography>
-          <PersonIcon />
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <Box
+              sx={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
+              }}
+            >
+              <PersonIcon sx={{ fontSize: '1.75rem', color: 'primary.main' }} />
+            </Box>
+            <Box>
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  mb: 0.5 
+                }}
+              >
+                {`Dr. ${therapist.name}`}
+              </Typography>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: 'text.secondary',
+                  fontWeight: 500 
+                }}
+              >
+                Healthcare Professional
+              </Typography>
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.1),
+              padding: '6px 12px',
+              borderRadius: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5
+            }}
+          >
+            <StarIcon sx={{ color: 'warning.main', fontSize: '1rem' }} />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                fontWeight: 600,
+                color: 'warning.main'
+              }}
+            >
+              {therapist.rating}
+            </Typography>
+          </Box>
         </WidgetHeader>
         <WidgetContent ref={contentRef}>
           <Box 
@@ -245,61 +310,73 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.05),
-              borderRadius: '8px',
-              padding: 1.5
+              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
+              borderRadius: '12px',
+              padding: 2,
+              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`
             }}
           >
             <Typography 
               variant="body2" 
               sx={{ 
-                fontWeight: 500,
-                color: 'primary.main'
+                fontWeight: 600,
+                color: 'primary.main',
+                letterSpacing: '0.5px'
               }}
             >
-              {therapist.specialty}
+              {`Specializes in ${therapist.specialty}`}
             </Typography>
           </Box>
           
-          <Box display="flex" alignItems="center" gap={1}>
-            <LocationOnIcon color="primary" />
-            <Typography variant="body2" color="text.secondary">
-              {therapist.address}
-            </Typography>
-          </Box>
+          <Box 
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              backgroundColor: (theme) => alpha(theme.palette.background.default, 0.4),
+              borderRadius: '12px',
+              padding: 2
+            }}
+          >
+            <Box display="flex" alignItems="center" gap={1.5}>
+              <LocationOnIcon color="primary" sx={{ fontSize: '1.2rem' }} />
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
+                  Practice Location
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                  {therapist.address}
+                </Typography>
+              </Box>
+            </Box>
 
-          <Box display="flex" alignItems="center" gap={1}>
-            <StarIcon color="warning" />
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.1),
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontWeight: 500
-              }}
-            >
-              {therapist.rating} / 5
-            </Typography>
-          </Box>
-
-          <Box display="flex" alignItems="center" gap={1}>
-            <PhoneIcon color="primary" />
-            <Typography variant="body2" color="text.secondary">
-              {therapist.phone}
-            </Typography>
+            <Box display="flex" alignItems="center" gap={1.5}>
+              <PhoneIcon color="primary" sx={{ fontSize: '1.2rem' }} />
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
+                  Contact Number
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                  {therapist.phone}
+                </Typography>
+              </Box>
+            </Box>
           </Box>
         </WidgetContent>
         
         <CardActions sx={{
           padding: 2,
-          gap: 1,
+          gap: 1.5,
           borderTop: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.6),
           '& .MuiButton-root': {
-            borderRadius: '8px',
+            borderRadius: '10px',
             textTransform: 'none',
-            fontWeight: 500,
+            fontWeight: 600,
             flex: 1,
+            padding: '10px 16px',
+            fontSize: '0.9rem',
+            letterSpacing: '0.5px'
           }
         }}>
           <Button
@@ -308,7 +385,7 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
             startIcon={<VisibilityIcon />}
             size="large"
           >
-            View Details
+            Full Profile
           </Button>
           <Button
             variant="outlined"
@@ -318,7 +395,7 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
             rel="noopener noreferrer"
             size="large"
           >
-            Maps
+            Directions
           </Button>
         </CardActions>
       </WidgetCard>
