@@ -19,7 +19,7 @@ import {
   Stack,
   Card as MuiCard,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { styled, alpha } from '@mui/material/styles';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { FcGoogle } from 'react-icons/fc';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,18 +41,29 @@ const Card = styled(MuiCard)(({ theme }) => ({
   [theme.breakpoints.up('sm')]: {
     maxWidth: '500px',
     padding: theme.spacing(4),
-  },
-  boxShadow:
-    'hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px',
-  borderRadius: '20px',
-  ...theme.applyStyles('dark', {
-    boxShadow:
-      'hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px',
-    backgroundColor: '#1C2B3C',
-  }),
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(2),
-  },
+    background: theme.palette.mode === 'light'
+      ? `linear-gradient(135deg, 
+          ${alpha(theme.palette.primary.main, 0.04)} 0%, 
+          ${alpha(theme.palette.primary.main, 0.08)} 100%)`
+      : `linear-gradient(135deg, 
+          ${alpha(theme.palette.primary.main, 0.08)} 0%, 
+          ${alpha(theme.palette.primary.main, 0.15)} 100%)`,
+    border: `1px solid ${theme.palette.mode === 'light'
+      ? alpha(theme.palette.primary.main, 0.2)
+      : alpha(theme.palette.primary.main, 0.15)}`,
+    boxShadow: theme.palette.mode === 'light'
+      ? `0 8px 32px ${alpha(theme.palette.primary.main, 0.25)}`
+      : `0 8px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
+    borderRadius: '16px',
+    backdropFilter: 'blur(20px)',
+    transition: 'all 0.3s ease-in-out',
+    '&:hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: theme.palette.mode === 'light'
+        ? `0 12px 48px ${alpha(theme.palette.primary.main, 0.3)}`
+        : `0 12px 48px ${alpha(theme.palette.primary.main, 0.2)}`
+    }
+  }
 }));
 
 const SignUpContainer = styled(motion(Stack))(({ theme }) => ({
@@ -60,26 +71,43 @@ const SignUpContainer = styled(motion(Stack))(({ theme }) => ({
   padding: theme.spacing(2),
   [theme.breakpoints.up('sm')]: {
     padding: theme.spacing(3),
+    backgroundImage: 'url(/images/login.png)',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    position: 'relative',
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 0,
+    },
+    '& > *': {
+      position: 'relative',
+      zIndex: 1,
+    }
   },
   position: 'relative',
   backgroundColor: theme.palette.background.default,
-  '&::before': {
-    content: '""',
-    display: 'block',
-    position: 'absolute',
-    zIndex: -1,
-    inset: 0,
-    backgroundImage:
-      'radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
-    backgroundRepeat: 'no-repeat',
-    ...theme.applyStyles('dark', {
-      backgroundImage:
-        'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))',
-    }),
-  },
   [theme.breakpoints.down('sm')]: {
     padding: theme.spacing(1),
-  },
+    '&::before': {
+      content: '""',
+      display: 'block',
+      position: 'absolute',
+      zIndex: -1,
+      inset: 0,
+      backgroundImage: theme.palette.mode === 'dark'
+        ? 'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))'
+        : 'radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
+      backgroundRepeat: 'no-repeat',
+    }
+  }
 }));
 
 // Animation Variants
