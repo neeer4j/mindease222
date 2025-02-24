@@ -333,7 +333,7 @@ const BottomNav = () => {
           boxShadow: 'none',
           transition: 'all 0.3s ease',
           height: isChatPage ? 56 : 'auto',
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingBottom: `calc(env(safe-area-inset-bottom) + ${isChatPage ? '8px' : '16px'})`,
         }}
         elevation={0}
       >

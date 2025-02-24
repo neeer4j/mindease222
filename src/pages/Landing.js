@@ -1,6 +1,6 @@
 // src/pages/Landing.jsx
 
-import React, { useContext, useEffect, useState, useRef } from 'react';
+import React, { useContext, useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import {
   Typography,
   Button,
@@ -73,6 +73,15 @@ const MobileFeatureCarousel = styled(Box)(({ theme }) => ({
   },
 }));
 
+// Memoized components
+const MemoizedAvatar = React.memo(({ src, alt, sx }) => (
+  <Avatar src={src} alt={alt} sx={sx} />
+));
+
+const MemoizedCard = React.memo(({ children, sx, ...props }) => (
+  <Card sx={sx} {...props}>{children}</Card>
+));
+
 const Landing = () => {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -80,7 +89,8 @@ const Landing = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { isAuthenticated } = useContext(AuthContext);
 
-  const features = [
+  // Memoize static data
+  const features = useMemo(() => [
     {
       icon: <EmojiEmotionsIcon fontSize="large" color="inherit" />,
       title: 'Mood Tracker',
@@ -141,9 +151,9 @@ const Landing = () => {
       imageUrl: 'images/reels.jpg',
       alt: 'Video reel widget',
     },
-  ];
+  ], []);
 
-  const testimonials = [
+  const testimonials = useMemo(() => [
     {
       quote:
         "MindEase has been a game changer for me. Tracking my mood has helped me identify patterns I never noticed before.",
@@ -198,9 +208,74 @@ const Landing = () => {
       alt: "Person with thoughtful expression",
       rating: 4.6
     }
-  ];
+  ], []);
 
-  const heroImageUrl = 'images/ab.jpg';
+  const heroImageUrl = useMemo(() => 'images/ab.jpg', []);
+
+  // Mobile feature carousel state
+  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
+  const [featureTouchStart, setFeatureTouchStart] = useState(0);
+  const [featureTouchEnd, setFeatureTouchEnd] = useState(0);
+  const [isFeatureDragging, setIsFeatureDragging] = useState(false);
+  const [featureDragDistance, setFeatureDragDistance] = useState(0);
+
+  // Memoize handlers
+  const handleFeatureCardClick = useCallback((action) => {
+    action();
+  }, []);
+
+  const handleFeatureTouchStart = useCallback((e) => {
+    setFeatureTouchStart(e.touches[0].clientX);
+    setIsFeatureDragging(true);
+    setFeatureDragDistance(0);
+  }, []);
+
+  const handleFeatureTouchMove = useCallback((e) => {
+    if (isFeatureDragging) {
+      const currentTouch = e.touches[0].clientX;
+      const distance = currentTouch - featureTouchStart;
+      setFeatureDragDistance(distance);
+      setFeatureTouchEnd(currentTouch);
+    }
+  }, [isFeatureDragging, featureTouchStart]);
+
+  const handleFeatureTouchEnd = useCallback(() => {
+    setIsFeatureDragging(false);
+    const minSwipeDistance = 50;
+    
+    if (Math.abs(featureTouchStart - featureTouchEnd) >= minSwipeDistance) {
+      if (featureTouchStart - featureTouchEnd > 0) {
+        setCurrentFeatureIndex((prev) => (prev + 1) % features.length);
+      } else {
+        setCurrentFeatureIndex((prev) => (prev - 1 + features.length) % features.length);
+      }
+    }
+    setFeatureDragDistance(0);
+  }, [featureTouchStart, featureTouchEnd, features.length]);
+
+  const handleDesktopFeatureClick = useCallback((action) => {
+    action();
+  }, []);
+
+  // Intersection observer
+  const [heroRef, heroInView] = useInView({ triggerOnce: true, threshold: 0.1 });
+
+  // Memoize image loading optimization
+  const optimizeImageLoading = useCallback((index) => ({
+    loading: index === currentFeatureIndex ? 'eager' : 'lazy',
+    fetchpriority: index === currentFeatureIndex ? 'high' : 'low',
+  }), [currentFeatureIndex]);
+
+  // Memoize common styles
+  const commonStyles = useMemo(() => ({
+    gradientBackground: {
+      background: theme.palette.mode === 'dark'
+        ? `linear-gradient(165deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${alpha(theme.palette.background.paper, 0.6)} 100%)`
+        : `linear-gradient(165deg, ${alpha('#ffffff', 0.95)} 0%, ${alpha('#ffffff', 0.85)} 100%)`,
+    },
+    cardShadow: `0 15px 30px -10px ${alpha(theme.palette.primary.main, 0.2)}`,
+    buttonGradient: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
+  }), [theme]);
 
   // --- Testimonial Slider Logic ---
   const testimonialsPerSlide = isMobile ? 1 : 3;
@@ -209,59 +284,6 @@ const Landing = () => {
   const [swipeDirection, setSwipeDirection] = useState('right');
 
   // Removed auto-scrolling timer
-
-  // Touch handling logic for features
-  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
-  const [featureTouchStart, setFeatureTouchStart] = useState(0);
-  const [featureTouchEnd, setFeatureTouchEnd] = useState(0);
-  const [isFeatureDragging, setIsFeatureDragging] = useState(false);
-  const [featureDragDistance, setFeatureDragDistance] = useState(0);
-
-  const handleFeatureCardClick = (action) => {
-    action();
-  };
-
-  const handleFeatureTouchStart = (e) => {
-    setFeatureTouchStart(e.touches[0].clientX);
-    setIsFeatureDragging(true);
-    setFeatureDragDistance(0);
-  };
-
-  const handleFeatureTouchMove = (e) => {
-    if (isFeatureDragging) {
-      const currentTouch = e.touches[0].clientX;
-      const distance = currentTouch - featureTouchStart;
-      setFeatureDragDistance(distance);
-      setFeatureTouchEnd(currentTouch);
-    }
-  };
-
-  const handleFeatureTouchEnd = () => {
-    setIsFeatureDragging(false);
-    const minSwipeDistance = 50;
-    
-    if (Math.abs(featureTouchStart - featureTouchEnd) >= minSwipeDistance) {
-      if (featureTouchStart - featureTouchEnd > 0) {
-        // Swiped left
-        setCurrentFeatureIndex((prev) => (prev + 1) % features.length);
-      } else {
-        // Swiped right
-        setCurrentFeatureIndex((prev) => (prev - 1 + features.length) % features.length);
-      }
-    }
-    setFeatureDragDistance(0);
-  };
-
-  const handleDesktopFeatureClick = (action) => {
-    action();
-  };
-
-  const [heroRef, heroInView] = useInView({ triggerOnce: true, threshold: 0.1 });
-
-  const optimizeImageLoading = (index) => ({
-    loading: index === currentFeatureIndex ? 'eager' : 'lazy',
-    fetchpriority: index === currentFeatureIndex ? 'high' : 'low',
-  });
 
   // Testimonials components
   const TestimonialScroll = () => {
@@ -338,7 +360,7 @@ const Landing = () => {
               style={{ flex: '0 0 auto' }}
               whileHover={{ scale: 1.02, y: -8, transition: { duration: 0.4, ease: "easeOut" } }}
             >
-              <Card
+              <MemoizedCard
                 sx={{
                   background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.9)} 0%, ${alpha(theme.palette.background.paper, 0.7)} 100%)`,
                   backdropFilter: 'blur(10px)',
@@ -386,7 +408,7 @@ const Landing = () => {
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, position: 'relative', zIndex: 2 }}>
-                  <Avatar
+                  <MemoizedAvatar
                     alt={testimonial.author}
                     src={testimonial.avatarUrl}
                     sx={{ width: 64, height: 64, border: `3px solid ${theme.palette.background.paper}`, boxShadow: theme.shadows[2] }}
@@ -400,7 +422,7 @@ const Landing = () => {
                     </Typography>
                   </Box>
                 </Box>
-              </Card>
+              </MemoizedCard>
             </motion.div>
           ))}
         </motion.div>
@@ -463,7 +485,7 @@ const Landing = () => {
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <Card
+            <MemoizedCard
               sx={{
                 background: theme.palette.mode === 'dark'
                   ? alpha(theme.palette.background.paper, 0.8)
@@ -477,7 +499,7 @@ const Landing = () => {
             >
               <Box sx={{ position: 'relative' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                  <Avatar
+                  <MemoizedAvatar
                     src={testimonials[currentIndex].avatarUrl}
                     alt={testimonials[currentIndex].author}
                     sx={{
@@ -571,7 +593,7 @@ const Landing = () => {
                   })}
                 </Box>
               </Box>
-            </Card>
+            </MemoizedCard>
           </motion.div>
         </AnimatePresence>
         {/* Navigation Dots */}
@@ -704,7 +726,7 @@ const Landing = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.7, delay: index * 0.2 }}
                 >
-                  <Box
+                  <MemoizedCard
                     sx={{
                       background: theme.palette.mode === 'dark' 
                         ? alpha(theme.palette.background.paper, 0.8)
@@ -776,7 +798,7 @@ const Landing = () => {
                             transition: 'opacity 0.3s ease'
                           }}
                         />
-                        <Avatar
+                        <MemoizedAvatar
                           alt={testimonial.author}
                           src={testimonial.avatarUrl}
                           sx={{
@@ -901,7 +923,7 @@ const Landing = () => {
                         {testimonial.rating.toFixed(1)}
                       </Typography>
                     </Box>
-                  </Box>
+                  </MemoizedCard>
                 </motion.div>
               </Grid>
             ))}
@@ -1402,19 +1424,16 @@ const Landing = () => {
                     onTouchMove={handleFeatureTouchMove}
                     onTouchEnd={handleFeatureTouchEnd}
                   >
-                    <Card
+                    <MemoizedCard
                       sx={{
                         margin: '0 auto',
                         width: '100%',
                         maxWidth: '340px',
                         borderRadius: '20px',
-                        background: theme.palette.mode === 'dark'
-                          ? `linear-gradient(165deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${alpha(theme.palette.background.paper, 0.6)} 100%)`
-                          : `linear-gradient(165deg, ${alpha('#ffffff', 0.95)} 0%, ${alpha('#ffffff', 0.85)} 100%)`,
+                        background: commonStyles.gradientBackground,
                         backdropFilter: 'blur(20px)',
                         border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
-                        boxShadow: `0 15px 30px -10px ${alpha(theme.palette.primary.main, 0.2)},
-                                  0 0 0 1px ${alpha(theme.palette.primary.main, 0.05)}`,
+                        boxShadow: commonStyles.cardShadow,
                         overflow: 'visible',
                         transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                         height: '100%',
@@ -1560,7 +1579,7 @@ const Landing = () => {
                               py: 1.75,
                               fontSize: '1.1rem',
                               borderRadius: '14px',
-                              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
+                              background: commonStyles.buttonGradient,
                               transition: 'all 0.3s ease',
                               boxShadow: `0 10px 20px -8px ${alpha(theme.palette.primary.main, 0.5)}`,
                               fontWeight: 600,
@@ -1574,7 +1593,7 @@ const Landing = () => {
                           </GradientButton>
                         </motion.div>
                       </CardActions>
-                    </Card>
+                    </MemoizedCard>
                   </motion.div>
                 </AnimatePresence>
 
@@ -1647,7 +1666,7 @@ const Landing = () => {
                         transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
                         whileHover={{ scale: 1.03, rotateY: 5, translateY: -10, transition: { duration: 0.4, ease: 'easeOut' } }}
                       >
-                        <Card
+                        <MemoizedCard
                           sx={{
                             background: `linear-gradient(165deg, ${alpha(theme.palette.background.paper, 0.95)} 0%, ${alpha(theme.palette.background.paper, 0.98)} 50%, ${alpha(theme.palette.background.paper, 0.95)} 100%)`,
                             backdropFilter: 'blur(10px)',
@@ -1836,7 +1855,7 @@ const Landing = () => {
                                     py: 2,
                                     fontSize: '1.1rem',
                                     borderRadius: '16px',
-                                    background: `linear-gradient(45deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
+                                    background: commonStyles.buttonGradient,
                                     transition: 'all 0.3s ease',
                                     boxShadow: `0 8px 20px -8px ${alpha(theme.palette.primary.main, 0.5)}`,
                                   }}
@@ -1846,7 +1865,7 @@ const Landing = () => {
                               </motion.div>
                             </Tooltip>
                           </CardActions>
-                        </Card>
+                        </MemoizedCard>
                       </motion.div>
                     </Grid>
                   ))}
@@ -2011,7 +2030,7 @@ const Landing = () => {
                           }}
                         >
                           {[1, 2, 3].map((i) => (
-                            <Avatar
+                            <MemoizedAvatar
                               key={i}
                               src={`images/p${i}.jpg`}
                               alt={`User ${i}`}

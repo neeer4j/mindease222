@@ -623,7 +623,7 @@ const Navbar = ({ toggleTheme }) => {
           sx={{
             position: 'fixed',
             top: 0,
-            left: 0,
+            left: -7,
             right: 0,
             zIndex: theme.zIndex.drawer + 3,
             background: mobileNavbarBg,
@@ -635,7 +635,8 @@ const Navbar = ({ toggleTheme }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            height: '64px',
+            height: '78px',
+            paddingTop: '1px',
             opacity: showTitle ? 1 : 0,
             transform: showTitle ? 'translateY(0)' : 'translateY(-20px)',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
