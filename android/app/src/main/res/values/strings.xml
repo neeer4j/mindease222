@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MindEase</string>
+    <string name="title_activity_main">MindEase</string>
+    <string name="package_name">com.mindease.app</string>
+    <string name="custom_url_scheme">com.mindease.app</string>
+</resources>
