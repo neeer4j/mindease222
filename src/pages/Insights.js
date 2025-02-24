@@ -1,6 +1,6 @@
 // src/pages/Insights.jsx
 
-import React, { useState, useMemo, useContext, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useContext, useRef, useEffect, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -1961,4 +1961,4 @@ Use **bold** for emphasis on key points.`;
   );
 };
 
-export default Insights;
+export default React.memo(Insights);
