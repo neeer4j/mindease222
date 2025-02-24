@@ -29,6 +29,8 @@ import ForgotPassword from './ForgotPassword';
 import AppTheme from '../shared-theme/AppTheme';
 import { useTheme } from '@mui/material/styles';
 import { useMediaQuery } from '@mui/material';
+import { signInWithGoogle as capacitorSignInWithGoogle } from '../firebaseCapacitor';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 // Styled Components
 const Card = styled(MuiCard)(({ theme }) => ({
@@ -182,7 +184,6 @@ export default function EnhancedLogin(props) {
     isAuthenticated, 
     isAdmin,
     login, 
-    signInWithGoogle, 
     loading: authLoading, 
     error: authError, 
     showSplash,
@@ -193,6 +194,7 @@ export default function EnhancedLogin(props) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [open, setOpen] = useState(false); // For ForgotPassword modal
+  const [isLoading, setIsLoading] = useState(false);
 
   // State for internal validation errors and success messages
   const [validationError, setValidationError] = useState('');
@@ -235,6 +237,7 @@ export default function EnhancedLogin(props) {
     }
 
     setValidationError('');
+    setIsLoading(true);
     try {
       await login(email, password);
       setSuccess('Login successful!');
@@ -242,7 +245,10 @@ export default function EnhancedLogin(props) {
       setPassword('');
     } catch (err) {
       console.error("Error during login:", err);
+      setValidationError(err.message || 'Failed to sign in. Please try again.');
       setSuccess('');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -250,12 +256,21 @@ export default function EnhancedLogin(props) {
   const handleGoogleSignIn = async () => {
     setValidationError('');
     setSuccess('');
+    setIsLoading(true); // Show loading spinner
     try {
-      await signInWithGoogle();
-      setShowSplash(true); // Explicitly set splash screen for Google sign-in
-      setSuccess('Login with Google successful!');
-    } catch (err) {
+      const result = await capacitorSignInWithGoogle();
+      if (result && result.user) {
+        setShowSplash(true);
+        setSuccess('Login with Google successful!');
+      } else {
+        setValidationError('Google sign-in failed. Please try again.');
+      }
+    } catch (error) {
+      console.error("Error during Google sign-in:", error);
+      setValidationError(error.message || 'Failed to sign in with Google. Please try again.');
       setSuccess('');
+    } finally {
+      setIsLoading(false); // Hide loading spinner
     }
   };
 
@@ -272,6 +287,7 @@ export default function EnhancedLogin(props) {
   return (
     <AppTheme {...props}>
       <CssBaseline enableColorScheme />
+      {isLoading && <LoadingSpinner />}
       <AnimatePresence>
         <SignInContainer
           direction="column"
@@ -572,11 +588,15 @@ export default function EnhancedLogin(props) {
                     variant="contained"
                     startIcon={<FcGoogle size={20} />}
                     onClick={handleGoogleSignIn}
-                    disabled={authLoading}
+                    disabled={isLoading || authLoading}
                     fullWidth
                     aria-label="Sign in with Google"
                   >
-                    {authLoading ? <CircularProgress size={20} color="inherit" /> : 'Sign In with Google'}
+                    {isLoading || authLoading ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      'Sign In with Google'
+                    )}
                   </GoogleButton>
                 </motion.div>
 

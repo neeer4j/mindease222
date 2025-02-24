@@ -1,0 +1,48 @@
+{
+    "project_info": {
+      "project_number": "873314691877",
+      "firebase_url": "https://mindease-dbed7-default-rtdb.firebaseio.com",
+      "project_id": "mindease-dbed7",
+      "storage_bucket": "mindease-dbed7.firebasestorage.app"
+    },
+    "client": [
+      {
+        "client_info": {
+          "mobilesdk_app_id": "1:873314691877:android:00e8e4dde0a4b1539a88cc",
+          "android_client_info": {
+            "package_name": "com.mindease.app"
+          }
+        },
+        "oauth_client": [
+          {
+            "client_id": "873314691877-lpdi02tb29ran031e42fpveajckn73o1.apps.googleusercontent.com",
+            "client_type": 1,
+            "android_info": {
+              "package_name": "com.mindease.app",
+              "certificate_hash": "db747c1c5385e0f19b43afc96c82a745348b0534"
+            }
+          },
+          {
+            "client_id": "873314691877-r2vfostdtfpghmvefuclhchmp471bq1c.apps.googleusercontent.com",
+            "client_type": 3
+          }
+        ],
+        "api_key": [
+          {
+            "current_key": "AIzaSyDdWbmSEyKayJZeaDVAaCTNmD_lqdSsXjc"
+          }
+        ],
+        "services": {
+          "appinvite_service": {
+            "other_platform_oauth_client": [
+              {
+                "client_id": "873314691877-r2vfostdtfpghmvefuclhchmp471bq1c.apps.googleusercontent.com",
+                "client_type": 3
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "configuration_version": "1"
+  }

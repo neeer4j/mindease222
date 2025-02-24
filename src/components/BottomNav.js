@@ -262,15 +262,14 @@ const BottomNav = () => {
             bottom: 0,
             left: 0,
             right: 0,
-            zIndex: 1100, // Higher z-index to stay above all content
+            zIndex: 1100,
             borderTopLeftRadius: '20px',
             borderTopRightRadius: '20px',
             boxShadow: '0px -2px 10px rgba(0, 0, 0, 0.1)',
-            // For unauthenticated users on mobile (and also on chat, if needed),
-            // use a solid background without gradient fade.
             background: isChatPage ? bottomNavTheme.palette.background.paper : navBgGradient,
             boxShadow: 'none',
             border: isChatPage ? 'none' : undefined,
+            paddingBottom: 'env(safe-area-inset-bottom)',
           }}
           elevation={0}
         >
@@ -334,6 +333,7 @@ const BottomNav = () => {
           boxShadow: 'none',
           transition: 'all 0.3s ease',
           height: isChatPage ? 56 : 'auto',
+          paddingBottom: 'env(safe-area-inset-bottom)',
         }}
         elevation={0}
       >
