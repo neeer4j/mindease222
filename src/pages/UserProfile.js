@@ -27,7 +27,14 @@ import {
   Tab,
   Badge,
   Divider,
-  Chip
+  Chip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Switch,
+  FormControlLabel,
+  CircularProgress as MuiCircularProgress
 } from '@mui/material';
 import { styled, alpha } from '@mui/system';
 import { AuthContext } from '../contexts/AuthContext';
@@ -146,6 +153,21 @@ const GradientButton = styled(Button)(({ theme }) => ({
   },
 }));
 
+const CompletionBar = styled(Box)(({ theme }) => ({
+  width: '100%',
+  padding: theme.spacing(2),
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(2),
+  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+  '& .MuiLinearProgress-root': {
+    height: 8,
+    borderRadius: 4,
+    flexGrow: 1,
+    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+  },
+}));
+
 // Animation variants
 const pageVariants = {
   initial: { opacity: 0, scale: 0.95 },
@@ -192,8 +214,42 @@ const UserProfile = () => {
     setError,
   } = useContext(AuthContext);
 
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-  const [editMode, setEditMode] = useState({ name: false, email: false, password: false });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: '',
+    address: '',
+    dateOfBirth: '',
+    gender: '',
+    occupation: '',
+    emergencyContact: '',
+    bio: '',
+    preferredLanguage: '',
+    timezone: '',
+    notificationPreferences: {
+      email: true,
+      push: true,
+      moodReminders: true,
+      activityReminders: true
+    }
+  });
+
+  const [editMode, setEditMode] = useState({
+    name: false,
+    email: false,
+    password: false,
+    phone: false,
+    address: false,
+    dateOfBirth: false,
+    gender: false,
+    occupation: false,
+    emergencyContact: false,
+    bio: false,
+    preferredLanguage: false,
+    timezone: false
+  });
+
   const [showPassword, setShowPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, field: '' });
@@ -211,7 +267,26 @@ const UserProfile = () => {
   // Fetch and set initial profile info on mount/update
   useEffect(() => {
     if (isAuthenticated && user) {
-      setFormData({ name: user.displayName || '', email: user.email || '', password: '' });
+      setFormData({
+        name: user.displayName || '',
+        email: user.email || '',
+        password: '',
+        phone: user.phone || '',
+        address: user.address || '',
+        dateOfBirth: user.dateOfBirth || '',
+        gender: user.gender || '',
+        occupation: user.occupation || '',
+        emergencyContact: user.emergencyContact || '',
+        bio: user.bio || '',
+        preferredLanguage: user.preferredLanguage || 'English',
+        timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        notificationPreferences: user.notificationPreferences || {
+          email: true,
+          push: true,
+          moodReminders: true,
+          activityReminders: true
+        }
+      });
       setAvatarPreview(user.avatar || null);
     }
   }, [isAuthenticated, user]);
@@ -356,6 +431,47 @@ const UserProfile = () => {
     setActiveTab(newValue);
   };
 
+  const handleNotificationChange = async (type) => {
+    const newPrefs = {
+      ...formData.notificationPreferences,
+      [type]: !formData.notificationPreferences[type]
+    };
+    setFormData(prev => ({
+      ...prev,
+      notificationPreferences: newPrefs
+    }));
+    await updateUserData('notificationPreferences', newPrefs);
+  };
+
+  const calculateProfileCompletion = useCallback(() => {
+    const fieldsToCheck = [
+      'name',
+      'phone',
+      'dateOfBirth',
+      'gender',
+      'occupation',
+      'emergencyContact',
+      'bio',
+      'preferredLanguage',
+      'timezone'
+    ];
+    
+    let filledFields = 0;
+    fieldsToCheck.forEach(field => {
+      if (formData[field] && formData[field].toString().trim() !== '') {
+        filledFields++;
+      }
+    });
+    
+    // Add avatar to completion calculation
+    if (avatarPreview) {
+      filledFields++;
+      fieldsToCheck.push('avatar');
+    }
+
+    return Math.round((filledFields / fieldsToCheck.length) * 100);
+  }, [formData, avatarPreview]);
+
   return (
     <motion.div
       variants={pageVariants}
@@ -376,6 +492,39 @@ const UserProfile = () => {
     >
       <Container maxWidth="lg">
         <ProfileContainer elevation={3}>
+          {!isMobile && (
+            <CompletionBar>
+              <Typography variant="body2" color="textSecondary" sx={{ minWidth: 'max-content' }}>
+                Profile Completion:
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={calculateProfileCompletion()}
+                sx={{
+                  '& .MuiLinearProgress-bar': {
+                    bgcolor: theme => {
+                      const completion = calculateProfileCompletion();
+                      if (completion >= 80) return theme.palette.success.main;
+                      if (completion >= 50) return theme.palette.warning.main;
+                      return theme.palette.error.main;
+                    },
+                  },
+                }}
+              />
+              <Typography 
+                variant="body2" 
+                color="textSecondary"
+                sx={{ 
+                  minWidth: '45px',
+                  textAlign: 'right',
+                  fontWeight: 'medium'
+                }}
+              >
+                {`${calculateProfileCompletion()}%`}
+              </Typography>
+            </CompletionBar>
+          )}
+
           {/* Header Section */}
           <Box mb={isMobile ? 2 : 4} textAlign="center">
             <motion.div
@@ -405,12 +554,13 @@ const UserProfile = () => {
               >
                 {formData.name || 'User'}
               </Typography>
-              <Chip
-                label="Active"
-                color="success"
-                size="small"
-                sx={{ mt: 0.5 }}
-              />
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 0.5 }}>
+                <Chip
+                  label="Active"
+                  color="success"
+                  size="small"
+                />
+              </Box>
             </motion.div>
           </Box>
 
@@ -425,13 +575,13 @@ const UserProfile = () => {
             >
               <Tab 
                 icon={<EditIcon sx={{ fontSize: isMobile ? '1.2rem' : '1.5rem' }} />} 
-                label={isMobile ? null : "Profile Info"}
-                aria-label="Profile Info"
+                label={isMobile ? null : "Basic Info"}
+                aria-label="Basic Info"
               />
               <Tab 
                 icon={<SecurityIcon sx={{ fontSize: isMobile ? '1.2rem' : '1.5rem' }} />} 
-                label={isMobile ? null : "Security"}
-                aria-label="Security"
+                label={isMobile ? null : "Additional Info"}
+                aria-label="Additional Info"
               />
               <Tab 
                 icon={<SettingsIcon sx={{ fontSize: isMobile ? '1.2rem' : '1.5rem' }} />} 
@@ -445,220 +595,167 @@ const UserProfile = () => {
           <AnimatePresence mode="wait">
             {activeTab === 0 && (
               <motion.div
-                key="profile"
-                variants={fieldVariants}
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-              >
-                <Grid container spacing={isMobile ? 2 : 4}>
-                  {/* Personal Information Section */}
-                  <Grid item xs={12} md={6}>
-                    <ProfileCard elevation={2}>
-                      <CardContent sx={{ 
-                        p: isMobile ? 2.5 : 3.5,
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between'
-                      }}>
-                        <Typography variant={isMobile ? "subtitle1" : "h6"} gutterBottom>
-                          Personal Information
-                        </Typography>
-                        <Divider sx={{ mb: isMobile ? 1.5 : 3 }} />
-                        {/* Name Field */}
-                        <Box mb={3}>
-                          <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                            Name
-                          </Typography>
-                          {!editMode.name ? (
-                            <Box display="flex" alignItems="center">
-                              <Typography variant="body1" sx={{ flexGrow: 1 }}>
-                                {formData.name || 'Not set'}
-                              </Typography>
-                              <Tooltip title="Edit Name">
-                                <IconButton
-                                  color="primary"
-                                  onClick={() => setEditMode((prev) => ({ ...prev, name: true }))}
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          ) : (
-                            <Box>
-                              <TextField
-                                fullWidth
-                                variant="outlined"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                sx={{ mb: 2 }}
-                              />
-                              <Box display="flex" justifyContent="flex-end" gap={1}>
-                                <GradientButton
-                                  size="small"
-                                  startIcon={<SaveIcon />}
-                                  onClick={() => openConfirmDialog('name')}
-                                >
-                                  Save
-                                </GradientButton>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  startIcon={<CancelIcon />}
-                                  onClick={() => handleCancelEdit('name')}
-                                >
-                                  Cancel
-                                </Button>
-                              </Box>
-                            </Box>
-                          )}
-                        </Box>
-
-                        {/* Email Field */}
-                        <Box mb={3}>
-                          <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                            Email
-                          </Typography>
-                          {!editMode.email ? (
-                            <Box display="flex" alignItems="center">
-                              <Typography variant="body1" sx={{ flexGrow: 1 }}>
-                                {formData.email || 'Not set'}
-                              </Typography>
-                              <Tooltip title="Edit Email">
-                                <IconButton
-                                  color="primary"
-                                  onClick={() => setEditMode((prev) => ({ ...prev, email: true }))}
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          ) : (
-                            <Box>
-                              <TextField
-                                fullWidth
-                                variant="outlined"
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                sx={{ mb: 2 }}
-                              />
-                              <Box display="flex" justifyContent="flex-end" gap={1}>
-                                <GradientButton
-                                  size="small"
-                                  startIcon={<SaveIcon />}
-                                  onClick={() => openConfirmDialog('email')}
-                                >
-                                  Save
-                                </GradientButton>
-                                <Button
-                                  variant="outlined"
-                                  size="small"
-                                  startIcon={<CancelIcon />}
-                                  onClick={() => handleCancelEdit('email')}
-                                >
-                                  Cancel
-                                </Button>
-                              </Box>
-                            </Box>
-                          )}
-                        </Box>
-                      </CardContent>
-                    </ProfileCard>
-                  </Grid>
-
-                  {/* Avatar Section */}
-                  <Grid item xs={12} md={6}>
-                    <ProfileCard elevation={2}>
-                      <CardContent sx={{ 
-                        p: isMobile ? 2.5 : 3.5,
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between'
-                      }}>
-                        <Typography variant={isMobile ? "subtitle1" : "h6"} gutterBottom>
-                          Profile Picture
-                        </Typography>
-                        <Divider sx={{ mb: isMobile ? 1.5 : 3 }} />
-                        <Box display="flex" flexDirection="column" alignItems="center">
-                          <input
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            id="avatar-upload"
-                            type="file"
-                            onChange={handleAvatarChange}
-                            ref={fileInputRef}
-                          />
-                          <label htmlFor="avatar-upload">
-                            <GradientButton
-                              component="span"
-                              startIcon={<PhotoCamera />}
-                              sx={{ mb: 2 }}
-                            >
-                              Upload New Photo
-                            </GradientButton>
-                          </label>
-                          {avatarFile && (
-                            <Box mt={2} display="flex" gap={2}>
-                              <GradientButton
-                                startIcon={<SaveIcon />}
-                                onClick={handleAvatarUpload}
-                              >
-                                Save
-                              </GradientButton>
-                              <Button
-                                variant="outlined"
-                                color="secondary"
-                                startIcon={<CancelIcon />}
-                                onClick={handleAvatarCancel}
-                              >
-                                Cancel
-                              </Button>
-                            </Box>
-                          )}
-                          {user?.avatar && (
-                            <Button
-                              color="error"
-                              startIcon={<DeleteForeverIcon />}
-                              onClick={handleAvatarRemove}
-                              sx={{ mt: 2 }}
-                            >
-                              Remove Photo
-                            </Button>
-                          )}
-                        </Box>
-                      </CardContent>
-                    </ProfileCard>
-                  </Grid>
-                </Grid>
-              </motion.div>
-            )}
-
-            {activeTab === 1 && (
-              <motion.div
-                key="security"
+                key="basic"
                 variants={fieldVariants}
                 initial="hidden"
                 animate="visible"
                 exit="hidden"
               >
                 <ProfileCard elevation={2}>
-                  <CardContent sx={{ 
-                    p: isMobile ? 2.5 : 3.5,
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between'
-                  }}>
-                    <Typography variant={isMobile ? "subtitle1" : "h6"} gutterBottom>
-                      Security Settings
-                    </Typography>
-                    <Divider sx={{ mb: isMobile ? 1.5 : 3 }} />
-                    <Box mb={4}>
+                  <CardContent>
+                    {/* Basic Info Fields */}
+                    <Box mb={3}>
+                      <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                        Name
+                      </Typography>
+                      {!editMode.name ? (
+                        <Box display="flex" alignItems="center">
+                          <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                            {formData.name || 'Not set'}
+                          </Typography>
+                          <Tooltip title="Edit Name">
+                            <IconButton
+                              color="primary"
+                              onClick={() => setEditMode((prev) => ({ ...prev, name: true }))}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      ) : (
+                        <Box>
+                          <TextField
+                            fullWidth
+                            variant="outlined"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            sx={{ mb: 2 }}
+                          />
+                          <Box display="flex" justifyContent="flex-end" gap={1}>
+                            <GradientButton
+                              size="small"
+                              startIcon={<SaveIcon />}
+                              onClick={() => openConfirmDialog('name')}
+                            >
+                              Save
+                            </GradientButton>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<CancelIcon />}
+                              onClick={() => handleCancelEdit('name')}
+                            >
+                              Cancel
+                            </Button>
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Email Field */}
+                    <Box mb={3}>
+                      <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                        Email
+                      </Typography>
+                      {!editMode.email ? (
+                        <Box display="flex" alignItems="center">
+                          <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                            {formData.email || 'Not set'}
+                          </Typography>
+                          <Tooltip title="Edit Email">
+                            <IconButton
+                              color="primary"
+                              onClick={() => setEditMode((prev) => ({ ...prev, email: true }))}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      ) : (
+                        <Box>
+                          <TextField
+                            fullWidth
+                            variant="outlined"
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            sx={{ mb: 2 }}
+                          />
+                          <Box display="flex" justifyContent="flex-end" gap={1}>
+                            <GradientButton
+                              size="small"
+                              startIcon={<SaveIcon />}
+                              onClick={() => openConfirmDialog('email')}
+                            >
+                              Save
+                            </GradientButton>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<CancelIcon />}
+                              onClick={() => handleCancelEdit('email')}
+                            >
+                              Cancel
+                            </Button>
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Phone Field */}
+                    <Box mb={3}>
+                      <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                        Phone
+                      </Typography>
+                      {!editMode.phone ? (
+                        <Box display="flex" alignItems="center">
+                          <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                            {formData.phone || 'Not set'}
+                          </Typography>
+                          <Tooltip title="Edit Phone">
+                            <IconButton
+                              color="primary"
+                              onClick={() => setEditMode((prev) => ({ ...prev, phone: true }))}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      ) : (
+                        <Box>
+                          <TextField
+                            fullWidth
+                            variant="outlined"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            sx={{ mb: 2 }}
+                          />
+                          <Box display="flex" justifyContent="flex-end" gap={1}>
+                            <GradientButton
+                              size="small"
+                              startIcon={<SaveIcon />}
+                              onClick={() => openConfirmDialog('phone')}
+                            >
+                              Save
+                            </GradientButton>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<CancelIcon />}
+                              onClick={() => handleCancelEdit('phone')}
+                            >
+                              Cancel
+                            </Button>
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
+
+                    {/* Password Field */}
+                    <Box mb={3}>
                       <Typography variant="subtitle2" color="textSecondary" gutterBottom>
                         Password
                       </Typography>
@@ -730,6 +827,243 @@ const UserProfile = () => {
               </motion.div>
             )}
 
+            {activeTab === 1 && (
+              <motion.div
+                key="additional"
+                variants={fieldVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+              >
+                <ProfileCard elevation={2}>
+                  <CardContent>
+                    {/* Additional Info Fields */}
+                    <Grid container spacing={3}>
+                      {/* Date of Birth */}
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                          Date of Birth
+                        </Typography>
+                        {!editMode.dateOfBirth ? (
+                          <Box display="flex" alignItems="center">
+                            <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                              {formData.dateOfBirth || 'Not set'}
+                            </Typography>
+                            <Tooltip title="Edit Date of Birth">
+                              <IconButton
+                                color="primary"
+                                onClick={() => setEditMode((prev) => ({ ...prev, dateOfBirth: true }))}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              type="date"
+                              name="dateOfBirth"
+                              value={formData.dateOfBirth}
+                              onChange={handleChange}
+                              sx={{ mb: 2 }}
+                            />
+                            <Box display="flex" justifyContent="flex-end" gap={1}>
+                              <GradientButton
+                                size="small"
+                                startIcon={<SaveIcon />}
+                                onClick={() => openConfirmDialog('dateOfBirth')}
+                              >
+                                Save
+                              </GradientButton>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<CancelIcon />}
+                                onClick={() => handleCancelEdit('dateOfBirth')}
+                              >
+                                Cancel
+                              </Button>
+                            </Box>
+                          </Box>
+                        )}
+                      </Grid>
+
+                      {/* Gender */}
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                          Gender
+                        </Typography>
+                        {!editMode.gender ? (
+                          <Box display="flex" alignItems="center">
+                            <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                              {formData.gender || 'Not set'}
+                            </Typography>
+                            <Tooltip title="Edit Gender">
+                              <IconButton
+                                color="primary"
+                                onClick={() => setEditMode((prev) => ({ ...prev, gender: true }))}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <FormControl fullWidth variant="outlined">
+                              <Select
+                                name="gender"
+                                value={formData.gender}
+                                onChange={handleChange}
+                              >
+                                <MenuItem value="">
+                                  <em>Select Gender</em>
+                                </MenuItem>
+                                <MenuItem value="male">Male</MenuItem>
+                                <MenuItem value="female">Female</MenuItem>
+                                <MenuItem value="other">Other</MenuItem>
+                                <MenuItem value="prefer-not-to-say">Prefer not to say</MenuItem>
+                              </Select>
+                            </FormControl>
+                            <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
+                              <GradientButton
+                                size="small"
+                                startIcon={<SaveIcon />}
+                                onClick={() => openConfirmDialog('gender')}
+                              >
+                                Save
+                              </GradientButton>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<CancelIcon />}
+                                onClick={() => handleCancelEdit('gender')}
+                              >
+                                Cancel
+                              </Button>
+                            </Box>
+                          </Box>
+                        )}
+                      </Grid>
+
+                      {/* Occupation */}
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                          Occupation
+                        </Typography>
+                        {!editMode.occupation ? (
+                          <Box display="flex" alignItems="center">
+                            <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                              {formData.occupation || 'Not set'}
+                            </Typography>
+                            <Tooltip title="Edit Occupation">
+                              <IconButton
+                                color="primary"
+                                onClick={() => setEditMode((prev) => ({ ...prev, occupation: true }))}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <FormControl fullWidth variant="outlined">
+                              <Select
+                                name="occupation"
+                                value={formData.occupation}
+                                onChange={handleChange}
+                              >
+                                <MenuItem value="">
+                                  <em>Select Occupation</em>
+                                </MenuItem>
+                                <MenuItem value="student">Student</MenuItem>
+                                <MenuItem value="employed">Employed</MenuItem>
+                                <MenuItem value="self-employed">Self-Employed</MenuItem>
+                                <MenuItem value="business-owner">Business Owner</MenuItem>
+                                <MenuItem value="freelancer">Freelancer</MenuItem>
+                                <MenuItem value="unemployed">Unemployed</MenuItem>
+                                <MenuItem value="retired">Retired</MenuItem>
+                                <MenuItem value="other">Other</MenuItem>
+                              </Select>
+                            </FormControl>
+                            <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
+                              <GradientButton
+                                size="small"
+                                startIcon={<SaveIcon />}
+                                onClick={() => openConfirmDialog('occupation')}
+                              >
+                                Save
+                              </GradientButton>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<CancelIcon />}
+                                onClick={() => handleCancelEdit('occupation')}
+                              >
+                                Cancel
+                              </Button>
+                            </Box>
+                          </Box>
+                        )}
+                      </Grid>
+
+                      {/* Emergency Contact */}
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                          Emergency Contact
+                        </Typography>
+                        {!editMode.emergencyContact ? (
+                          <Box display="flex" alignItems="center">
+                            <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                              {formData.emergencyContact || 'Not set'}
+                            </Typography>
+                            <Tooltip title="Edit Emergency Contact">
+                              <IconButton
+                                color="primary"
+                                onClick={() => setEditMode((prev) => ({ ...prev, emergencyContact: true }))}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              name="emergencyContact"
+                              value={formData.emergencyContact}
+                              onChange={handleChange}
+                              placeholder="Name: xxx, Relation: xxx, Phone: xxx"
+                              sx={{ mb: 2 }}
+                            />
+                            <Box display="flex" justifyContent="flex-end" gap={1}>
+                              <GradientButton
+                                size="small"
+                                startIcon={<SaveIcon />}
+                                onClick={() => openConfirmDialog('emergencyContact')}
+                              >
+                                Save
+                              </GradientButton>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<CancelIcon />}
+                                onClick={() => handleCancelEdit('emergencyContact')}
+                              >
+                                Cancel
+                              </Button>
+                            </Box>
+                          </Box>
+                        )}
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </ProfileCard>
+              </motion.div>
+            )}
+
             {activeTab === 2 && (
               <motion.div
                 key="preferences"
@@ -739,33 +1073,168 @@ const UserProfile = () => {
                 exit="hidden"
               >
                 <ProfileCard elevation={2}>
-                  <CardContent sx={{ 
-                    p: isMobile ? 2.5 : 3.5,
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between'
-                  }}>
-                    <Typography variant={isMobile ? "subtitle1" : "h6"} gutterBottom>
-                      Account Preferences
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Notification Preferences
                     </Typography>
-                    <Divider sx={{ mb: isMobile ? 1.5 : 3 }} />
-                    <Box display="flex" justifyContent="center" mt={4}>
-                      <GradientButton
-                        color="error"
-                        startIcon={<DeleteIcon />}
-                        onClick={handleLogout}
-                      >
-                        Logout
-                      </GradientButton>
+                    <Box sx={{ mt: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.notificationPreferences.email}
+                            onChange={() => handleNotificationChange('email')}
+                            color="primary"
+                          />
+                        }
+                        label="Email Notifications"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.notificationPreferences.push}
+                            onChange={() => handleNotificationChange('push')}
+                            color="primary"
+                          />
+                        }
+                        label="Push Notifications"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.notificationPreferences.moodReminders}
+                            onChange={() => handleNotificationChange('moodReminders')}
+                            color="primary"
+                          />
+                        }
+                        label="Mood Tracking Reminders"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={formData.notificationPreferences.activityReminders}
+                            onChange={() => handleNotificationChange('activityReminders')}
+                            color="primary"
+                          />
+                        }
+                        label="Activity Reminders"
+                      />
                     </Box>
+
+                    <Divider sx={{ my: 3 }} />
+
+                    {/* Language Preference */}
+                    <Typography variant="subtitle1" gutterBottom>
+                      Language Preference
+                    </Typography>
+                    {!editMode.preferredLanguage ? (
+                      <Box display="flex" alignItems="center" mb={3}>
+                        <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                          {formData.preferredLanguage}
+                        </Typography>
+                        <Tooltip title="Edit Language">
+                          <IconButton
+                            color="primary"
+                            onClick={() => setEditMode((prev) => ({ ...prev, preferredLanguage: true }))}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    ) : (
+                      <Box mb={3}>
+                        <FormControl fullWidth variant="outlined">
+                          <Select
+                            name="preferredLanguage"
+                            value={formData.preferredLanguage}
+                            onChange={handleChange}
+                          >
+                            <MenuItem value="English">English</MenuItem>
+                            <MenuItem value="Spanish">Spanish</MenuItem>
+                            <MenuItem value="French">French</MenuItem>
+                            <MenuItem value="German">German</MenuItem>
+                            <MenuItem value="Chinese">Chinese</MenuItem>
+                            <MenuItem value="Japanese">Japanese</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
+                          <GradientButton
+                            size="small"
+                            startIcon={<SaveIcon />}
+                            onClick={() => openConfirmDialog('preferredLanguage')}
+                          >
+                            Save
+                          </GradientButton>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<CancelIcon />}
+                            onClick={() => handleCancelEdit('preferredLanguage')}
+                          >
+                            Cancel
+                          </Button>
+                        </Box>
+                      </Box>
+                    )}
+
+                    {/* Timezone */}
+                    <Typography variant="subtitle1" gutterBottom>
+                      Timezone
+                    </Typography>
+                    {!editMode.timezone ? (
+                      <Box display="flex" alignItems="center">
+                        <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                          {formData.timezone}
+                        </Typography>
+                        <Tooltip title="Edit Timezone">
+                          <IconButton
+                            color="primary"
+                            onClick={() => setEditMode((prev) => ({ ...prev, timezone: true }))}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    ) : (
+                      <Box>
+                        <FormControl fullWidth variant="outlined">
+                          <Select
+                            name="timezone"
+                            value={formData.timezone}
+                            onChange={handleChange}
+                          >
+                            {Intl.supportedValuesOf('timeZone').map((tz) => (
+                              <MenuItem key={tz} value={tz}>
+                                {tz}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
+                          <GradientButton
+                            size="small"
+                            startIcon={<SaveIcon />}
+                            onClick={() => openConfirmDialog('timezone')}
+                          >
+                            Save
+                          </GradientButton>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<CancelIcon />}
+                            onClick={() => handleCancelEdit('timezone')}
+                          >
+                            Cancel
+                          </Button>
+                        </Box>
+                      </Box>
+                    )}
                   </CardContent>
                 </ProfileCard>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Feedback Messages */}
+          {/* Alerts and Dialogs */}
           <AnimatePresence>
             {error && (
               <motion.div
@@ -775,11 +1244,8 @@ const UserProfile = () => {
               >
                 <Alert 
                   severity="error" 
-                  onClose={clearError} 
-                  sx={{ 
-                    mt: 2,
-                    fontSize: isMobile ? '0.875rem' : '1rem'
-                  }}
+                  onClose={clearError}
+                  sx={{ mt: 2 }}
                 >
                   {error}
                 </Alert>
@@ -793,55 +1259,51 @@ const UserProfile = () => {
               >
                 <Alert 
                   severity="success" 
-                  onClose={clearSuccess} 
-                  sx={{ 
-                    mt: 2,
-                    fontSize: isMobile ? '0.875rem' : '1rem'
-                  }}
+                  onClose={clearSuccess}
+                  sx={{ mt: 2 }}
                 >
                   {success}
                 </Alert>
               </motion.div>
             )}
           </AnimatePresence>
-        </ProfileContainer>
 
-        {/* Confirmation Dialog */}
-        <AnimatePresence>
-          {confirmDialog.open && (
-            <Dialog
-              open={confirmDialog.open}
-              onClose={closeConfirmDialog}
-              fullWidth
-              maxWidth="xs"
-              PaperProps={{
-                component: motion.div,
-                initial: { opacity: 0, scale: 0.9 },
-                animate: { opacity: 1, scale: 1 },
-                exit: { opacity: 0, scale: 0.9 },
-                transition: { duration: 0.2 },
-                sx: { m: isMobile ? 2 : 3 }
-              }}
-            >
-              <DialogTitle>
-                Confirm Changes
-              </DialogTitle>
-              <DialogContent>
-                <DialogContentText>
-                  Are you sure you want to update your {confirmDialog.field}?
-                </DialogContentText>
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={closeConfirmDialog} startIcon={<CancelIcon />}>
-                  Cancel
-                </Button>
-                <GradientButton onClick={handleConfirmEdit} startIcon={<SaveIcon />}>
-                  Confirm
-                </GradientButton>
-              </DialogActions>
-            </Dialog>
-          )}
-        </AnimatePresence>
+          {/* Confirmation Dialog */}
+          <AnimatePresence>
+            {confirmDialog.open && (
+              <Dialog
+                open={confirmDialog.open}
+                onClose={closeConfirmDialog}
+                maxWidth="xs"
+                PaperProps={{
+                  component: motion.div,
+                  initial: { opacity: 0, scale: 0.9 },
+                  animate: { opacity: 1, scale: 1 },
+                  exit: { opacity: 0, scale: 0.9 },
+                  transition: { duration: 0.2 },
+                  sx: { m: isMobile ? 2 : 3 }
+                }}
+              >
+                <DialogTitle>
+                  Confirm Changes
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText>
+                    Are you sure you want to update your {confirmDialog.field}?
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={closeConfirmDialog} startIcon={<CancelIcon />}>
+                    Cancel
+                  </Button>
+                  <GradientButton onClick={handleConfirmEdit} startIcon={<SaveIcon />}>
+                    Confirm
+                  </GradientButton>
+                </DialogActions>
+              </Dialog>
+            )}
+          </AnimatePresence>
+        </ProfileContainer>
       </Container>
     </motion.div>
   );

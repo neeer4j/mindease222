@@ -2019,7 +2019,7 @@ const Landing = () => {
                             background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                           }}
                         >
-                          Get Started Free
+                          Get Started 
                         </GradientButton>
                       </motion.div>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: { xs: 0, sm: 2 } }}>

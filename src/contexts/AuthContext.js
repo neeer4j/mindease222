@@ -78,8 +78,22 @@ export const AuthProvider = ({ children }) => {
           email: auth.currentUser?.email || "",
           phone: "",
           address: "",
+          dateOfBirth: "",
+          gender: "",
+          occupation: "",
+          emergencyContact: "",
+          bio: "",
+          preferredLanguage: "English",
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           avatar: "",
           createdAt: new Date().toISOString(),
+          lastUpdated: new Date().toISOString(),
+          notificationPreferences: {
+            email: true,
+            push: true,
+            moodReminders: true,
+            activityReminders: true
+          }
         };
         await setDoc(userDocRef, defaultProfile);
         return defaultProfile;
@@ -257,23 +271,37 @@ export const AuthProvider = ({ children }) => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName });
       const userRef = doc(db, "users", userCredential.user.uid);
-      await setDoc(userRef, {
-        displayName: displayName,
-        email: email,
+
+      // Create an extended profile with all fields
+      const userProfile = {
+        displayName,
+        email,
         phone: "",
         address: "",
+        dateOfBirth: "",
+        gender: "",
+        occupation: "",
+        emergencyContact: "",
+        bio: "",
+        preferredLanguage: "English",
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         avatar: "",
         createdAt: new Date().toISOString(),
-      });
+        lastUpdated: new Date().toISOString(),
+        notificationPreferences: {
+          email: true,
+          push: true,
+          moodReminders: true,
+          activityReminders: true
+        }
+      };
+
+      await setDoc(userRef, userProfile);
       setUser({
         uid: userCredential.user.uid,
-        email: userCredential.user.email,
-        displayName: userCredential.user.displayName,
-        phone: "",
-        address: "",
-        avatar: "",
-        createdAt: new Date().toISOString(),
+        ...userProfile
       });
+      
       setSuccess("Signup successful! Welcome.");
       setShowSplash(true);
     } catch (err) {
