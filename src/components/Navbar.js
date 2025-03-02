@@ -558,11 +558,6 @@ const Navbar = ({ toggleTheme }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              '&::before': {
-                content: '""',
-                display: 'block',
-                paddingTop: '75%', // Force 4:3 aspect ratio
-              }
             }}
           >
             {activePhoto && (
@@ -571,14 +566,13 @@ const Navbar = ({ toggleTheme }) => {
                 src={activePhoto}
                 alt="Feature preview"
                 sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
                   opacity: theme.palette.mode === 'dark' ? 0.7 : 0.9,
-                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: 'translateZ(0)',
+                  filter: theme.palette.mode === 'dark' ? 'brightness(0.8) contrast(1.2)' : 'none'
                 }}
               />
             )}
@@ -629,7 +623,7 @@ const Navbar = ({ toggleTheme }) => {
           sx={{
             position: 'fixed',
             top: 0,
-            left: -7,
+            left: -9,
             right: 0,
             zIndex: theme.zIndex.drawer + 3,
             background: mobileNavbarBg,
@@ -641,8 +635,8 @@ const Navbar = ({ toggleTheme }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            height: '78px',
-            paddingTop: '1px',
+            height: '65px',
+            paddingTop: '26px',
             opacity: showTitle ? 1 : 0,
             transform: showTitle ? 'translateY(0)' : 'translateY(-20px)',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
