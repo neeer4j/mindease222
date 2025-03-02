@@ -11,6 +11,8 @@ import {
   GoogleAuthProvider,
   updateEmail,
   updatePassword,
+  setPersistence,
+  browserLocalPersistence,
   // Optionally, import reauthenticateWithCredential and EmailAuthProvider if implementing reauthentication
 } from "firebase/auth";
 
@@ -34,7 +36,11 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    // Try to get user from localStorage on initial load
+    const savedUser = localStorage.getItem('authUser');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   const [loading, setLoading] = useState(true); // Indicates if auth state is being determined
@@ -42,10 +48,47 @@ export const AuthProvider = ({ children }) => {
   const [success, setSuccess] = useState(null);
   const [showSplash, setShowSplash] = useState(false); // Initialize to false
   const [isInAdminMode, setIsInAdminMode] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const googleProvider = new GoogleAuthProvider();
+
+  // Set Firebase persistence on mount
+  useEffect(() => {
+    const setupPersistence = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        console.log('Firebase persistence set to LOCAL');
+      } catch (err) {
+        console.error('Error setting persistence:', err);
+      }
+    };
+    setupPersistence();
+  }, []);
+
+  // Add network status listener
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      // When coming back online, try to sync with Firebase
+      if (auth.currentUser) {
+        auth.currentUser.reload().catch(console.error);
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Cleanup function to detach all listeners
   const cleanup = (unsubscribe) => {
@@ -65,41 +108,46 @@ export const AuthProvider = ({ children }) => {
     setIsInAdminMode(false);
   };
 
-  // Fetch user profile from Firestore
+  // Modify fetchUserProfile to handle offline state
   const fetchUserProfile = async (uid) => {
     try {
+      if (!isOnline) {
+        const cachedUser = localStorage.getItem('authUser');
+        if (cachedUser) {
+          return JSON.parse(cachedUser);
+        }
+        throw new Error("No cached user data available offline");
+      }
+
       const userDocRef = doc(db, "users", uid);
       const userSnapshot = await getDoc(userDocRef);
       if (userSnapshot.exists()) {
-        return userSnapshot.data();
+        const userData = userSnapshot.data();
+        // Cache the user data
+        localStorage.setItem('authUser', JSON.stringify(userData));
+        return userData;
       } else {
         const defaultProfile = {
           displayName: auth.currentUser?.displayName || "",
           email: auth.currentUser?.email || "",
           phone: "",
           address: "",
-          dateOfBirth: "",
-          gender: "",
-          occupation: "",
-          emergencyContact: "",
-          bio: "",
-          preferredLanguage: "English",
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           avatar: "",
           createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString(),
-          notificationPreferences: {
-            email: true,
-            push: true,
-            moodReminders: true,
-            activityReminders: true
-          }
         };
-        await setDoc(userDocRef, defaultProfile);
+        if (isOnline) {
+          await setDoc(userDocRef, defaultProfile);
+        }
+        localStorage.setItem('authUser', JSON.stringify(defaultProfile));
         return defaultProfile;
       }
     } catch (err) {
       console.error("Error fetching user profile:", err);
+      // If offline, try to use cached data
+      const cachedUser = localStorage.getItem('authUser');
+      if (cachedUser) {
+        return JSON.parse(cachedUser);
+      }
       throw new Error("Failed to fetch user profile.");
     }
   };
@@ -157,7 +205,7 @@ export const AuthProvider = ({ children }) => {
     return false;
   };
 
-  // Listen for auth state changes and process any redirect result (if present)
+  // Listen for auth state changes and process any redirect result
   useEffect(() => {
     let unsubscribeAuth;
     let unsubscribeUser;
@@ -171,7 +219,9 @@ export const AuthProvider = ({ children }) => {
         if (!firebaseUser) {
           setUser(null);
           setIsAdmin(false);
-          setIsInAdminMode(false); // Reset admin mode when no user is logged in
+          setIsInAdminMode(false);
+          // Clear local storage when user logs out
+          localStorage.removeItem('authUser');
           setLoading(false);
           return;
         }
@@ -184,27 +234,38 @@ export const AuthProvider = ({ children }) => {
             setIsBanned(true);
             setUser(firebaseUser);
             setIsAdmin(false);
-            setIsInAdminMode(false); // Reset admin mode for banned users
+            setIsInAdminMode(false);
           } else {
             setIsBanned(false);
             const userProfile = await fetchUserProfile(firebaseUser.uid);
-            setUser({
+            const userData = {
               uid: firebaseUser.uid,
               email: firebaseUser.email,
               displayName: firebaseUser.displayName,
               ...userProfile,
-            });
+            };
+            setUser(userData);
+            // Store user data in localStorage for offline access
+            localStorage.setItem('authUser', JSON.stringify(userData));
             setIsAdmin(isUserAdmin);
-            // Set admin mode to true by default for admin users on desktop
             setIsInAdminMode(isUserAdmin && !isMobile);
             console.log("[onAuthStateChanged] User profile loaded and state updated.");
           }
         } catch (err) {
           console.error("Error fetching user profile in onAuthStateChanged:", err);
-          setError("Failed to load user profile.");
-          setUser(null);
-          setIsAdmin(false);
-          setIsInAdminMode(false);
+          // If offline, try to use cached user data
+          const cachedUser = localStorage.getItem('authUser');
+          if (cachedUser) {
+            const userData = JSON.parse(cachedUser);
+            setUser(userData);
+            setIsAdmin(userData.isAdmin || false);
+            setIsInAdminMode(userData.isAdmin && !isMobile);
+          } else {
+            setError("Failed to load user profile.");
+            setUser(null);
+            setIsAdmin(false);
+            setIsInAdminMode(false);
+          }
         } finally {
           setLoading(false);
           console.log("[onAuthStateChanged] Loading set to false.");
@@ -230,6 +291,7 @@ export const AuthProvider = ({ children }) => {
       setSuccess(null);
       setShowSplash(false);
       setIsInAdminMode(false);
+      localStorage.removeItem('authUser');
     };
 
     const unsubscribe = setupAuthListener();
@@ -243,16 +305,30 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
-  // Login function
+  // Modify login function to handle offline state
   const login = async (email, password) => {
     setLoading(true);
     setError(null);
     setSuccess(null);
     try {
+      if (!isOnline) {
+        const cachedUser = localStorage.getItem('authUser');
+        if (cachedUser) {
+          const userData = JSON.parse(cachedUser);
+          if (userData.email === email) {
+            setUser(userData);
+            setIsAdmin(userData.isAdmin || false);
+            setIsInAdminMode(userData.isAdmin && !isMobile);
+            setSuccess("Logged in from cached data (offline mode).");
+            return;
+          }
+        }
+        throw new Error("Cannot login while offline without cached credentials");
+      }
+
       const result = await signInWithEmailAndPassword(auth, email, password);
       const isUserAdmin = await checkUserRole(result.user);
       setIsAdmin(isUserAdmin);
-      // Set admin mode to true by default for admin users on desktop
       setIsInAdminMode(isUserAdmin && !isMobile);
       setSuccess("Logged in successfully.");
     } catch (err) {
@@ -271,37 +347,23 @@ export const AuthProvider = ({ children }) => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName });
       const userRef = doc(db, "users", userCredential.user.uid);
-
-      // Create an extended profile with all fields
-      const userProfile = {
-        displayName,
-        email,
+      await setDoc(userRef, {
+        displayName: displayName,
+        email: email,
         phone: "",
         address: "",
-        dateOfBirth: "",
-        gender: "",
-        occupation: "",
-        emergencyContact: "",
-        bio: "",
-        preferredLanguage: "English",
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         avatar: "",
         createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString(),
-        notificationPreferences: {
-          email: true,
-          push: true,
-          moodReminders: true,
-          activityReminders: true
-        }
-      };
-
-      await setDoc(userRef, userProfile);
+      });
       setUser({
         uid: userCredential.user.uid,
-        ...userProfile
+        email: userCredential.user.email,
+        displayName: userCredential.user.displayName,
+        phone: "",
+        address: "",
+        avatar: "",
+        createdAt: new Date().toISOString(),
       });
-      
       setSuccess("Signup successful! Welcome.");
       setShowSplash(true);
     } catch (err) {
@@ -553,6 +615,7 @@ export const AuthProvider = ({ children }) => {
         setShowSplash,
         isInAdminMode,
         toggleAdminMode,
+        isOnline, // Add this to the context value
       }}
     >
       {children}
