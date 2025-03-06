@@ -26,7 +26,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Landing from "./pages/Landing";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Dashboard from "./pages/Dashboard";
+import DashboardPage from "./pages/Dashboard";
 import BookFacility from "./pages/BookFacility";
 import ComplaintsPage from "./pages/ComplaintsPage";
 import PaymentsPage from "./pages/PaymentsPage";
@@ -73,7 +73,7 @@ function AppRoutes({ toggleTheme }) {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <DashboardPage />
             </ProtectedRoute>
           }
         />
