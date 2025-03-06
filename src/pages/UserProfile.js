@@ -712,7 +712,7 @@ const UserProfile = () => {
                       {!editMode.phone ? (
                         <Box display="flex" alignItems="center">
                           <Typography variant="body1" sx={{ flexGrow: 1 }}>
-                            {formData.phone || 'Not set'}
+                            {typeof formData.phone === 'object' ? JSON.stringify(formData.phone) : formData.phone || 'Not set'}
                           </Typography>
                           <Tooltip title="Edit Phone">
                             <IconButton
@@ -1016,7 +1016,7 @@ const UserProfile = () => {
                         {!editMode.emergencyContact ? (
                           <Box display="flex" alignItems="center">
                             <Typography variant="body1" sx={{ flexGrow: 1 }}>
-                              {formData.emergencyContact || 'Not set'}
+                              {typeof formData.emergencyContact === 'object' ? JSON.stringify(formData.emergencyContact) : formData.emergencyContact || 'Not set'}
                             </Typography>
                             <Tooltip title="Edit Emergency Contact">
                               <IconButton
