@@ -95,18 +95,18 @@ const ProfileCard = styled(Card)(({ theme }) => ({
 }));
 
 const StyledAvatar = styled(Avatar)(({ theme }) => ({
-  width: 120,
-  height: 120,
+  width: 140,
+  height: 140,
   border: `4px solid ${theme.palette.primary.main}`,
   boxShadow: `0 0 20px ${alpha(theme.palette.primary.main, 0.3)}`,
   transition: 'all 0.3s ease',
   '&:hover': {
-    transform: 'scale(1.05) rotate(5deg)',
+    transform: 'scale(1.05)',
     boxShadow: `0 0 30px ${alpha(theme.palette.primary.main, 0.5)}`,
   },
   [theme.breakpoints.down('sm')]: {
-    width: 90,
-    height: 90,
+    width: 120,
+    height: 120,
   }
 }));
 
@@ -168,6 +168,18 @@ const CompletionBar = styled(Box)(({ theme }) => ({
   },
 }));
 
+const AvatarUploadButton = styled('input')({
+  display: 'none',
+});
+
+const PhotoActionButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  backgroundColor: alpha(theme.palette.background.paper, 0.8),
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.background.paper, 0.9),
+  },
+}));
+
 // Animation variants
 const pageVariants = {
   initial: { opacity: 0, scale: 0.95 },
@@ -212,6 +224,7 @@ const UserProfile = () => {
     clearError,
     clearSuccess,
     setError,
+    setSuccess,
   } = useContext(AuthContext);
 
   const [formData, setFormData] = useState({
@@ -254,11 +267,13 @@ const UserProfile = () => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, field: '' });
   const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileInputRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState(0);
   const [showNotification, setShowNotification] = useState(false);
+  const [showPhotoActions, setShowPhotoActions] = useState(false);
 
   // Helper: Capitalize first letter
   const capitalize = (s) =>
@@ -359,71 +374,51 @@ const UserProfile = () => {
     return 'error';
   }, [passwordStrength]);
 
-  // Handle avatar change with file size check (limit set to 1MB)
-  const handleAvatarChange = (e) => {
+  const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const maxSize = 1 * 1024 * 1024; // 1MB
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!file) return;
 
-      if (!allowedTypes.includes(file.type)) {
-        clearSuccess();
-        setError("❌ Only JPG, PNG, and GIF files are allowed.");
-        return;
-      }
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
 
-      if (file.size > maxSize) {
-        clearSuccess();
-        setError("❌ File size should not exceed 1MB.");
-        return;
-      }
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size should be less than 5MB');
+      return;
+    }
 
-      setError(null);
-      setAvatarFile(file);
-
+    try {
+      setAvatarLoading(true);
+      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result);
       };
       reader.readAsDataURL(file);
+
+      // Upload to server
+      await uploadAvatar(file);
+      setSuccess('Profile photo updated successfully');
+    } catch (error) {
+      setError('Failed to update profile photo');
+    } finally {
+      setAvatarLoading(false);
     }
   };
 
-  const handleAvatarUpload = async () => {
-    if (!avatarFile) {
-      setError("No file selected for avatar.");
-      return;
-    }
+  const handleRemovePhoto = async () => {
     try {
-      const newAvatarUrl = await uploadAvatar(avatarFile);
-      setAvatarPreview(newAvatarUrl);
-      setAvatarFile(null);
-      clearError();
-    } catch (err) {
-      setError(err.message || "Failed to upload avatar.");
-    }
-  };
-
-  // When canceling, clear the selected file, clear the file input, and revert the preview
-  const handleAvatarCancel = () => {
-    setAvatarFile(null);
-    setAvatarPreview(user?.avatar || null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleAvatarRemove = async () => {
-    if (!user?.avatar) {
-      setError("No avatar to remove.");
-      return;
-    }
-    try {
+      setAvatarLoading(true);
       await deleteAvatar();
       setAvatarPreview(null);
-      clearError();
-    } catch (err) {
-      setError(err.message || "Failed to remove avatar.");
+      setSuccess('Profile photo removed successfully');
+    } catch (error) {
+      setError('Failed to remove profile photo');
+    } finally {
+      setAvatarLoading(false);
     }
   };
 
@@ -526,24 +521,83 @@ const UserProfile = () => {
           )}
 
           {/* Header Section */}
-          <Box mb={isMobile ? 2 : 4} textAlign="center">
+          <Box mb={isMobile ? 2 : 4} textAlign="center" sx={{ mt: 4 }}>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <StyledBadge
-                overlap="circular"
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                variant="dot"
-              >
-                <StyledAvatar
-                  src={avatarPreview}
-                  alt={formData.name}
+              <Box textAlign="center" sx={{ position: 'relative', zIndex: 1 }}>
+                <StyledBadge
+                  overlap="circular"
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  variant="dot"
                 >
-                  {formData.name ? formData.name.charAt(0).toUpperCase() : 'U'}
-                </StyledAvatar>
-              </StyledBadge>
+                  <StyledAvatar
+                    alt={user?.name || 'User'}
+                    src={avatarPreview || user?.avatarUrl}
+                  >
+                    {!avatarPreview && !user?.avatarUrl && (user?.name?.[0] || '?')}
+                    {avatarLoading && (
+                      <Box
+                        position="absolute"
+                        top={0}
+                        left={0}
+                        right={0}
+                        bottom={0}
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        bgcolor={alpha('#000', 0.5)}
+                        borderRadius="50%"
+                      >
+                        <MuiCircularProgress size={50} color="primary" />
+                      </Box>
+                    )}
+                  </StyledAvatar>
+                </StyledBadge>
+
+                <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'center' }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<PhotoCamera />}
+                    onClick={() => fileInputRef.current?.click()}
+                    sx={{
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                      '&:hover': {
+                        bgcolor: 'primary.dark',
+                      },
+                    }}
+                  >
+                    Change Picture
+                  </Button>
+                  {(user?.avatarUrl || avatarPreview) && (
+                    <Button
+                      variant="contained"
+                      startIcon={<DeleteIcon />}
+                      onClick={handleRemovePhoto}
+                      sx={{
+                        bgcolor: '#dc3545',
+                        color: 'white',
+                        '&:hover': {
+                          bgcolor: '#c82333',
+                        },
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Box>
+
+                <AvatarUploadButton
+                  accept="image/*"
+                  id="avatar-upload"
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarChange}
+                />
+              </Box>
               <Typography 
                 variant={isMobile ? "h5" : "h4"} 
                 sx={{ 

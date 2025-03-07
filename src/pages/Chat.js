@@ -456,6 +456,27 @@ const MemoizedMessage = React.memo(({ msg, index, showTimestamp, theme, handleQu
   );
 });
 
+// Add after the existing styled components and before the Chat component
+const chatContentStyles = {
+  flex: 1,
+  overflowY: 'auto',
+  px: 2,
+  pt: 2,
+  pb: `${BOTTOM_NAV_HEIGHT + CHAT_INPUT_HEIGHT + 32}px`,
+  scrollBehavior: 'smooth',
+  '::-webkit-scrollbar': {
+    width: '4px',
+  },
+  '::-webkit-scrollbar-thumb': {
+    background: 'rgba(128, 128, 128, 0.3)',
+    borderRadius: '2px',
+  },
+  WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+  height: '100%', // Ensure container takes full height
+  display: 'flex',
+  flexDirection: 'column',
+};
+
 const Chat = ({ toggleTheme }) => {
   // Contexts
   const { user } = useContext(AuthContext);
@@ -686,12 +707,36 @@ The user's name is ${userName}. You have access to their mood and sleep history.
     }
   }, [user, addMessage, userName, chatLoading, messages]);
 
-  // Auto-scroll the chat messages area whenever new messages are added.
-  useEffect(() => {
+  // Update the scrollToBottom function
+  const scrollToBottom = useCallback(() => {
     if (chatContentRef.current) {
-      chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
+      const messageContainers = chatContentRef.current.querySelectorAll('.MuiBox-root motion.div');
+      if (messageContainers.length > 0) {
+        const lastMessage = messageContainers[messageContainers.length - 1];
+        lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        // Fallback: scroll to bottom of container if no messages found
+        chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
+      }
     }
-  }, [messages]);
+  }, []);
+
+  // Add this effect to scroll to the last message when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  // Add this effect to scroll to the last message when typing state changes
+  useEffect(() => {
+    if (isTyping) {
+      scrollToBottom();
+    }
+  }, [isTyping, scrollToBottom]);
+
+  // Add this effect to scroll to the last message on initial load
+  useEffect(() => {
+    setTimeout(scrollToBottom, 100); // Small delay to ensure content is rendered
+  }, [scrollToBottom]);
 
   // Setup voice-to-text (Chrome Web Speech API)
   useEffect(() => {
@@ -1377,60 +1422,47 @@ Format as simple reply options without bullets or numbers.`;
         {/* Mobile Chat Messages */}
         <Box
           ref={chatContentRef}
-          sx={{
-            flex: 1,
-            overflowY: 'auto',
-            px: 2,
-            pt: 2,
-            pb: `${BOTTOM_NAV_HEIGHT + CHAT_INPUT_HEIGHT + 32}px`,
-            scrollBehavior: 'smooth',
-            '::-webkit-scrollbar': {
-              width: '4px',
-            },
-            '::-webkit-scrollbar-thumb': {
-              background: 'rgba(128, 128, 128, 0.3)',
-              borderRadius: '2px',
-            },
-            WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
-          }}
+          sx={chatContentStyles}
           role="log"
           aria-live="polite"
         >
-          <ErrorBoundary>
-            {renderMessages()}
-            {isTyping && (
-              <Box display="flex" alignItems="center" mb={1} pl={4}>
-                <Box
-                  component={motion.div}
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                  sx={{
-                    display: 'flex',
-                    gap: 0.5,
-                    alignItems: 'center',
-                    background: alpha(theme.palette.primary.main, 0.1),
-                    borderRadius: '16px',
-                    padding: '8px 12px',
-                  }}
-                >
-                  <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
-                    MindEase is typing
-                  </Typography>
+          <Box sx={{ flex: 1 }}>
+            <ErrorBoundary>
+              {renderMessages()}
+              {isTyping && (
+                <Box display="flex" alignItems="center" mb={1} pl={4}>
                   <Box
-                    component="span"
+                    component={motion.div}
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
                     sx={{
-                      display: 'inline-block',
-                      width: '4px',
-                      height: '4px',
-                      borderRadius: '50%',
-                      backgroundColor: theme.palette.primary.main,
-                      animation: 'pulse 1s infinite',
+                      display: 'flex',
+                      gap: 0.5,
+                      alignItems: 'center',
+                      background: alpha(theme.palette.primary.main, 0.1),
+                      borderRadius: '16px',
+                      padding: '8px 12px',
                     }}
-                  />
+                  >
+                    <Typography variant="body2" color="textSecondary" sx={{ fontSize: '0.875rem' }}>
+                      MindEase is typing
+                    </Typography>
+                    <Box
+                      component="span"
+                      sx={{
+                        display: 'inline-block',
+                        width: '4px',
+                        height: '4px',
+                        borderRadius: '50%',
+                        backgroundColor: theme.palette.primary.main,
+                        animation: 'pulse 1s infinite',
+                      }}
+                    />
+                  </Box>
                 </Box>
-              </Box>
-            )}
-          </ErrorBoundary>
+              )}
+            </ErrorBoundary>
+          </Box>
         </Box>
 
         {/* Mobile Chat Input */}
@@ -1890,50 +1922,36 @@ Format as simple reply options without bullets or numbers.`;
         <ErrorBoundary>
           <Box
             ref={chatContentRef}
-            sx={{
-              flexGrow: 1,
-              overflowY: 'auto',
-              padding: '24px',
-              '&::-webkit-scrollbar': {
-                width: '8px',
-              },
-              '&::-webkit-scrollbar-track': {
-                background: 'transparent',
-              },
-              '&::-webkit-scrollbar-thumb': {
-                background: alpha(theme.palette.primary.main, 0.2),
-                borderRadius: '4px',
-                '&:hover': {
-                  background: alpha(theme.palette.primary.main, 0.3),
-                },
-              },
-            }}
+            sx={chatContentStyles}
+            role="log"
+            aria-live="polite"
           >
-            {renderMessages()}
-            
-            {isTyping && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <MemoizedTypingIndicator>
-                  <TypingDot
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2 }}
-                  />
-                  <TypingDot
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2, delay: 0.2 }}
-                  />
-                  <TypingDot
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2, delay: 0.4 }}
-                  />
-                </MemoizedTypingIndicator>
-              </motion.div>
-            )}
+            <Box sx={{ flex: 1 }}>
+              {renderMessages()}
+              {isTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <MemoizedTypingIndicator>
+                    <TypingDot
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2 }}
+                    />
+                    <TypingDot
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2, delay: 0.2 }}
+                    />
+                    <TypingDot
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.2, delay: 0.4 }}
+                    />
+                  </MemoizedTypingIndicator>
+                </motion.div>
+              )}
+            </Box>
           </Box>
         </ErrorBoundary>
 
