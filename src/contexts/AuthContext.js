@@ -13,6 +13,7 @@ import {
   updatePassword,
   setPersistence,
   browserLocalPersistence,
+  sendPasswordResetEmail,
   // Optionally, import reauthenticateWithCredential and EmailAuthProvider if implementing reauthentication
 } from "firebase/auth";
 
@@ -581,6 +582,20 @@ export const AuthProvider = ({ children }) => {
     setIsInAdminMode(prev => !prev);
   };
 
+  // Add resetPassword function
+  const resetPassword = async (email) => {
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSuccess('Password reset email sent successfully!');
+    } catch (err) {
+      handleFirebaseError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -616,6 +631,7 @@ export const AuthProvider = ({ children }) => {
         isInAdminMode,
         toggleAdminMode,
         isOnline, // Add this to the context value
+        resetPassword, // Add resetPassword to the context value
       }}
     >
       {children}
