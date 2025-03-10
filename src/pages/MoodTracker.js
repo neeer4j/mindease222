@@ -1416,7 +1416,7 @@ const MoodTracker = () => {
                             transition={{ duration: 0.5 }}
                           >
                             <Typography variant="body1" paragraph>
-                              {Array.isArray(children) ? children.join('') : String(children)}
+                              {children}
                             </Typography>
                           </motion.div>
                         ),
@@ -1427,7 +1427,7 @@ const MoodTracker = () => {
                             transition={{ duration: 0.5 }}
                           >
                             <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-                              {Array.isArray(children) ? children.join('') : String(children)}
+                              {children}
                             </Typography>
                           </motion.div>
                         ),
@@ -1441,7 +1441,7 @@ const MoodTracker = () => {
                               fontWeight: 600,
                               color: theme.palette.secondary.main 
                             }}>
-                              {Array.isArray(children) ? children.join('') : String(children)}
+                              {children}
                             </Typography>
                           </motion.div>
                         ),
@@ -1455,12 +1455,12 @@ const MoodTracker = () => {
                               color: theme.palette.text.primary
                             }}
                           >
-                            {Array.isArray(children) ? children.join('') : String(children)}
+                            {children}
                           </motion.li>
                         ),
                       }}
                     >
-                      {typeof aiAnalysis === 'string' ? aiAnalysis : JSON.stringify(aiAnalysis)}
+                      {aiAnalysis}
                     </ReactMarkdown>
                   </motion.div>
                 </Box>

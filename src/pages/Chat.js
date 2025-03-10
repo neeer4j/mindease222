@@ -789,18 +789,17 @@ Incorporate their hobbies into your advice and examples to make your suggestions
       if ((userProfile?.preferredHabits && Array.isArray(userProfile.preferredHabits) && userProfile.preferredHabits.length > 0) ||
           (userProfile?.hobbies && Array.isArray(userProfile.hobbies) && userProfile.hobbies.length > 0)) {
         
-        let personalizedPart = '';
+        welcomeMessage = `Hi ${userName || 'there'}! I'm MindEase, your AI therapist. `;
         
         if (userProfile?.preferredHabits && userProfile.preferredHabits.length > 0) {
-          personalizedPart += `I see you're interested in ${userProfile.preferredHabits.join(', ')}. These are great habits for mental wellbeing!`;
+          welcomeMessage += `I see you're interested in ${userProfile.preferredHabits.join(', ')}. These are great habits for mental wellbeing!`;
         }
         
         if (userProfile?.hobbies && userProfile.hobbies.length > 0) {
-          if (personalizedPart) personalizedPart += ' ';
-          personalizedPart += `I notice you enjoy ${userProfile.hobbies.join(', ')} as hobbies. It's wonderful to have activities you're passionate about.`;
+          welcomeMessage += ` ${userProfile?.preferredHabits?.length > 0 ? 'Also, I' : 'I'} notice you enjoy ${userProfile.hobbies.join(', ')} as hobbies. It's wonderful to have activities you're passionate about.`;
         }
         
-        welcomeMessage = `Hi ${userName || 'there'}! I'm MindEase, your AI therapist. ${personalizedPart} I'll keep these in mind as we chat. How are you feeling today?`;
+        welcomeMessage += ' How are you feeling today?';
       }
       
       try {

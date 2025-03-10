@@ -60,8 +60,8 @@ const iconVariants = {
 const BannedUserScreen = () => {
   const theme = useTheme();
 
-  const handleContact = () => {
-    window.location.href = 'mailto:support@mindeaseai.com';
+  const handleContactSupport = () => {
+    window.location.href = '/contact';
   };
 
   return (
@@ -119,7 +119,7 @@ const BannedUserScreen = () => {
 
         <motion.div variants={textVariants}>
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <StyledButton variant="contained" onClick={handleContact}>
+            <StyledButton variant="contained" onClick={handleContactSupport}>
               Contact Support
             </StyledButton>
           </Box>
