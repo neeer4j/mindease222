@@ -91,7 +91,7 @@ service cloud.firestore {
           'displayName', 'email', 'phone', 'address', 'dateOfBirth', 
           'gender', 'occupation', 'emergencyContact', 'bio', 
           'preferredLanguage', 'timezone', 'avatar', 'lastUpdated',
-          'notificationPreferences'
+          'notificationPreferences', 'preferredHabits', 'hobbies'
         ]);
       
       // Allow creation of new user documents

@@ -494,6 +494,9 @@ const Chat = ({ toggleTheme }) => {
   // *** Run the moderation hook (analyzes messages silently) ***
   useChatModeration();
 
+  // State to store complete user profile
+  const [userProfile, setUserProfile] = useState(null);
+
   // Local state
   const [userInput, setUserInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -584,6 +587,8 @@ const Chat = ({ toggleTheme }) => {
 
   // Memoize expensive computations
   const memoizedSystemInstructions = useMemo(() => {
+    console.log("Creating system instructions with userProfile:", userProfile); // Log the userProfile
+    
     let instructions = `You are MindEase, a warm, empathetic, and supportive AI therapist with expertise in cognitive behavioral therapy, mindfulness, and positive psychology. When responding:
 - Use a warm, conversational tone like a caring human therapist
 - Show genuine empathy and understanding
@@ -596,12 +601,49 @@ const Chat = ({ toggleTheme }) => {
 - Avoid clinical or overly formal language
 - Remember past context to provide continuity of care
 
-The user's name is ${userName}. You have access to their mood and sleep history. Use this information subtly to personalize your responses and track their progress over time.`;
+The user's name is ${userName}.`;
+
+    // Add occupation information if available
+    if (userProfile?.occupation) {
+      console.log("Adding occupation to instructions:", userProfile.occupation); // Log the occupation
+      instructions += ` Their occupation is ${userProfile.occupation}. Consider how their work as a ${userProfile.occupation} might affect their mental health, stress levels, and daily routines.`;
+    }
+
+    // Add preferred habits information if available
+    if (userProfile?.preferredHabits && Array.isArray(userProfile.preferredHabits) && userProfile.preferredHabits.length > 0) {
+      console.log("Adding preferred habits to instructions:", userProfile.preferredHabits); // Log the preferred habits
+      instructions += ` They have indicated interest in these habits: ${userProfile.preferredHabits.join(', ')}. IMPORTANT: Actively recommend and reference these specific habits whenever the user:
+1. Mentions feeling stressed, anxious, or overwhelmed
+2. Asks for coping strategies or recommendations
+3. Seeks advice on improving their mental wellbeing
+4. Discusses their daily routine or lifestyle
+5. Expresses interest in developing new habits
+
+Be specific in your recommendations by explaining how each habit can be applied to their situation. For example, if they mention work stress and they've listed "Meditation" as a habit, suggest a short meditation technique they could use during work breaks.`;
+    }
+
+    // Add hobbies information if available
+    if (userProfile?.hobbies && Array.isArray(userProfile.hobbies) && userProfile.hobbies.length > 0) {
+      console.log("Adding hobbies to instructions:", userProfile.hobbies); // Log the hobbies
+      instructions += ` They enjoy these hobbies and interests: ${userProfile.hobbies.join(', ')}. IMPORTANT: Consider these hobbies when:
+1. Making recommendations for stress relief or enjoyment
+2. Suggesting activities that might improve their mood
+3. Drawing analogies or examples that will resonate with them
+4. Helping them find meaning and fulfillment in their life
+5. Discussing work-life balance and leisure time
+
+Incorporate their hobbies into your advice and examples to make your suggestions more relevant and engaging. For instance, if they enjoy "Reading" and are feeling anxious, you might suggest a calming book or using reading as a mindfulness activity.`;
+    }
+
+    instructions += ` You have access to their mood and sleep history. Use this information subtly to personalize your responses and track their progress over time.`;
+    
     if (customInstructions && customInstructions.trim() !== '') {
       instructions += ` ${customInstructions}`;
     }
+    
+    console.log("Final instructions:", instructions); // Log the final instructions
     return instructions;
-  }, [userName, customInstructions]);
+  }, [userName, customInstructions, userProfile]);
 
   // Add local storage sync for messages
   useEffect(() => {
@@ -667,45 +709,107 @@ The user's name is ${userName}. You have access to their mood and sleep history.
     loadCustomInstructions();
   }, [user]);
 
+  // Load user profile data when the component mounts
+  useEffect(() => {
+    const fetchUserProfileData = async () => {
+      if (!user || !user.uid) return;
+      
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userSnapshot = await getDoc(userDocRef);
+        
+        if (userSnapshot.exists()) {
+          const newProfileData = userSnapshot.data();
+          console.log("User profile data loaded:", newProfileData); // Log the user profile data
+          console.log("Preferred habits:", newProfileData.preferredHabits); // Log the preferred habits specifically
+          console.log("Hobbies:", newProfileData.hobbies); // Log the hobbies specifically
+          
+          // Check if habits or hobbies have been updated
+          const habitsChanged = userProfile && 
+            JSON.stringify(userProfile.preferredHabits) !== JSON.stringify(newProfileData.preferredHabits);
+          const hobbiesChanged = userProfile && 
+            JSON.stringify(userProfile.hobbies) !== JSON.stringify(newProfileData.hobbies);
+          
+          setUserProfile(newProfileData);
+          
+          // If habits or hobbies have changed, clear chat to get fresh AI responses
+          if ((habitsChanged && newProfileData.preferredHabits && newProfileData.preferredHabits.length > 0) ||
+              (hobbiesChanged && newProfileData.hobbies && newProfileData.hobbies.length > 0)) {
+            console.log("Habits or hobbies changed, clearing chat history");
+            clearChat();
+            setSnackbar({
+              open: true,
+              message: 'Your profile has been updated! Chat history cleared to ensure the AI considers your new preferences.',
+              severity: 'success',
+            });
+          }
+          // If this is the first time loading the profile and it has occupation, habits, or hobbies,
+          // show a notification that the AI will consider these factors
+          else if (!userProfile && (newProfileData.occupation || 
+                  (newProfileData.preferredHabits && newProfileData.preferredHabits.length > 0) ||
+                  (newProfileData.hobbies && newProfileData.hobbies.length > 0))) {
+            setSnackbar({
+              open: true,
+              message: 'Your personal information like occupation, habits, and hobbies will be considered to provide more personalized support. Try clearing the chat for fully personalized responses!',
+              severity: 'info',
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching complete user profile:", error);
+      }
+    };
+    
+    fetchUserProfileData();
+  }, [user, userProfile, clearChat]);
+
   // Modified welcome message logic
   useEffect(() => {
-    if (chatLoading || !user) return;
-    
-    const sessionKey = `mindease_welcomed_${user.uid}`;
-    const lastWelcomeKey = `mindease_last_welcome_${user.uid}`;
-    
-    // Function to check if we should show welcome message
     const shouldShowWelcome = () => {
-      // Get the timestamp of the last welcome message
-      const lastWelcomeTime = localStorage.getItem(lastWelcomeKey);
-      const hasRecentWelcome = lastWelcomeTime && 
-        (Date.now() - new Date(lastWelcomeTime).getTime() < 1000 * 60 * 5); // 5 minutes
+      // Don't show welcome if no user or messages already exist
+      if (!user || messages.length > 0) return false;
       
-      // Check if there are any non-welcome user messages
-      const hasUserMessages = messages.some(msg => !msg.isBot && !msg.isWelcome);
-      
-      // Don't show welcome if:
-      // 1. There's a recent welcome message
-      // 2. There are existing messages but no user replies
-      // 3. There's already a welcome message in the current session
-      return !hasRecentWelcome && 
-             !(messages.length > 0 && !hasUserMessages) &&
-             !messages.some(msg => msg.isWelcome);
+      // Check if we've already welcomed this user in this session
+      const sessionKey = `mindease_welcomed_${user.uid}`;
+      return !sessionStorage.getItem(sessionKey);
     };
-
-    // Only show welcome message if conditions are met
-    if (shouldShowWelcome()) {
-      const greetingMessage = `Hello ${userName}! I'm MindEase, your AI therapist. How can I assist you today?`;
-      addMessage(greetingMessage, true, {
-        isWelcome: true,
+    
+    const addWelcomeMessage = async () => {
+      if (!shouldShowWelcome()) return;
+      
+      // Mark as welcomed for this session
+      sessionStorage.setItem(`mindease_welcomed_${user.uid}`, 'true');
+      
+      let welcomeMessage = `Hi ${userName || 'there'}! I'm MindEase, your AI therapist. How are you feeling today?`;
+      
+      // Add personalized habit and hobby reference if available
+      if ((userProfile?.preferredHabits && Array.isArray(userProfile.preferredHabits) && userProfile.preferredHabits.length > 0) ||
+          (userProfile?.hobbies && Array.isArray(userProfile.hobbies) && userProfile.hobbies.length > 0)) {
+        
+        let personalizedPart = '';
+        
+        if (userProfile?.preferredHabits && userProfile.preferredHabits.length > 0) {
+          personalizedPart += `I see you're interested in ${userProfile.preferredHabits.join(', ')}. These are great habits for mental wellbeing!`;
+        }
+        
+        if (userProfile?.hobbies && userProfile.hobbies.length > 0) {
+          if (personalizedPart) personalizedPart += ' ';
+          personalizedPart += `I notice you enjoy ${userProfile.hobbies.join(', ')} as hobbies. It's wonderful to have activities you're passionate about.`;
+        }
+        
+        welcomeMessage = `Hi ${userName || 'there'}! I'm MindEase, your AI therapist. ${personalizedPart} I'll keep these in mind as we chat. How are you feeling today?`;
+      }
+      
+      await addMessage({
+        id: 'welcome',
+        text: welcomeMessage,
+        sender: 'bot',
         timestamp: new Date().toISOString(),
       });
-      
-      // Store the welcome message timestamp
-      localStorage.setItem(lastWelcomeKey, new Date().toISOString());
-      sessionStorage.setItem(sessionKey, 'true');
-    }
-  }, [user, addMessage, userName, chatLoading, messages]);
+    };
+    
+    addWelcomeMessage();
+  }, [user, messages.length, userName, addMessage, userProfile]);
 
   // Update the scrollToBottom function
   const scrollToBottom = useCallback(() => {
