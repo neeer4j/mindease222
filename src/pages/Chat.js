@@ -418,7 +418,7 @@ const MemoizedMessage = React.memo(({ msg, index, showTimestamp, theme, handleQu
                 ),
               }}
             >
-              {msg.text}
+              {typeof msg.text === 'string' ? msg.text : String(msg.text || '')}
             </MemoizedStyledMarkdown>
           </MemoizedMessageBubble>
         </MemoizedMessageContainer>
@@ -800,12 +800,16 @@ Incorporate their hobbies into your advice and examples to make your suggestions
         welcomeMessage = `Hi ${userName || 'there'}! I'm MindEase, your AI therapist. ${personalizedPart} I'll keep these in mind as we chat. How are you feeling today?`;
       }
       
-      await addMessage({
-        id: 'welcome',
-        text: welcomeMessage,
-        sender: 'bot',
-        timestamp: new Date().toISOString(),
-      });
+      try {
+        // Fix: Pass the message text as the first parameter, isBot as the second, and additional data as the third
+        await addMessage(welcomeMessage, true, {
+          id: 'welcome',
+          sender: 'bot',
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error('Error adding welcome message:', error);
+      }
     };
     
     addWelcomeMessage();
