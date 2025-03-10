@@ -751,23 +751,17 @@ const ReelsPage = () => {
         options.pageToken = nextPageToken;
       }
 
-      // Try occupation-specific folder first
       let listResult = await list(videosFolderRef, options);
       console.log('Initial list result:', { 
         folderPath, 
         itemCount: listResult.items.length,
         items: listResult.items.map(item => item.name)
       });
-      
-      // If no videos found and not already in general folder, try general folder
+
       if (listResult.items.length === 0 && folderPath !== 'general') {
         console.log('No videos in occupation folder, trying general folder');
         const generalFolderRef = storageRef(storage, 'videos/general');
         listResult = await list(generalFolderRef, options);
-        console.log('General folder results:', {
-          itemCount: listResult.items.length,
-          items: listResult.items.map(item => item.name)
-        });
       }
 
       const newVideos = await Promise.all(
@@ -775,17 +769,14 @@ const ReelsPage = () => {
           try {
             console.log('Getting download URL for:', item.name);
             const url = await getDownloadURL(item);
-            console.log('Got download URL:', { name: item.name, url });
             
-            // Create a test request to verify the URL is accessible
-            const testResponse = await fetch(url, { method: 'HEAD' });
-            if (!testResponse.ok) {
-              throw new Error(`URL not accessible: ${testResponse.status}`);
-            }
+            // Instead of testing with fetch, create video URL with no-cors mode
+            const videoUrl = new URL(url);
+            videoUrl.searchParams.append('alt', 'media');
             
             return {
               id: item.fullPath,
-              videoUrl: url,
+              videoUrl: videoUrl.toString(),
               title: item.name.replace(/\.[^/.]+$/, '').replace(/%20/g, ' '),
               description: '',
               likeCount: Math.floor(Math.random() * 1000),
@@ -808,10 +799,6 @@ const ReelsPage = () => {
       } else {
         setVideos(prev => {
           const updatedVideos = [...prev, ...validVideos];
-          console.log('Updated videos state:', updatedVideos.map(v => ({ 
-            title: v.title, 
-            url: v.videoUrl 
-          })));
           return updatedVideos;
         });
         setNextPageToken(listResult.nextPageToken);
