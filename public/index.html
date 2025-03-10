@@ -31,6 +31,61 @@
     />
 
     <title>MindEase AI</title>
+    
+    <!-- WebSocket Error Handling -->
+    <script>
+      // Patch WebSocket to handle connection errors gracefully
+      (function() {
+        const originalWebSocket = window.WebSocket;
+        window.WebSocket = function(url, protocols) {
+          console.log('WebSocket connecting to:', url);
+          const ws = protocols ? new originalWebSocket(url, protocols) : new originalWebSocket(url);
+          
+          // Add error handling
+          ws.addEventListener('error', function(error) {
+            console.log('WebSocket connection error:', error);
+            // Prevent error from bubbling up and crashing the app
+            error.preventDefault && error.preventDefault();
+            return false;
+          });
+          
+          return ws;
+        };
+        window.WebSocket.prototype = originalWebSocket.prototype;
+      })();
+      
+      // Handle image loading errors
+      window.addEventListener('load', function() {
+        // Add global error handler for images
+        document.addEventListener('error', function(e) {
+          if (e.target.tagName.toLowerCase() === 'img') {
+            console.log('Image failed to load:', e.target.src);
+            // Replace with a default image or hide
+            e.target.src = 'images/mindeaselogo.png'; // Fallback to logo
+            e.target.onerror = null; // Prevent infinite loop
+          }
+        }, true); // Use capture phase
+        
+        // Fix specific image paths that are known to be problematic
+        setTimeout(function() {
+          const fixImageSrc = function(selector, correctSrc) {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(function(el) {
+              if (el.tagName.toLowerCase() === 'img') {
+                el.src = correctSrc;
+              } else if (el.style && el.style.backgroundImage) {
+                el.style.backgroundImage = `url(${correctSrc})`;
+              }
+            });
+          };
+          
+          // Fix known problematic images
+          fixImageSrc('img[src$="mindwasess.png"]', 'navbar/title/mindwasess.png');
+          fixImageSrc('img[src$="aa.jpg"]', 'navbar/aa.jpg');
+          fixImageSrc('img[src$="login.png"]', 'images/login.png');
+        }, 500);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

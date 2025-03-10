@@ -1304,6 +1304,59 @@ const UserProfile = () => {
                           </Box>
                         )}
                       </Grid>
+
+                      {/* Bio */}
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                          Bio
+                        </Typography>
+                        {!editMode.bio ? (
+                          <Box display="flex" alignItems="center">
+                            <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                              {formData.bio || 'Not set'}
+                            </Typography>
+                            <Tooltip title="Edit Bio">
+                              <IconButton
+                                color="primary"
+                                onClick={() => setEditMode((prev) => ({ ...prev, bio: true }))}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <TextField
+                              fullWidth
+                              variant="outlined"
+                              name="bio"
+                              value={formData.bio}
+                              onChange={handleChange}
+                              multiline
+                              rows={4}
+                              placeholder="Tell us a bit about yourself..."
+                              sx={{ mb: 2 }}
+                            />
+                            <Box display="flex" justifyContent="flex-end" gap={1}>
+                              <GradientButton
+                                size="small"
+                                startIcon={<SaveIcon />}
+                                onClick={() => openConfirmDialog('bio')}
+                              >
+                                Save
+                              </GradientButton>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<CancelIcon />}
+                                onClick={() => handleCancelEdit('bio')}
+                              >
+                                Cancel
+                              </Button>
+                            </Box>
+                          </Box>
+                        )}
+                      </Grid>
                     </Grid>
                   </CardContent>
                 </ProfileCard>

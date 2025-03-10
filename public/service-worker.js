@@ -18,6 +18,16 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Simply fetch from network, no caching
-  event.respondWith(fetch(event.request));
+  // Fetch from network and fall back gracefully on error
+  event.respondWith(
+    fetch(event.request)
+      .catch(error => {
+        console.log('Fetch error:', error);
+        // Return a simple empty response instead of failing
+        return new Response('', {
+          status: 200,
+          headers: {'Content-Type': 'text/plain'}
+        });
+      })
+  );
 });
