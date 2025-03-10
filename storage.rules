@@ -28,59 +28,10 @@ service firebase.storage {
         request.resource.size <= 1 * 1024 * 1024; // 1MB max
     }
 
-    // Videos rules
-    match /videos/{occupation}/{videoName} {
-      allow read: if request.auth != null;
-    }
-    
-    match /videos/general/{videoName} {
-      allow read: if request.auth != null;
-    }
-
-    // Audio meditations rules
-    match /meditations/{fileName} {
+    // Videos rules - allow read access to all authenticated users
+    match /videos/{category}/{videoName} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() &&
-        isValidContentType(request.resource.contentType, 'audio/.*') &&
-        request.resource.size <= 20 * 1024 * 1024; // 20MB max
-    }
-
-    // Activity attachments rules
-    match /activities/{userId}/{activityId}/{fileName} {
-      allow read: if isAuthenticated() && isOwner(userId);
-      allow write: if isAuthenticated() && isOwner(userId) &&
-        request.resource.size <= 5 * 1024 * 1024; // 5MB max
-    }
-
-    // Support ticket attachments
-    match /support-tickets/{ticketId}/{fileName} {
-      allow read: if isAuthenticated() && (
-        isOwner(firestore.get(/databases/(default)/documents/supportTickets/$(ticketId)).data.userId) || 
-        isAdmin()
-      );
-      allow write: if isAuthenticated() &&
-        (isOwner(firestore.get(/databases/(default)/documents/supportTickets/$(ticketId)).data.userId) || isAdmin()) &&
-        request.resource.size <= 10 * 1024 * 1024; // 10MB max
-    }
-
-    // Chat media rules
-    match /chat-media/{messageId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() &&
-        !firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isBanned &&
-        request.resource.size <= 5 * 1024 * 1024; // 5MB max
-    }
-
-    // User documents and reports
-    match /documents/{userId}/{fileName} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
-      allow write: if isAuthenticated() && isOwner(userId) &&
-        request.resource.size <= 15 * 1024 * 1024; // 15MB max
-    }
-
-    // Default deny
-    match /{allPaths=**} {
-      allow read, write: if false;
+      allow write: if isAdmin();
     }
   }
 }

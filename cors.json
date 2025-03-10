@@ -2,15 +2,22 @@
   {
     "origin": [
       "http://localhost:3000",
-      "https://mindease-dbed7.web.app"
+      "https://mindease-dbed7.web.app",
+      "https://mindease-dbed7.firebaseapp.com"
     ],
-    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "maxAgeSeconds": 3600,
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS"],
     "responseHeader": [
       "Content-Type",
       "Access-Control-Allow-Origin",
-      "Authorization"
-    ]
+      "Authorization",
+      "Cache-Control",
+      "Content-Disposition",
+      "Content-Encoding",
+      "Content-Language",
+      "Content-Length",
+      "Content-Range"
+    ],
+    "maxAgeSeconds": 3600
   },
   {
     "resource": "https://firebasestorage.googleapis.com/v0/b/mindease-dbed7.appspot.com"
