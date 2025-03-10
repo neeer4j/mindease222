@@ -34,23 +34,38 @@
     
     <!-- WebSocket Error Handling -->
     <script>
-      // Patch WebSocket to handle connection errors gracefully
+      // Improved WebSocket error handling
       (function() {
         const originalWebSocket = window.WebSocket;
-        window.WebSocket = function(url, protocols) {
-          console.log('WebSocket connecting to:', url);
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+
+        function createWebSocket(url, protocols) {
+          console.log('Creating WebSocket connection to:', url);
           const ws = protocols ? new originalWebSocket(url, protocols) : new originalWebSocket(url);
           
-          // Add error handling
           ws.addEventListener('error', function(error) {
             console.log('WebSocket connection error:', error);
-            // Prevent error from bubbling up and crashing the app
+            if (reconnectAttempts < maxReconnectAttempts) {
+              reconnectAttempts++;
+              console.log(`Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})...`);
+              setTimeout(() => {
+                createWebSocket(url, protocols);
+              }, 1000 * reconnectAttempts); // Exponential backoff
+            }
             error.preventDefault && error.preventDefault();
             return false;
           });
-          
+
+          ws.addEventListener('open', function() {
+            console.log('WebSocket connection established');
+            reconnectAttempts = 0;
+          });
+
           return ws;
-        };
+        }
+
+        window.WebSocket = createWebSocket;
         window.WebSocket.prototype = originalWebSocket.prototype;
       })();
       

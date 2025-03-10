@@ -93,6 +93,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
+  "proxy": "http://localhost:3000",
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -112,6 +113,7 @@
     ]
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "firebase-admin": "^13.1.0",
     "workbox-cli": "^7.3.0"
   }
