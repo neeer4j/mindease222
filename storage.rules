@@ -29,11 +29,12 @@ service firebase.storage {
     }
 
     // Videos rules
-    match /videos/{fileName} {
-      allow read: if true; // Public read access
-      allow write: if isAuthenticated() && 
-        isValidContentType(request.resource.contentType, 'video/.*') &&
-        request.resource.size <= 50 * 1024 * 1024; // 50MB max
+    match /videos/{occupation}/{videoName} {
+      allow read: if request.auth != null;
+    }
+    
+    match /videos/general/{videoName} {
+      allow read: if request.auth != null;
     }
 
     // Audio meditations rules
@@ -75,6 +76,11 @@ service firebase.storage {
       allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow write: if isAuthenticated() && isOwner(userId) &&
         request.resource.size <= 15 * 1024 * 1024; // 15MB max
+    }
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

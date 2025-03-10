@@ -517,6 +517,8 @@ const Chat = ({ toggleTheme }) => {
   const [isListening, setIsListening] = useState(false);
   const [useBackupApi, setUseBackupApi] = useState(false);
   const [apiToggleAnchorEl, setApiToggleAnchorEl] = useState(null);
+  // Add this state to track if welcome message has been shown
+  const [hasShownWelcome, setHasShownWelcome] = useState(false);
 
   // Refs and responsive helpers
   const recognitionRef = useRef(null);
@@ -766,8 +768,8 @@ Incorporate their hobbies into your advice and examples to make your suggestions
   // Modified welcome message logic
   useEffect(() => {
     const shouldShowWelcome = () => {
-      // Don't show welcome if no user or messages already exist
-      if (!user || messages.length > 0) return false;
+      // Don't show welcome if no user, messages exist, or welcome already shown
+      if (!user || messages.length > 0 || hasShownWelcome) return false;
       
       // Check if we've already welcomed this user in this session
       const sessionKey = `mindease_welcomed_${user.uid}`;
@@ -779,6 +781,7 @@ Incorporate their hobbies into your advice and examples to make your suggestions
       
       // Mark as welcomed for this session
       sessionStorage.setItem(`mindease_welcomed_${user.uid}`, 'true');
+      setHasShownWelcome(true);
       
       let welcomeMessage = `Hi ${userName || 'there'}! I'm MindEase, your AI therapist. How are you feeling today?`;
       
@@ -801,11 +804,11 @@ Incorporate their hobbies into your advice and examples to make your suggestions
       }
       
       try {
-        // Fix: Pass the message text as the first parameter, isBot as the second, and additional data as the third
         await addMessage(welcomeMessage, true, {
           id: 'welcome',
           sender: 'bot',
           timestamp: new Date().toISOString(),
+          isWelcome: true
         });
       } catch (error) {
         console.error('Error adding welcome message:', error);
@@ -813,7 +816,7 @@ Incorporate their hobbies into your advice and examples to make your suggestions
     };
     
     addWelcomeMessage();
-  }, [user, messages.length, userName, addMessage, userProfile]);
+  }, [user, messages.length, userName, addMessage, userProfile, hasShownWelcome]);
 
   // Update the scrollToBottom function
   const scrollToBottom = useCallback(() => {

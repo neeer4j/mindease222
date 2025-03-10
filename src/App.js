@@ -62,6 +62,7 @@ import AboutUs from "./pages/AboutUs";
 // Debugging log
 console.log("Rendering App...");
 
+// Make AppRoutes a proper React component
 function AppRoutes({ toggleTheme }) {
   return (
     <AnimatePresence mode="wait">
@@ -264,7 +265,8 @@ function RedirectHandler() {
   return <WelcomeSplash onComplete={handleSplashComplete} />;
 }
 
-const MainContent = ({ toggleTheme, mode }) => {
+// Update MainContent to properly use AppRoutes
+function MainContent({ toggleTheme, mode }) {
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
 
@@ -282,14 +284,13 @@ const MainContent = ({ toggleTheme, mode }) => {
       <Navbar toggleTheme={toggleTheme} mode={mode} />
       <Box component="main" sx={{ flexGrow: 1 }}>
         <RedirectHandler />
-        {/* ScrollToTop ensures new pages start at the top */}
         <ScrollToTop />
         <AppRoutes toggleTheme={toggleTheme} />
       </Box>
-      {!isMobile && <Footer />} {/* Footer only for non-mobile */}
+      {!isMobile && <Footer />}
     </Box>
   );
-};
+}
 
 function App() {
   const [mode, setMode] = useState(() => localStorage.getItem("themeMode") || "dark");
