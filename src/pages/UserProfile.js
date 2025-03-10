@@ -240,6 +240,8 @@ const UserProfile = () => {
     bio: '',
     preferredLanguage: '',
     timezone: '',
+    preferredHabits: [],
+    hobbies: [],
     notificationPreferences: {
       email: true,
       push: true,
@@ -260,7 +262,9 @@ const UserProfile = () => {
     emergencyContact: false,
     bio: false,
     preferredLanguage: false,
-    timezone: false
+    timezone: false,
+    preferredHabits: false,
+    hobbies: false
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -295,6 +299,8 @@ const UserProfile = () => {
         bio: user.bio || '',
         preferredLanguage: user.preferredLanguage || 'English',
         timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        preferredHabits: user.preferredHabits || [],
+        hobbies: user.hobbies || [],
         notificationPreferences: user.notificationPreferences || {
           email: true,
           push: true,
@@ -448,12 +454,18 @@ const UserProfile = () => {
       'emergencyContact',
       'bio',
       'preferredLanguage',
-      'timezone'
+      'timezone',
+      'preferredHabits',
+      'hobbies'
     ];
     
     let filledFields = 0;
     fieldsToCheck.forEach(field => {
-      if (formData[field] && formData[field].toString().trim() !== '') {
+      if (field === 'preferredHabits') {
+        if (formData[field] && Array.isArray(formData[field]) && formData[field].length > 0) {
+          filledFields++;
+        }
+      } else if (formData[field] && formData[field].toString().trim() !== '') {
         filledFields++;
       }
     });
@@ -1105,6 +1117,186 @@ const UserProfile = () => {
                                 size="small"
                                 startIcon={<CancelIcon />}
                                 onClick={() => handleCancelEdit('emergencyContact')}
+                              >
+                                Cancel
+                              </Button>
+                            </Box>
+                          </Box>
+                        )}
+                      </Grid>
+
+                      {/* Preferred Habits */}
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                          Preferred Habits
+                        </Typography>
+                        {!editMode.preferredHabits ? (
+                          <Box display="flex" alignItems="center">
+                            <Box sx={{ flexGrow: 1 }}>
+                              {formData.preferredHabits && formData.preferredHabits.length > 0 ? (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                  {formData.preferredHabits.map((habit, index) => (
+                                    <Chip 
+                                      key={index} 
+                                      label={habit} 
+                                      color="primary" 
+                                      variant="outlined" 
+                                    />
+                                  ))}
+                                </Box>
+                              ) : (
+                                <Typography variant="body1">No habits selected</Typography>
+                              )}
+                            </Box>
+                            <Tooltip title="Choose Habits">
+                              <IconButton
+                                color="primary"
+                                onClick={() => setEditMode((prev) => ({ ...prev, preferredHabits: true }))}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <FormControl fullWidth variant="outlined">
+                              <InputLabel id="habits-select-label">Select Habits</InputLabel>
+                              <Select
+                                labelId="habits-select-label"
+                                multiple
+                                name="preferredHabits"
+                                value={formData.preferredHabits || []}
+                                onChange={handleChange}
+                                renderValue={(selected) => (
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {selected.map((value) => (
+                                      <Chip key={value} label={value} />
+                                    ))}
+                                  </Box>
+                                )}
+                              >
+                                <MenuItem value="Meditation">Meditation</MenuItem>
+                                <MenuItem value="Exercise">Exercise</MenuItem>
+                                <MenuItem value="Reading">Reading</MenuItem>
+                                <MenuItem value="Journaling">Journaling</MenuItem>
+                                <MenuItem value="Yoga">Yoga</MenuItem>
+                                <MenuItem value="Walking">Walking</MenuItem>
+                                <MenuItem value="Cycling">Cycling</MenuItem>
+                                <MenuItem value="Healthy Eating">Healthy Eating</MenuItem>
+                                <MenuItem value="Gratitude Practice">Gratitude Practice</MenuItem>
+                                <MenuItem value="Mindfulness">Mindfulness</MenuItem>
+                              </Select>
+                            </FormControl>
+                            <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
+                              <GradientButton
+                                size="small"
+                                startIcon={<SaveIcon />}
+                                onClick={() => openConfirmDialog('preferredHabits')}
+                              >
+                                Save
+                              </GradientButton>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<CancelIcon />}
+                                onClick={() => handleCancelEdit('preferredHabits')}
+                              >
+                                Cancel
+                              </Button>
+                            </Box>
+                          </Box>
+                        )}
+                      </Grid>
+
+                      {/* Hobbies */}
+                      <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                          Hobbies & Interests
+                        </Typography>
+                        {!editMode.hobbies ? (
+                          <Box display="flex" alignItems="center">
+                            <Box sx={{ flexGrow: 1 }}>
+                              {formData.hobbies && formData.hobbies.length > 0 ? (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                  {formData.hobbies.map((hobby, index) => (
+                                    <Chip 
+                                      key={index} 
+                                      label={hobby} 
+                                      color="secondary" 
+                                      variant="outlined" 
+                                    />
+                                  ))}
+                                </Box>
+                              ) : (
+                                <Typography variant="body1">No hobbies selected</Typography>
+                              )}
+                            </Box>
+                            <Tooltip title="Add Hobbies">
+                              <IconButton
+                                color="primary"
+                                onClick={() => setEditMode((prev) => ({ ...prev, hobbies: true }))}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <FormControl fullWidth variant="outlined">
+                              <InputLabel id="hobbies-select-label">Select Hobbies & Interests</InputLabel>
+                              <Select
+                                labelId="hobbies-select-label"
+                                multiple
+                                name="hobbies"
+                                value={formData.hobbies || []}
+                                onChange={handleChange}
+                                renderValue={(selected) => (
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {selected.map((value) => (
+                                      <Chip key={value} label={value} />
+                                    ))}
+                                  </Box>
+                                )}
+                              >
+                                <MenuItem value="Reading">Reading</MenuItem>
+                                <MenuItem value="Writing">Writing</MenuItem>
+                                <MenuItem value="Painting">Painting</MenuItem>
+                                <MenuItem value="Drawing">Drawing</MenuItem>
+                                <MenuItem value="Photography">Photography</MenuItem>
+                                <MenuItem value="Cooking">Cooking</MenuItem>
+                                <MenuItem value="Baking">Baking</MenuItem>
+                                <MenuItem value="Gardening">Gardening</MenuItem>
+                                <MenuItem value="Hiking">Hiking</MenuItem>
+                                <MenuItem value="Camping">Camping</MenuItem>
+                                <MenuItem value="Fishing">Fishing</MenuItem>
+                                <MenuItem value="Swimming">Swimming</MenuItem>
+                                <MenuItem value="Dancing">Dancing</MenuItem>
+                                <MenuItem value="Singing">Singing</MenuItem>
+                                <MenuItem value="Playing Music">Playing Music</MenuItem>
+                                <MenuItem value="Video Games">Video Games</MenuItem>
+                                <MenuItem value="Board Games">Board Games</MenuItem>
+                                <MenuItem value="Puzzles">Puzzles</MenuItem>
+                                <MenuItem value="Collecting">Collecting</MenuItem>
+                                <MenuItem value="Traveling">Traveling</MenuItem>
+                                <MenuItem value="Volunteering">Volunteering</MenuItem>
+                                <MenuItem value="Learning Languages">Learning Languages</MenuItem>
+                                <MenuItem value="Watching Movies">Watching Movies</MenuItem>
+                                <MenuItem value="Watching TV Shows">Watching TV Shows</MenuItem>
+                              </Select>
+                            </FormControl>
+                            <Box display="flex" justifyContent="flex-end" gap={1} mt={2}>
+                              <GradientButton
+                                size="small"
+                                startIcon={<SaveIcon />}
+                                onClick={() => openConfirmDialog('hobbies')}
+                              >
+                                Save
+                              </GradientButton>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<CancelIcon />}
+                                onClick={() => handleCancelEdit('hobbies')}
                               >
                                 Cancel
                               </Button>
