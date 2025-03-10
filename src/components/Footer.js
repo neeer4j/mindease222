@@ -12,9 +12,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import {
-  Facebook as FacebookIcon,
   Twitter as TwitterIcon,
-  Instagram as InstagramIcon,
   LinkedIn as LinkedInIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
@@ -213,48 +211,25 @@ const Footer = () => {
             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}> {/* Increased gap and added margin bottom */}
               <IconButton
                 component="a"
-                href="https://facebook.com" // Replace with your actual Facebook link
-                target="_blank"
-                rel="noopener"
-                aria-label="Facebook"
-                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }} // Hover effect
-              >
-                <FacebookIcon />
-              </IconButton>
-              <IconButton
-                component="a"
-                href="https://twitter.com" // Replace with your actual Twitter link
+                href="https://x.com/NeerajVenu"
                 target="_blank"
                 rel="noopener"
                 aria-label="Twitter"
-                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }} // Hover effect
+                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }}
               >
                 <TwitterIcon />
               </IconButton>
               <IconButton
                 component="a"
-                href="https://instagram.com" // Replace with your actual Instagram link
-                target="_blank"
-                rel="noopener"
-                aria-label="Instagram"
-                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }} // Hover effect
-              >
-                <InstagramIcon />
-              </IconButton>
-              <IconButton
-                component="a"
-                href="https://linkedin.com" // Replace with your actual LinkedIn link
+                href="https://www.linkedin.com/in/neerajvenu"
                 target="_blank"
                 rel="noopener"
                 aria-label="LinkedIn"
-                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }} // Hover effect
+                sx={{ color: theme.palette.text.secondary, '&:hover': { color: theme.palette.primary.main } }}
               >
                 <LinkedInIcon />
               </IconButton>
             </Box>
-             <Typography variant="body2" color="textSecondary">
-              Email: <MuiLink href="mailto:info@mindeaseai.com" color="inherit" underline="hover">info@mindeaseai.com</MuiLink><br />
-            </Typography>
           </Grid>
         </Grid>
       </Container>

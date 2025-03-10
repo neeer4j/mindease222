@@ -322,6 +322,17 @@ const Meditations = () => {
     });
   }, [allMeditations]);
 
+  // Cleanup effect for audio
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current.load();
+      }
+    };
+  }, []);
+
   // Update audio playback effect to be more stable
   useEffect(() => {
     const audio = audioRef.current;
@@ -330,7 +341,15 @@ const Meditations = () => {
     const playAudio = async () => {
       if (isPlaying) {
         try {
-          await audio.play();
+          // Ensure audio is ready before playing
+          if (audio.readyState >= 2) {
+            await audio.play();
+          } else {
+            await new Promise((resolve) => {
+              audio.addEventListener('canplay', resolve, { once: true });
+            });
+            await audio.play();
+          }
         } catch (error) {
           console.error("Playback failed:", error);
           setIsPlaying(false);
@@ -382,18 +401,35 @@ const Meditations = () => {
   };
 
   // Toggle play/pause and scroll to player if needed
-  const handlePlayPauseToggle = (meditation) => {
+  const handlePlayPauseToggle = async (meditation) => {
     scrollToPlayer();
+    
+    // If clicking the same meditation that's currently playing
     if (currentMeditation && currentMeditation.id === meditation.id) {
       setIsPlaying((prev) => !prev);
-    } else {
-      setCurrentMeditation(meditation);
-      setIsPlaying(true);
-      setCurrentTime(0);
-      if (audioRef.current) {
+      return;
+    }
+
+    // If there's a current audio playing, stop it first
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
+    // Set up the new meditation
+    setCurrentMeditation(meditation);
+    setIsPlaying(true);
+    setCurrentTime(0);
+
+    // Load and play the new audio
+    if (audioRef.current) {
+      try {
         audioRef.current.src = meditation.audioSrc;
-        audioRef.current.load();
-        audioRef.current.play().catch((error) => console.error("Playback failed:", error));
+        await audioRef.current.load();
+        await audioRef.current.play();
+      } catch (error) {
+        console.error("Playback failed:", error);
+        setIsPlaying(false);
       }
     }
   };

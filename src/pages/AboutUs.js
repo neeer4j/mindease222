@@ -18,25 +18,25 @@ const AboutUs = () => {
     {
       name: 'Muhammed Nayif',
       role: 'Lead Developer & Project Head',
-      description: 'Leading the development and architecture of MindEase, ensuring the platform delivers innovative mental health solutions.',
+      
       avatarSrc: '/images/developers/nayif.jpeg',
     },
     {
       name: 'Neeraj Venu',
       role: 'UI/UX Designer',
-      description: 'Creating intuitive and accessible user experiences that make mental health support more approachable.',
+     
       avatarSrc: 'images/developers/neeraj.jpg',
     },
     {
       name: 'Alan Dibu',
-      role: 'Backend Architect & Data Scientist',
-      description: 'Developing robust backend systems and implementing data-driven solutions for personalized mental health support.',
+      role: 'Documentation Specialist',
+      
       avatarSrc: 'images/developers/alan.jpeg',
     },
     {
       name: 'Gautham Suresh',
-      role: 'Frontend Developer & Accessibility Specialist',
-      description: 'Ensuring MindEase is accessible to all users while implementing responsive and engaging frontend features.',
+      role: 'Frontend Developer ',
+      
       avatarSrc: '/images/developers/gautham.jpg',
     },
   ];
