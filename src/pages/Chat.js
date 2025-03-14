@@ -1954,7 +1954,7 @@ Format as simple reply options without bullets or numbers.`;
           flexDirection: 'column',
           height: '82vh',
           width: '100%',
-          maxWidth: '900px',
+          maxWidth: '1200px', // Reverted back to 1200px from 1600px
           position: 'relative',
           zIndex: 1,
         }}

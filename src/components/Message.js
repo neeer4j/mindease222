@@ -151,7 +151,7 @@ const Message = ({ msg }) => {
             position: 'relative', // Needed for bubble tail positioning
             padding: `${theme.spacing(1.75)} ${theme.spacing(2.5)}`, // Vertical and horizontal padding inside bubble
             borderRadius: '25px', // Rounded corners for chat bubble
-            maxWidth: '75%', // Maximum width of the bubble
+            maxWidth: '90%', // Increased from 75% to 90% to make chat bubbles wider
             background: isEmergency
               ? theme.palette.error.main // Red background for emergency messages
               : isBot
