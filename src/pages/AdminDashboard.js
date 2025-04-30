@@ -1256,20 +1256,11 @@ const AdminDashboard = () => {
                   <Tab 
                     label={
                       <Box display="flex" alignItems="center" gap={1}>
-                        <AssessmentIcon fontSize="small" />
-                        <span>Analytics</span>
-                      </Box>
-                    } 
-                    value="6" 
-                  />
-                  <Tab 
-                    label={
-                      <Box display="flex" alignItems="center" gap={1}>
                         <InfoIcon fontSize="small" />
                         <span>System</span>
                       </Box>
                     } 
-                    value="7" 
+                    value="6" 
                   />
                 </StyledTabList>
               </Box>
@@ -1455,10 +1446,6 @@ const AdminDashboard = () => {
                 </TabPanel>
 
                 <TabPanel value="6" sx={{ p: 0 }}>
-                  <AdminAnalytics />
-                </TabPanel>
-
-                <TabPanel value="7" sx={{ p: 0 }}>
                   {systemStatsLoading ? <LoadingState /> : <SystemStats />}
                 </TabPanel>
               </TabPanelContainer>
