@@ -30,3 +30,9 @@ mindease.zip
 serviceAccountKey.json
 
 .vercel
+
+# Android
+/android/local.properties
+
+# Zipped files
+mindease.zip
