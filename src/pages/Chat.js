@@ -667,11 +667,21 @@ Incorporate their hobbies into your advice and examples to make your suggestions
         const parsedMessages = JSON.parse(cachedMessages);
         // Only set cached messages if there are no messages yet
         if (messages.length === 0 && parsedMessages.length > 0) {
+          // Check if session welcome message was already shown
+          const sessionKey = `mindease_welcomed_${user.uid}`;
+          const alreadyWelcomedThisSession = sessionStorage.getItem(sessionKey);
+
           parsedMessages.forEach(msg => {
+            // Don't add cached welcome message if a welcome was already shown this session
+            if (msg.isWelcome && alreadyWelcomedThisSession) {
+              console.log("Skipping cached welcome message as session already welcomed.");
+              return; // Skip adding this cached welcome message
+            }
+
             addMessage(msg.text, msg.isBot, {
               isWelcome: msg.isWelcome,
-              timestamp: msg.timestamp,
-              quickReplies: msg.quickReplies,
+              timestamp: msg.timestamp, // Keep timestamp from cache
+              quickReplies: msg.quickReplies, // Keep quick replies if any
               isEmergency: msg.isEmergency,
               isError: msg.isError
             });
@@ -679,6 +689,11 @@ Incorporate their hobbies into your advice and examples to make your suggestions
         }
       } catch (error) {
         console.error('Error parsing cached messages:', error);
+        // Clear potentially corrupted cache
+        localStorage.removeItem(`mindease_messages_${user.uid}`);
+        setSnackbar({ open: true, message: 'Error loading cached messages. Cache cleared.', severity: 'warning' });
+        // Ensure session welcome state is reset if cache fails
+        sessionStorage.removeItem(`mindease_welcomed_${user.uid}`);
       }
     }
   }, [user, addMessage, messages.length]);

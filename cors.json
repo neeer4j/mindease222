@@ -21,5 +21,10 @@
   },
   {
     "resource": "https://firebasestorage.googleapis.com/v0/b/mindease-dbed7.appspot.com"
+  },
+  {
+    "origin": ["https://mindeaseai.vercel.app"],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600
   }
 ]

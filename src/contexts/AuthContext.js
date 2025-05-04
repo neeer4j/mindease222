@@ -332,6 +332,7 @@ export const AuthProvider = ({ children }) => {
       setIsAdmin(isUserAdmin);
       setIsInAdminMode(isUserAdmin && !isMobile);
       setSuccess("Logged in successfully.");
+      setShowSplash(true);
     } catch (err) {
       handleFirebaseError(err);
     } finally {
