@@ -33,6 +33,7 @@ serviceAccountKey.json
 
 # Android
 /android/local.properties
+/android
 
 # Zipped files
 mindease.zip
