@@ -23,9 +23,10 @@ service firebase.storage {
     // Avatar rules
     match /avatars/{userId}/{allPaths=**} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isOwner(userId) && 
+      allow create, update: if isAuthenticated() && isOwner(userId) && 
         isValidContentType(request.resource.contentType, 'image/.*') &&
-        request.resource.size <= 1 * 1024 * 1024; // 1MB max
+        request.resource.size <= 5 * 1024 * 1024; // 5MB max
+      allow delete: if isAuthenticated() && isOwner(userId);
     }
 
     // Videos rules - allow read access to all authenticated users
