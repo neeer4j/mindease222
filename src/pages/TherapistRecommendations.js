@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Chip,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -26,6 +27,7 @@ import {
   Star as StarIcon,
   Visibility as VisibilityIcon,
   Refresh as RefreshIcon,
+  DirectionsWalk as DirectionsWalkIcon,
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/system';
 import { motion } from 'framer-motion';
@@ -234,8 +236,6 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
     }
   }, []);
 
-  const googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${therapist.id}`;
-
   return (
     <motion.div 
       variants={widgetItemVariants} 
@@ -269,7 +269,7 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
                   mb: 0.5 
                 }}
               >
-                {`Dr. ${therapist.name}`}
+                {therapist.name}
               </Typography>
               <Typography 
                 variant="caption" 
@@ -278,56 +278,19 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
                   fontWeight: 500 
                 }}
               >
-                Healthcare Professional
+                {therapist.specialty}
               </Typography>
             </Box>
           </Box>
-          <Box
-            sx={{
-              backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.1),
-              padding: '6px 12px',
-              borderRadius: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5
-            }}
-          >
-            <StarIcon sx={{ color: 'warning.main', fontSize: '1rem' }} />
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                fontWeight: 600,
-                color: 'warning.main'
-              }}
-            >
-              {therapist.rating}
-            </Typography>
-          </Box>
+          <Chip
+            icon={<DirectionsWalkIcon />}
+            label={`${therapist.distance.toFixed(1)} km`}
+            size="small"
+            color="primary"
+            variant="outlined"
+          />
         </WidgetHeader>
         <WidgetContent ref={contentRef}>
-          <Box 
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
-              borderRadius: '12px',
-              padding: 2,
-              border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`
-            }}
-          >
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                fontWeight: 600,
-                color: 'primary.main',
-                letterSpacing: '0.5px'
-              }}
-            >
-              {`Specializes in ${therapist.specialty}`}
-            </Typography>
-          </Box>
-          
           <Box 
             sx={{
               display: 'flex',
@@ -354,7 +317,7 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
               <PhoneIcon color="primary" sx={{ fontSize: '1.2rem' }} />
               <Box>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mb: 0.5 }}>
-                  Contact Number
+                  Contact
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
                   {therapist.phone}
@@ -363,39 +326,14 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
             </Box>
           </Box>
         </WidgetContent>
-        
-        <CardActions sx={{
-          padding: 2,
-          gap: 1.5,
-          borderTop: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-          backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.6),
-          '& .MuiButton-root': {
-            borderRadius: '10px',
-            textTransform: 'none',
-            fontWeight: 600,
-            flex: 1,
-            padding: '10px 16px',
-            fontSize: '0.9rem',
-            letterSpacing: '0.5px'
-          }
-        }}>
+        <CardActions sx={{ padding: 2, gap: 1.5 }}>
           <Button
             variant="contained"
             onClick={() => handleDetailsClick(therapist)}
             startIcon={<VisibilityIcon />}
-            size="large"
+            fullWidth
           >
-            Full Profile
-          </Button>
-          <Button
-            variant="outlined"
-            color="secondary"
-            href={googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            size="large"
-          >
-            Directions
+            View Details
           </Button>
         </CardActions>
       </WidgetCard>
@@ -408,7 +346,8 @@ const TherapistWidget = ({ therapist, handleDetailsClick }) => {
 // -----------------------
 
 const TherapistDetailsContent = ({ therapist, onClose }) => {
-  const googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${therapist.id}`;
+  const osmUrl = `https://www.openstreetmap.org/search?query=${encodeURIComponent(therapist.address)}`;
+  
   return (
     <>
       <DialogTitle>{therapist.name}</DialogTitle>
@@ -419,8 +358,8 @@ const TherapistDetailsContent = ({ therapist, onClose }) => {
             <Typography variant="body1">{therapist.address}</Typography>
           </Box>
           <Box display="flex" alignItems="center">
-            <StarIcon fontSize="medium" color="warning" sx={{ mr: 1 }} />
-            <Typography variant="body1">{therapist.rating} / 5</Typography>
+            <DirectionsWalkIcon fontSize="medium" color="primary" sx={{ mr: 1 }} />
+            <Typography variant="body1">{therapist.distance.toFixed(1)} km away</Typography>
           </Box>
           <Box display="flex" alignItems="center">
             <PhoneIcon fontSize="medium" color="primary" sx={{ mr: 1 }} />
@@ -437,11 +376,11 @@ const TherapistDetailsContent = ({ therapist, onClose }) => {
         <Button
           size="small"
           color="secondary"
-          href={googleMapsUrl}
+          href={osmUrl}
           target="_blank"
           rel="noopener noreferrer"
         >
-          Google Maps
+          View on OpenStreetMap
         </Button>
         <Button onClick={onClose} color="primary">
           Close
@@ -483,7 +422,6 @@ const TherapistRecommendations = () => {
         (position) => {
           const { latitude, longitude } = position.coords;
           console.log(`User location: ${latitude}, ${longitude}`);
-          // Pass force=true to always fetch fresh data.
           fetchTherapists(latitude, longitude, force);
           setIsRefreshing(false);
         },

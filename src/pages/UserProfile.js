@@ -241,13 +241,7 @@ const UserProfile = () => {
     preferredLanguage: '',
     timezone: '',
     preferredHabits: [],
-    hobbies: [],
-    notificationPreferences: {
-      email: true,
-      push: true,
-      moodReminders: true,
-      activityReminders: true
-    }
+    hobbies: []
   });
 
   const [editMode, setEditMode] = useState({
@@ -301,12 +295,6 @@ const UserProfile = () => {
         timezone: user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         preferredHabits: user.preferredHabits || [],
         hobbies: user.hobbies || [],
-        notificationPreferences: user.notificationPreferences || {
-          email: true,
-          push: true,
-          moodReminders: true,
-          activityReminders: true
-        }
       });
       setAvatarPreview(user.avatar || null);
     }
@@ -430,18 +418,6 @@ const UserProfile = () => {
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
-  };
-
-  const handleNotificationChange = async (type) => {
-    const newPrefs = {
-      ...formData.notificationPreferences,
-      [type]: !formData.notificationPreferences[type]
-    };
-    setFormData(prev => ({
-      ...prev,
-      notificationPreferences: newPrefs
-    }));
-    await updateUserData('notificationPreferences', newPrefs);
   };
 
   const calculateProfileCompletion = useCallback(() => {
@@ -1373,54 +1349,6 @@ const UserProfile = () => {
               >
                 <ProfileCard elevation={2}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Notification Preferences
-                    </Typography>
-                    <Box sx={{ mt: 2 }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.notificationPreferences.email}
-                            onChange={() => handleNotificationChange('email')}
-                            color="primary"
-                          />
-                        }
-                        label="Email Notifications"
-                      />
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.notificationPreferences.push}
-                            onChange={() => handleNotificationChange('push')}
-                            color="primary"
-                          />
-                        }
-                        label="Push Notifications"
-                      />
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.notificationPreferences.moodReminders}
-                            onChange={() => handleNotificationChange('moodReminders')}
-                            color="primary"
-                          />
-                        }
-                        label="Mood Tracking Reminders"
-                      />
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={formData.notificationPreferences.activityReminders}
-                            onChange={() => handleNotificationChange('activityReminders')}
-                            color="primary"
-                          />
-                        }
-                        label="Activity Reminders"
-                      />
-                    </Box>
-
-                    <Divider sx={{ my: 3 }} />
-
                     {/* Language Preference */}
                     <Typography variant="subtitle1" gutterBottom>
                       Language Preference
