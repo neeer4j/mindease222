@@ -196,37 +196,53 @@ const Chat = ({ toggleTheme }) => {
         
         if (userSnapshot.exists()) {
           const newProfileData = userSnapshot.data();
-          console.log("User profile data loaded:", newProfileData);
           
-          // Check if habits or hobbies have been updated
-          const habitsChanged = userProfile && 
-            JSON.stringify(userProfile.preferredHabits) !== JSON.stringify(newProfileData.preferredHabits);
-          const hobbiesChanged = userProfile && 
-            JSON.stringify(userProfile.hobbies) !== JSON.stringify(newProfileData.hobbies);
-          
-          setUserProfile(newProfileData);
-          
-          // If habits or hobbies have changed, clear chat to get fresh AI responses
-          if ((habitsChanged && newProfileData.preferredHabits && newProfileData.preferredHabits.length > 0) ||
-              (hobbiesChanged && newProfileData.hobbies && newProfileData.hobbies.length > 0)) {
-            console.log("Habits or hobbies changed, clearing chat history");
-            clearChat();
-            setSnackbar({
-              open: true,
-              message: 'Your profile has been updated! Chat history cleared to ensure the AI considers your new preferences.',
-              severity: 'success',
-            });
+          // Only log once rather than on every render
+          if (!userProfile) {
+            console.log("User profile data loaded:", newProfileData);
           }
-          // If this is the first time loading the profile and it has occupation, habits, or hobbies,
-          // show a notification that the AI will consider these factors
-          else if (!userProfile && (newProfileData.occupation || 
+          
+          // Check if habits or hobbies have been updated - only if userProfile already exists
+          if (userProfile) {
+            const habitsChanged = 
+              JSON.stringify(userProfile.preferredHabits) !== JSON.stringify(newProfileData.preferredHabits);
+            const hobbiesChanged = 
+              JSON.stringify(userProfile.hobbies) !== JSON.stringify(newProfileData.hobbies);
+            
+            // Only update and clear chat if there are actual changes
+            if ((habitsChanged && newProfileData.preferredHabits && newProfileData.preferredHabits.length > 0) ||
+                (hobbiesChanged && newProfileData.hobbies && newProfileData.hobbies.length > 0)) {
+              console.log("Habits or hobbies changed, clearing chat history");
+              
+              // Set profile data first, then clear chat to prevent extra rerenders
+              setUserProfile(newProfileData);
+              clearChat();
+              
+              setSnackbar({
+                open: true,
+                message: 'Your profile has been updated! Chat history cleared to ensure the AI considers your new preferences.',
+                severity: 'success',
+              });
+              return; // Exit early to prevent setting profile again
+            }
+          }
+          
+          // First time loading profile with data
+          if (!userProfile && (newProfileData.occupation || 
                   (newProfileData.preferredHabits && newProfileData.preferredHabits.length > 0) ||
                   (newProfileData.hobbies && newProfileData.hobbies.length > 0))) {
+            setUserProfile(newProfileData);
             setSnackbar({
               open: true,
               message: 'Your personal information like occupation, habits, and hobbies will be considered to provide more personalized support. Try clearing the chat for fully personalized responses!',
               severity: 'info',
             });
+            return; // Exit early
+          }
+          
+          // Set profile data if not already set or returned early
+          if (!userProfile) {
+            setUserProfile(newProfileData);
           }
         }
       } catch (error) {
@@ -235,7 +251,17 @@ const Chat = ({ toggleTheme }) => {
     };
     
     fetchUserProfileData();
-  }, [user, userProfile, clearChat]);
+    
+    // Set up a listener for profile changes instead of repeatedly fetching
+    const userDocRef = doc(db, "users", user?.uid);
+    const unsubscribe = onSnapshot(userDocRef, (doc) => {
+      if (doc.exists()) {
+        fetchUserProfileData();
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [user]); // Only depend on user, not userProfile or clearChat
 
   // Modified welcome message logic
   useEffect(() => {

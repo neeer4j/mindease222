@@ -65,6 +65,11 @@ const useChatApiService = () => {
   const getChatResponse = async (userInput, systemInstructions, chatHistory) => {
     setIsLoading(true);
     
+    // Ensure system instructions aren't too long for the API
+    const trimmedInstructions = systemInstructions.length > 15000 
+      ? systemInstructions.substring(0, 15000) + "..."
+      : systemInstructions;
+    
     const tryServer = async (isPrimary) => {
       try {
         let response;
@@ -75,7 +80,7 @@ const useChatApiService = () => {
           const updatedChatHistory = [
             {
               role: 'user',
-              parts: [{ text: systemInstructions }],
+              parts: [{ text: trimmedInstructions }],
             },
             ...filteredMessages.map((msg) => ({
               role: msg.isBot ? 'model' : 'user',
@@ -104,7 +109,7 @@ const useChatApiService = () => {
               messages: [
                 {
                   role: "system",
-                  content: systemInstructions
+                  content: trimmedInstructions
                 },
                 ...formattedHistory,
                 {
