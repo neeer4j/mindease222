@@ -554,7 +554,7 @@ const Chat = ({ toggleTheme }) => {
       "X-Title": "MindEase",
       "Content-Type": "application/json"
     },
-    model: "meta-llama/llama-3-8b-instruct:free"
+    model: "microsoft/phi-4-reasoning-plus:free"
   }), []);
 
   // Build full mood and sleep data strings
