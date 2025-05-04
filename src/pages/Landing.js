@@ -87,7 +87,15 @@ const Landing = () => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, isAdmin } = useContext(AuthContext);
+
+  const handleDashboardNavigation = () => {
+    if (isAdmin && !isMobile) {
+      navigate('/admin');
+    } else {
+      navigate('/dashboard');
+    }
+  };
 
   // Memoize static data
   const features = useMemo(() => [
@@ -1129,7 +1137,7 @@ const Landing = () => {
                           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                             <GradientButton 
                               variant="contained" 
-                              onClick={() => navigate('/dashboard')} 
+                              onClick={handleDashboardNavigation} 
                               sx={{ 
                                 py: 1.5,
                                 px: 3,
@@ -1251,7 +1259,7 @@ const Landing = () => {
                             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                               <GradientButton 
                                 variant="contained" 
-                                onClick={() => navigate('/dashboard')} 
+                                onClick={handleDashboardNavigation} 
                                 sx={{ 
                                   py: 1.5,
                                   px: 3,
