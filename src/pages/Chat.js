@@ -60,9 +60,8 @@ const Chat = ({ toggleTheme }) => {
   const {
     getChatResponse,
     generateQuickReplies,
-    toggleApiService,
     setApiService,
-    useBackupApi,
+    selectedServerIndex,
     isLoading,
     SERVER_CONFIG,
     getCurrentServerInfo
@@ -93,7 +92,6 @@ const Chat = ({ toggleTheme }) => {
   const [customInstructionsInput, setCustomInstructionsInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [apiToggleAnchorEl, setApiToggleAnchorEl] = useState(null);
-  const [hasShownWelcome, setHasShownWelcome] = useState(false);
 
   // Refs and responsive helpers
   const recognitionRef = useRef(null);
@@ -267,7 +265,7 @@ const Chat = ({ toggleTheme }) => {
   useEffect(() => {
     const shouldShowWelcome = () => {
       // Don't show welcome if no user, messages exist, or welcome already shown
-      if (!user || messages.length > 0 || hasShownWelcome) return false;
+      if (!user || messages.length > 0) return false;
       
       // Check if we've already welcomed this user in this session
       const sessionKey = `mindease_welcomed_${user.uid}`;
@@ -279,7 +277,6 @@ const Chat = ({ toggleTheme }) => {
       
       // Mark as welcomed for this session
       sessionStorage.setItem(`mindease_welcomed_${user.uid}`, 'true');
-      setHasShownWelcome(true);
       
       let welcomeMessage = `Hi ${userName || 'there'}! I'm MindEase, your AI therapist. How are you feeling today?`;
       
@@ -313,7 +310,7 @@ const Chat = ({ toggleTheme }) => {
     };
     
     addWelcomeMessage();
-  }, [user, messages.length, userName, addMessage, userProfile, hasShownWelcome]);
+  }, [user, messages.length, userName, addMessage, userProfile]);
 
   // Update the scrollToBottom function
   const scrollToBottom = useCallback(() => {
@@ -661,15 +658,17 @@ const Chat = ({ toggleTheme }) => {
     setApiToggleAnchorEl(null);
   }, []);
 
-  const handleApiChange = useCallback((useBackup) => {
-    setApiService(useBackup);
-    setApiToggleAnchorEl(null);
-    setSnackbar({
-      open: true,
-      message: `Switched to ${useBackup ? 'Server 2' : 'Server 1'} API`,
-      severity: 'info',
-    });
-  }, [setApiService]);
+  // Update snackbar when server index changes (e.g., via menu selection or auto-switch)
+  useEffect(() => {
+    const currentServer = getCurrentServerInfo();
+    if (currentServer) { // Ensure currentServer is defined
+        setSnackbar({
+            open: true,
+            message: `Switched to ${currentServer.name} API`,
+            severity: 'info',
+        });
+    }
+  }, [selectedServerIndex, getCurrentServerInfo]); // Add getCurrentServerInfo dependency
 
   // Helper: determine if two messages are in the same time group
   const isSameTimeGroup = useCallback((prevMsg, curMsg) => {
@@ -729,7 +728,8 @@ const Chat = ({ toggleTheme }) => {
           handleClearChat={handleClearChat}
           openCustomInstructionsDialog={openCustomInstructionsDialog}
           handleApiToggleClick={handleApiToggleClick}
-          useBackupApi={useBackupApi}
+          selectedServerIndex={selectedServerIndex}
+          currentServerInfo={getCurrentServerInfo()}
           toggleTheme={toggleTheme}
         />
 
@@ -743,8 +743,8 @@ const Chat = ({ toggleTheme }) => {
         <ApiToggleMenu
           anchorEl={apiToggleAnchorEl}
           handleClose={handleApiToggleClose}
-          handleApiChange={handleApiChange}
-          useBackupApi={useBackupApi}
+          setApiService={setApiService}
+          selectedServerIndex={selectedServerIndex}
           serverConfig={SERVER_CONFIG}
         />
 
@@ -809,7 +809,7 @@ const Chat = ({ toggleTheme }) => {
         handleClearChat={handleClearChat}
         openCustomInstructionsDialog={openCustomInstructionsDialog}
         handleApiToggleClick={handleApiToggleClick}
-        useBackupApi={useBackupApi}
+        selectedServerIndex={selectedServerIndex}
         currentServerInfo={getCurrentServerInfo()}
       />
 
@@ -823,8 +823,8 @@ const Chat = ({ toggleTheme }) => {
       <ApiToggleMenu
         anchorEl={apiToggleAnchorEl}
         handleClose={handleApiToggleClose}
-        handleApiChange={handleApiChange}
-        useBackupApi={useBackupApi}
+        setApiService={setApiService}
+        selectedServerIndex={selectedServerIndex}
         serverConfig={SERVER_CONFIG}
       />
 

@@ -6,17 +6,25 @@ const SERVER_CONFIG = {
   primary: {
     name: 'Server 1',
     description: 'Primary Server (Gemini)',
-    color: 'primary'
+    color: 'primary',
+    modelName: 'gemini-2.0-flash-lite-preview-02-05'
   },
-  backup: {
+  secondary: {
     name: 'Server 2',
-    description: 'Backup Server (Phi)',
-    color: 'secondary'
+    description: 'Secondary Server (Phi)',
+    color: 'secondary',
+    modelName: 'microsoft/phi-4-reasoning-plus:free'
+  },
+  tertiary: {
+    name: 'Server 3',
+    description: 'Flash Preview Server (Gemini 2.5)',
+    color: 'info',
+    modelName: 'gemini-2.5-flash-preview-04-17'
   }
 };
 
 const useChatApiService = () => {
-  const [useBackupApi, setUseBackupApi] = useState(false);
+  const [selectedServerIndex, setSelectedServerIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
   // Gemini API initialization
@@ -25,75 +33,112 @@ const useChatApiService = () => {
     []
   );
 
-  const model = useMemo(
-    () => genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-lite-preview-02-05',
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.8,
-        topK: 40
-      }
-    }),
-    [genAI]
-  );
+  const model = useMemo(() => {
+    const serverKeys = Object.keys(SERVER_CONFIG);
+    const currentServerKey = serverKeys[selectedServerIndex];
+    const currentConfig = SERVER_CONFIG[currentServerKey];
+
+    if (currentConfig.modelName.startsWith('gemini')) {
+      return genAI.getGenerativeModel({
+        model: currentConfig.modelName,
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.8,
+          topK: 40,
+        },
+      });
+    }
+    return null;
+  }, [genAI, selectedServerIndex]);
 
   // OpenRouter API configuration
-  const openRouterApi = useMemo(() => ({
-    url: "https://openrouter.ai/api/v1/chat/completions",
-    headers: {
-      "Authorization": `Bearer ${process.env.REACT_APP_OPENROUTER_API_KEY}`,
-      "HTTP-Referer": window.location.origin,
-      "X-Title": "MindEase",
-      "Content-Type": "application/json"
-    },
-    model: "microsoft/phi-4-reasoning-plus:free"
-  }), []);
+  const openRouterApi = useMemo(() => {
+    const serverKeys = Object.keys(SERVER_CONFIG);
+    const currentServerKey = serverKeys[selectedServerIndex];
+    const currentConfig = SERVER_CONFIG[currentServerKey];
+
+    if (currentConfig.modelName.startsWith('microsoft/phi')) {
+       return {
+        url: "https://openrouter.ai/api/v1/chat/completions",
+        headers: {
+          "Authorization": `Bearer ${process.env.REACT_APP_OPENROUTER_API_KEY}`,
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "MindEase",
+          "Content-Type": "application/json"
+        },
+        model: currentConfig.modelName
+      };
+    }
+    return null;
+  }, [selectedServerIndex]);
 
   const toggleApiService = () => {
-    setUseBackupApi(prev => !prev);
+    setSelectedServerIndex(prevIndex => (prevIndex + 1) % Object.keys(SERVER_CONFIG).length);
   };
 
-  const setApiService = (useBackup) => {
-    setUseBackupApi(useBackup);
+  const setApiService = (serverIndex) => {
+    if (serverIndex >= 0 && serverIndex < Object.keys(SERVER_CONFIG).length) {
+        setSelectedServerIndex(serverIndex);
+    } else {
+        console.warn("Invalid server index provided to setApiService:", serverIndex);
+    }
   };
 
   const getCurrentServerInfo = () => {
-    return useBackupApi ? SERVER_CONFIG.backup : SERVER_CONFIG.primary;
+    const serverKeys = Object.keys(SERVER_CONFIG);
+    const currentServerKey = serverKeys[selectedServerIndex];
+    return SERVER_CONFIG[currentServerKey];
   };
 
   // Main function to get chat response
   const getChatResponse = async (userInput, systemInstructions, chatHistory) => {
     setIsLoading(true);
     
+    const serverKeys = Object.keys(SERVER_CONFIG);
+    const initialServerKey = serverKeys[selectedServerIndex];
+    const initialConfig = SERVER_CONFIG[initialServerKey];
+
     // Ensure system instructions aren't too long for the API
     const trimmedInstructions = systemInstructions.length > 15000 
       ? systemInstructions.substring(0, 15000) + "..."
       : systemInstructions;
     
-    const tryServer = async (isPrimary) => {
+    const tryServer = async (serverKey) => {
+      const config = SERVER_CONFIG[serverKey];
+      console.log(`Attempting request with ${config.name} (${config.modelName})...`);
       try {
-        let response;
-        
-        if (isPrimary) {
-          // Use Gemini API (Server 1)
+        let responseText;
+
+        if (config.modelName.startsWith('gemini')) {
+          // Use Gemini API
+          const geminiModel = genAI.getGenerativeModel({ model: config.modelName, /* Add generationConfig if needed */ });
           const filteredMessages = chatHistory.filter(msg => !msg.isWelcome);
           const updatedChatHistory = [
-            {
-              role: 'user',
-              parts: [{ text: trimmedInstructions }],
-            },
+            { role: 'user', parts: [{ text: trimmedInstructions }] },
             ...filteredMessages.map((msg) => ({
               role: msg.isBot ? 'model' : 'user',
               parts: [{ text: msg.text }],
             })),
           ];
 
-          const chat = model.startChat({ history: updatedChatHistory });
+          const chat = geminiModel.startChat({ history: updatedChatHistory });
           const result = await chat.sendMessage(userInput);
-          response = await result.response;
-          return response.text();
-        } else {
-          // Use OpenRouter API (Server 2)
+          const response = await result.response;
+          responseText = response.text();
+
+        } else if (config.modelName.startsWith('microsoft/phi')) {
+          // Use OpenRouter API
+           const currentOpenRouterConfig = { // Define specific OpenRouter config for this attempt
+                url: "https://openrouter.ai/api/v1/chat/completions",
+                headers: {
+                    "Authorization": `Bearer ${process.env.REACT_APP_OPENROUTER_API_KEY}`,
+                    "HTTP-Referer": window.location.origin,
+                    "X-Title": "MindEase",
+                    "Content-Type": "application/json"
+                },
+                model: config.modelName
+            };
+
           const formattedHistory = chatHistory
             .filter(msg => !msg.isWelcome)
             .map(msg => ({
@@ -101,63 +146,84 @@ const useChatApiService = () => {
               content: msg.text
             }));
 
-          const openRouterResponse = await fetch(openRouterApi.url, {
+          const openRouterResponse = await fetch(currentOpenRouterConfig.url, {
             method: "POST",
-            headers: openRouterApi.headers,
+            headers: currentOpenRouterConfig.headers,
             body: JSON.stringify({
-              model: openRouterApi.model,
+              model: currentOpenRouterConfig.model,
               messages: [
-                {
-                  role: "system",
-                  content: trimmedInstructions
-                },
+                { role: "system", content: trimmedInstructions },
                 ...formattedHistory,
-                {
-                  role: "user",
-                  content: userInput
-                }
+                { role: "user", content: userInput }
               ]
             })
           });
 
           if (!openRouterResponse.ok) {
-            throw new Error('Server 2 request failed');
+             const errorBody = await openRouterResponse.text();
+             console.error(`OpenRouter request failed with status ${openRouterResponse.status}:`, errorBody);
+             throw new Error(`Server ${config.name} request failed: ${openRouterResponse.statusText}`);
           }
 
           const data = await openRouterResponse.json();
-          return data.choices[0].message.content;
+           if (!data.choices || data.choices.length === 0 || !data.choices[0].message) {
+             console.error("Invalid response structure from OpenRouter:", data);
+             throw new Error(`Server ${config.name} returned invalid response structure.`);
+           }
+          responseText = data.choices[0].message.content;
+        } else {
+           console.error("Unknown model type:", config.modelName);
+           throw new Error(`Unknown model type configured for ${config.name}`);
         }
+
+        console.log(`Success with ${config.name}.`);
+        return { text: responseText, serverName: config.name, serverKey: serverKey };
+
       } catch (error) {
-        console.error(`Error with ${isPrimary ? 'Server 1' : 'Server 2'}:`, error);
-        throw error;
+        console.error(`Error with ${config.name} (${config.modelName}):`, error);
+        throw error; // Re-throw to signal failure
       }
     };
 
-    try {
-      // Try current server first
-      const currentServer = !useBackupApi;
-      let response;
-      let serverUsed;
-      
-      try {
-        response = await tryServer(currentServer);
-        serverUsed = currentServer ? 'Server 1' : 'Server 2';
-      } catch (error) {
-        // If current server fails, try other server
-        response = await tryServer(!currentServer);
-        serverUsed = !currentServer ? 'Server 1' : 'Server 2';
-        // Auto-switch to working server
-        setUseBackupApi(!currentServer);
-      }
+    // Define the order of servers to try, starting with the selected one
+    const serverTryOrder = [
+        initialServerKey,
+        ...serverKeys.filter(key => key !== initialServerKey)
+    ];
 
-      setIsLoading(false);
-      return {
-        text: response,
-        server: serverUsed
-      };
-    } catch (error) {
-      setIsLoading(false);
-      throw new Error('Failed to get response from both servers');
+
+    let finalResponse = null;
+    let errorOccurred = null;
+
+     for (const serverKey of serverTryOrder) {
+        try {
+            finalResponse = await tryServer(serverKey);
+            // If successful, update the selected server to the one that worked
+            const workingIndex = serverKeys.indexOf(serverKey);
+            if (workingIndex !== selectedServerIndex) {
+                 console.log(`Auto-switching to working server: ${SERVER_CONFIG[serverKey].name}`);
+                 setSelectedServerIndex(workingIndex);
+            }
+            errorOccurred = null; // Reset error if a server succeeds
+            break; // Exit loop on success
+        } catch (err) {
+            console.warn(`Server ${SERVER_CONFIG[serverKey].name} failed. Trying next...`);
+            errorOccurred = err; // Store the last error
+        }
+    }
+
+
+    setIsLoading(false);
+
+    if (finalResponse) {
+       return {
+            text: finalResponse.text,
+            server: finalResponse.serverName // Return the name of the server that responded
+       };
+    } else {
+       console.error("All servers failed:", errorOccurred);
+       // Throw the last encountered error or a generic one
+       throw errorOccurred || new Error('Failed to get response from all available servers');
     }
   };
 
@@ -219,7 +285,7 @@ Format as simple reply options without bullets or numbers.`;
     generateQuickReplies,
     toggleApiService,
     setApiService,
-    useBackupApi,
+    selectedServerIndex,
     isLoading,
     SERVER_CONFIG,
     getCurrentServerInfo
